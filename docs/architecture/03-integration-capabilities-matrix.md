@@ -29,11 +29,11 @@ Every adapter implements `PlatformAdapter` and declares a static `Capabilities`:
 ```python
 class Capabilities(BaseModel):
     platform: Platform
-    read_profile: CapabilityLevel      # none | manual | export | api
+    read_profile: CapabilityLevel  # none | manual | export | api
     write_profile: CapabilityLevel
     read_opportunities: CapabilityLevel
     read_messages: CapabilityLevel
-    apply: CapabilityLevel             # always "none" or "manual_assist" — never automated
+    apply: CapabilityLevel  # always "none" or "manual_assist" — never automated
     export_import: CapabilityLevel
     official_api: bool
     email_fallback: bool

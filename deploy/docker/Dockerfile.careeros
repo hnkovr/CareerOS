@@ -1,0 +1,38 @@
+# CareerOS Python service image: API, worker and CLI share it (ADR-008).
+FROM python:3.13-slim-bookworm AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    PATH="/opt/venv/bin:$PATH"
+
+# git: vault commits · fonts: RenderCV PDF output
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      git ca-certificates fonts-dejavu-core fontconfig \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:0.10 /uv /usr/local/bin/uv
+
+WORKDIR /app
+
+# Dependency layer (cached unless lockfile/pyproject change)
+COPY pyproject.toml uv.lock ./
+COPY services/careeros/pyproject.toml services/careeros/README.md ./services/careeros/
+RUN uv sync --frozen --no-dev --no-install-workspace
+
+# Source layer
+COPY services/careeros ./services/careeros
+COPY career ./career
+RUN uv sync --frozen --no-dev
+
+RUN useradd --create-home --uid 10001 app \
+    && mkdir -p /vault /generated && chown -R app:app /vault /generated /app
+USER app
+
+# Git identity inside the container is configured by the app from settings; safe.directory for mounts
+RUN git config --global --add safe.directory '*'
+
+EXPOSE 8000
+CMD ["careeros-api"]

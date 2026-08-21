@@ -43,3 +43,6 @@ coverage/
 
 # --- generated artifacts that are NOT committed (generated schemas ARE committed) ---
 services/careeros/openapi.json
+
+# keep the private vault directory present (contents stay ignored)
+!career/private/README.md

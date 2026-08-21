@@ -1,0 +1,51 @@
+[project]
+name = "careeros"
+version = "0.1.0"
+description = "CareerOS — personal agentic career data platform (API, worker, CLI)"
+readme = "README.md"
+requires-python = ">=3.13"
+license = "MIT"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.5",
+  "sqlalchemy[asyncio]>=2.0.36",
+  "asyncpg>=0.30",
+  "alembic>=1.13",
+  "pgvector>=0.3",
+  "arq>=0.26",
+  "redis>=5",
+  "structlog>=24",
+  "typer>=0.12",
+  "httpx>=0.27",
+  "ruamel.yaml>=0.18",
+  "jinja2>=3.1",
+  "rapidfuzz>=3.9",
+  "anthropic>=0.40",
+  "openai>=1.50",
+  "rendercv>=2.0",
+]
+
+[project.scripts]
+careeros = "careeros.cli:app"
+careeros-api = "careeros.api.main:run"
+careeros-worker = "careeros.worker.main:run"
+
+[dependency-groups]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.24",
+  "anyio>=4",
+  "ruff>=0.8",
+  "pyright>=1.1.390",
+  "import-linter>=2",
+  "httpx>=0.27",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/careeros"]

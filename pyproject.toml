@@ -1,0 +1,53 @@
+[tool.uv.workspace]
+members = ["services/careeros"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC", "T20"]
+ignore = ["RUF012", "B008"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/cli.py" = ["T20"]
+"**/seed.py" = ["T20"]
+"**/tests/**" = ["T20", "ASYNC"]
+"scripts/**" = ["T20"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["careeros"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pyright]
+pythonVersion = "3.13"
+venvPath = "."
+venv = ".venv"
+include = ["services/careeros/src", "services/careeros/tests"]
+typeCheckingMode = "standard"
+reportMissingImports = true
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+testpaths = ["services/careeros/tests", "tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+addopts = "-q -ra"
+markers = ["db: requires a reachable PostgreSQL (CAREEROS_TEST_DATABASE_URL)", "ai: calls a real AI provider (skipped unless CAREEROS_AI_LIVE=1)"]
+filterwarnings = ["error::DeprecationWarning:careeros.*"]
+
+[tool.importlinter]
+root_package = "careeros"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "AI providers are isolated"
+type = "forbidden"
+source_modules = ["careeros.api", "careeros.core"]
+forbidden_modules = ["anthropic", "openai"]

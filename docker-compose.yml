@@ -1,0 +1,114 @@
+name: careeros
+
+x-app-env: &app-env
+  env_file:
+    - path: ./config/.env.docker
+      required: false
+  environment:
+    CAREEROS_DATABASE_URL: postgresql+asyncpg://careeros:${POSTGRES_PASSWORD:-careeros}@postgres:5432/careeros
+    CAREEROS_REDIS_URL: redis://redis:6379/0
+    CAREEROS_VAULT_PATH: /vault
+    CAREEROS_GENERATED_DIR: /generated
+    CAREEROS_CORS_ORIGINS: '["http://localhost:3000"]'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: careeros
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-careeros}
+      POSTGRES_DB: careeros
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/docker/postgres-init.sql:/docker-entrypoint-initdb.d/10-init.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U careeros -d careeros"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--save", "60", "1", "--loglevel", "warning"]
+    volumes:
+      - redisdata:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.careeros
+    <<: *app-env
+    command: ["careeros-api"]
+    volumes:
+      - ${CAREEROS_VAULT_HOST_PATH:-./career/private}:/vault
+      - ./generated:/generated
+      - ~/.ssh:/home/app/.ssh:ro
+    ports:
+      - "${API_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  worker:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.careeros
+    <<: *app-env
+    command: ["careeros-worker"]
+    volumes:
+      - ${CAREEROS_VAULT_HOST_PATH:-./career/private}:/vault
+      - ./generated:/generated
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.careeros
+    <<: *app-env
+    command: ["alembic", "-c", "/app/services/careeros/alembic.ini", "upgrade", "head"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.web
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:${API_PORT:-8000}
+      API_INTERNAL_URL: http://api:8000
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    profiles: ["web"]
+
+volumes:
+  pgdata:
+  redisdata:
