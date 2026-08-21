@@ -1,0 +1,45 @@
+# --- secrets & local env ---
+.env
+.env.*
+!.env.*.template
+config/.env.secrets*
+!config/.env.secrets.demo.template
+
+# --- private career data (never commit) ---
+career/private/
+generated/
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+
+# --- node ---
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+coverage/
+
+# --- tooling ---
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.stash/
+.AI/
+*.log
+
+# --- generated artifacts that are NOT committed (generated schemas ARE committed) ---
+services/careeros/openapi.json
