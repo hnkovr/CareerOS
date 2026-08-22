@@ -49,13 +49,25 @@ root_package = "careeros"
 include_external_packages = true
 
 [[tool.importlinter.contracts]]
-name = "AI providers are isolated"
+name = "AI SDKs and provider adapters are used only through the AI gateway"
 type = "forbidden"
-source_modules = ["careeros.api", "careeros.core", "careeros.modules.vault", "careeros.modules.ai.service", "careeros.modules.ai.prompts", "careeros.modules.ai.provider"]
+source_modules = [
+  "careeros.api", "careeros.core", "careeros.modules.vault", "careeros.modules.cv",
+  "careeros.modules.opportunities",
+  "careeros.modules.ai.service", "careeros.modules.ai.prompts", "careeros.modules.ai.provider",
+]
 forbidden_modules = ["anthropic", "openai", "careeros.modules.ai.providers"]
+allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]
 name = "vault does not depend on the database or other modules"
 type = "forbidden"
 source_modules = ["careeros.modules.vault"]
-forbidden_modules = ["sqlalchemy", "careeros.core.db", "careeros.core.models"]
+forbidden_modules = ["sqlalchemy", "careeros.core.db", "careeros.core.models", "careeros.modules.ai", "careeros.modules.cv"]
+
+[[tool.importlinter.contracts]]
+name = "rendercv is used only by the CV adapter"
+type = "forbidden"
+source_modules = ["careeros.api", "careeros.core", "careeros.modules.vault", "careeros.modules.ai", "careeros.modules.cv.service", "careeros.modules.cv.builder"]
+forbidden_modules = ["rendercv"]
+allow_indirect_imports = true
