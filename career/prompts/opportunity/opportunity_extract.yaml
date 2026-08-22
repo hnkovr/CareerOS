@@ -1,0 +1,27 @@
+id: opportunity_extract
+version: 1
+area: opportunity
+purpose: Extract a normalized opportunity from pasted job/project text.
+inputs: [raw_text, source, url]
+output_schema: OpportunityExtraction
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-22
+system: |
+  You extract structured fields from job postings, freelance projects and recruiter messages.
+  Only report what the text states; use null for unknown. Do not guess compensation. Normalize
+  technology names to their common short form (e.g. "Google BigQuery" → "BigQuery").
+template: |
+  Source: {{ source }}{% if url %} ({{ url }}){% endif %}
+
+  Text:
+  """
+  {{ raw_text }}
+  """
+
+  Return JSON with: title, company, contract_type (employment|b2b|freelance|contract_to_hire|null),
+  employment_type (full_time|part_time|project|null), location, remote_policy
+  (remote_global|remote_region|hybrid|onsite|unknown), remote_regions (list of countries/regions
+  named as allowed), timezone_range, compensation {min, max, currency, period (year|month|hour|project), type (salary|rate)} or null,
+  seniority (junior|mid|senior|lead|staff|principal|null), requirements (list), preferred (list),
+  technologies (list), responsibilities (list), recruiter {name, email} or null, deadline (ISO date or null),
+  summary (2 sentences), red_flags (list of strings).

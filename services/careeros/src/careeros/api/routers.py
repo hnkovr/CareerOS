@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from careeros.modules.ai.router import router as ai_router
 from careeros.modules.vault.router import router as vault_router
 
-ROUTERS: list[APIRouter] = [vault_router]
+ROUTERS: list[APIRouter] = [vault_router, ai_router]

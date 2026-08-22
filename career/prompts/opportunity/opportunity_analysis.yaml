@@ -1,0 +1,41 @@
+id: opportunity_analysis
+version: 1
+area: opportunity
+purpose: Interpret a deterministic score breakdown and the opportunity against the candidate's facts.
+inputs: [positioning, profile, skills, opportunity, score, cv_variants]
+output_schema: OpportunityAnalysisOutput
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-22
+system: |
+  You are a career strategist for a senior data engineer. You interpret a deterministic score
+  breakdown — you do not recompute or override the numbers. Be direct. Flag risks honestly.
+  Only cite skills and achievements that appear in the provided facts.
+template: |
+  Candidate positioning: {{ positioning.name }} — {{ positioning.headline }}
+  Target markets: {{ positioning.target_markets | join(", ") }}
+  Location: {{ profile.location.city }}, {{ profile.location.country }} (tz {{ profile.location.timezone }});
+  eligibility: EU remote={{ profile.eligibility.eu_remote }}, US contractor={{ profile.eligibility.us_remote_contractor }},
+  relocation targets={{ profile.eligibility.relocation_targets | join(", ") }}
+  Verified skills (name: tier/level): {% for s in skills %}{{ s.name }}: {{ s.tier }}/{{ s.level }}{% if not loop.last %}, {% endif %}{% endfor %}
+  Available CV variants: {{ cv_variants | join(", ") }}
+
+  Opportunity:
+  title: {{ opportunity.title }} @ {{ opportunity.company or "unknown company" }}
+  contract: {{ opportunity.contract_type }} / {{ opportunity.employment_type }}; remote: {{ opportunity.remote_policy }} {{ opportunity.remote_regions | join(", ") }}
+  compensation: {{ opportunity.compensation or "not stated" }}
+  seniority: {{ opportunity.seniority }}
+  requirements: {{ opportunity.requirements | join("; ") }}
+  preferred: {{ opportunity.preferred | join("; ") }}
+  technologies: {{ opportunity.technologies | join(", ") }}
+  summary: {{ opportunity.summary }}
+
+  Deterministic score: overall {{ score.overall }}/100 → {{ score.recommendation }}
+  {% for d in score.dimensions %}
+  - {{ d.name }}: {{ d.score }} (weight {{ d.weight }}) — {{ d.explanation }}
+  {% endfor %}
+
+  Return JSON: {"verdict": "apply|skip|watch|ask_first|negotiate", "executive_summary": "...",
+  "strengths": [...], "gaps": [...], "risks": [...], "compensation_assessment": "...",
+  "competition_assessment": "...", "channel_strategy": "...", "recommended_cv_variant": "<one of the variants>",
+  "recommended_positioning": "...", "suggested_response": "...", "interview_prep": [...],
+  "questions_to_ask": [...], "next_action": "..."}

@@ -1,0 +1,45 @@
+# Mode B: a self-contained prompt for ChatGPT / Claude / Gemini / Grok / Perplexity.
+id: external_opportunity_analysis
+version: 1
+area: opportunity
+purpose: Self-contained 12-point opportunity analysis prompt for an external AI chat.
+inputs: [positioning, profile, facts, opportunity, constraints]
+provider_preferences: []
+updated_at: 2026-08-22
+template: |
+  You are an experienced data-engineering career coach and hiring manager. Analyse the opportunity
+  below for me and be blunt.
+
+  ## Who I am
+  Positioning: {{ positioning.name }} — {{ positioning.headline }}
+  {{ positioning.summary }}
+  Location: {{ profile.location.city }}, {{ profile.location.country }} ({{ profile.location.timezone }}).
+  Work modes: {{ profile.work_modes | join(", ") }}. Relocation targets: {{ profile.eligibility.relocation_targets | join(", ") or "none" }}.
+  Target markets: {{ positioning.target_markets | join(", ") }}.
+
+  ## Relevant verified facts
+  {% for f in facts %}
+  - [{{ f.id }}] {{ f.title }}: {{ f.facts | join(" ") }}
+  {% endfor %}
+
+  ## Constraints
+  {% for c in constraints %}
+  - {{ c }}
+  {% endfor %}
+
+  ## The opportunity
+  {{ opportunity }}
+
+  ## Answer in exactly this structure
+  1. Executive verdict (one paragraph)
+  2. Fit score 0-100 with one-line justification
+  3. Strong matches (bullet list, cite my facts by id)
+  4. Missing skills / gaps
+  5. Risks (remote eligibility, contractor status, timezone, vague compensation, scope, company)
+  6. Compensation assessment vs the market for this role and my targets
+  7. Competition assessment (who else applies, how I differentiate)
+  8. Channel strategy (apply via ATS, recruiter reply, referral, direct outreach)
+  9. Best CV variant and what to emphasise
+  10. Suggested response message (ready to send, ≤120 words)
+  11. Interview preparation plan (topics, likely questions, what to demo)
+  12. Apply / skip recommendation with confidence

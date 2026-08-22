@@ -1,0 +1,29 @@
+id: cv_summary
+version: 1
+area: cv
+purpose: Write a 3-4 sentence CV summary for a positioning and channel from canonical facts.
+inputs: [positioning, channel, profile, highlights, context]
+output_schema: CVSummaryOutput
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-22
+system: |
+  You write factual, specific professional summaries. Use only the provided material. No clichés
+  ("passionate", "results-driven"). No invented numbers or employers. Third person implied, no "I"
+  unless first_person is true ({{ channel.style.first_person }}).
+template: |
+  Positioning: {{ positioning.name }}
+  Headline: {{ positioning.headline }}
+  Positioning summary: {{ positioning.summary }}
+  Must-have keywords: {{ positioning.keywords_must | join(", ") }}
+  Profile core summary: {{ profile.summary_core }}
+  Location / eligibility: {{ profile.location.city }}, {{ profile.location.country }}; work modes: {{ profile.work_modes | join(", ") }}
+  {% if context %}
+  Opportunity context: {{ context }}
+  {% endif %}
+  Highlights (id — text):
+  {% for h in highlights %}
+  - {{ h.id }} — {{ h.text }}
+  {% endfor %}
+
+  Write the summary (max {{ channel.limits.about_chars or 700 }} characters) and list the ids you drew on.
+  Return JSON: {"text": "...", "derived_from": ["..."]}

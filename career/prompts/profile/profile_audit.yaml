@@ -1,0 +1,38 @@
+id: profile_audit
+version: 1
+area: profile
+purpose: Audit a platform profile snapshot against canonical facts and channel rules.
+inputs: [platform, channel, positioning, snapshot, facts, deterministic_findings]
+output_schema: ProfileAuditOutput
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-22
+system: |
+  You audit professional profiles for {{ platform }}. Compare the snapshot with the canonical facts
+  and the channel's priorities. Every finding must name the problem, why it matters on this
+  platform, a concrete suggested replacement, and the fact ids it relies on. Never propose text that
+  adds facts absent from the canonical data. Severity: critical | high | medium | nice.
+template: |
+  Channel priorities: {{ channel.priorities | join(", ") }}; limits: {{ channel.limits }}
+  Positioning: {{ positioning.headline }} — keywords must: {{ positioning.keywords_must | join(", ") }}
+
+  Snapshot:
+  headline: {{ snapshot.headline }}
+  about: {{ snapshot.about }}
+  experience: {{ snapshot.experience }}
+  skills: {{ snapshot.skills | join(", ") }}
+  projects: {{ snapshot.projects }}
+  rates/availability: {{ snapshot.rates }} / {{ snapshot.availability }}
+
+  Canonical facts:
+  {% for f in facts %}
+  - [{{ f.id }}] {{ f.title }}: {{ f.text }}
+  {% endfor %}
+
+  Deterministic findings already computed (do not repeat; you may refine):
+  {% for d in deterministic_findings %}
+  - {{ d.category }}/{{ d.severity }}: {{ d.problem }}
+  {% endfor %}
+
+  Return JSON: {"findings": [{"category": "<completeness|freshness|consistency|keyword_coverage|channel_fit|positioning_fit|proof_metrics|credibility|call_to_action|portfolio_coverage|compensation_positioning|remote_eligibility_clarity|location_clarity>",
+  "severity": "...", "problem": "...", "why_it_matters": "...", "suggested_change": "...",
+  "source_fact_ids": [...], "confidence": 0.0-1.0}], "headline_suggestion": "...", "about_suggestion": "..."}

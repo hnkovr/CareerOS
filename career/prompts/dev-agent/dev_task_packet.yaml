@@ -1,0 +1,49 @@
+# Mode C: task packet for a coding agent (Claude Code, Codex CLI, Gemini CLI, Cursor, ...).
+id: dev_task_packet
+version: 1
+area: dev-agent
+purpose: Render a self-contained task packet for a coding agent.
+inputs: [agent, slug, context, goal, relevant_files, constraints, acceptance_criteria, suggested_commands, expected_artifacts]
+provider_preferences: []
+updated_at: 2026-08-22
+template: |
+  # Task: {{ slug }}
+
+  Target agent: {{ agent }}
+
+  ## Context
+  {{ context }}
+
+  ## Goal
+  {{ goal }}
+
+  ## Relevant source files
+  {% for f in relevant_files %}
+  - `{{ f }}`
+  {% else %}
+  - (none listed — inspect the repository first)
+  {% endfor %}
+
+  ## Constraints
+  {% for c in constraints %}
+  - {{ c }}
+  {% else %}
+  - Do not change canonical career facts without producing a reviewable diff.
+  {% endfor %}
+
+  ## Acceptance criteria
+  {% for a in acceptance_criteria %}
+  - [ ] {{ a }}
+  {% endfor %}
+
+  ## Suggested commands
+  {% for cmd in suggested_commands %}
+  ```bash
+  {{ cmd }}
+  ```
+  {% endfor %}
+
+  ## Expected artifacts
+  {% for e in expected_artifacts %}
+  - {{ e }}
+  {% endfor %}

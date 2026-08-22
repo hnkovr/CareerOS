@@ -64,8 +64,21 @@
       "default": null,
       "title": "Updated At"
     },
+    "system": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Jinja2 template for the system prompt",
+      "title": "System"
+    },
     "template": {
-      "description": "Jinja2 template",
+      "description": "Jinja2 template for the user prompt",
       "title": "Template",
       "type": "string"
     }

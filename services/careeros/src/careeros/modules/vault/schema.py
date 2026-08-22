@@ -424,7 +424,8 @@ class Prompt(VaultModel):
     )
     provider_preferences: list[str] = Field(default_factory=list)
     updated_at: date | None = None
-    template: str = Field(description="Jinja2 template")
+    system: str | None = Field(default=None, description="Jinja2 template for the system prompt")
+    template: str = Field(description="Jinja2 template for the user prompt")
 
     @field_validator("template")
     @classmethod

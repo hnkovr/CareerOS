@@ -48,3 +48,6 @@ openapi: ## Export OpenAPI + regenerate TS client/types
 
 clean: ## Remove build artifacts and caches
 	rm -rf .venv node_modules apps/web/.next .pytest_cache .ruff_cache generated/*
+
+run: up validate-career generate-cv migrate openapi
+	open .

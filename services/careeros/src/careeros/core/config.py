@@ -54,6 +54,8 @@ class Settings(BaseSettings):
     ai_structured_max_retries: int = 2
     ai_store_inputs: bool = True
     ai_inputs_retention_days: int = 90
+    # model → (usd per 1M input tokens, usd per 1M output tokens); unknown models record cost=null
+    ai_pricing: dict[str, tuple[float, float]] = Field(default_factory=dict)
 
     # --- tasks ---
     task_runner: Literal["inline", "arq"] = "arq"
