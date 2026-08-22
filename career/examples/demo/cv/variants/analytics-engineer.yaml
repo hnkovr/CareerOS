@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../schemas/cv_variants.schema.json
+id: analytics-engineer
+name: Analytics Engineer
+positioning_id: analytics_engineer
+channel_id: ats
+locale: en
+length: two_page
+sections: [summary, experience, skills, projects, certifications]
+rendercv_theme: classic
+include: {years_back: 10, max_bullets_per_role: 4, max_projects: 2}

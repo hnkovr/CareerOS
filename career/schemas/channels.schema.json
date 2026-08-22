@@ -1,0 +1,349 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/channels.schema.json",
+  "$defs": {
+    "ChannelLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "headline_chars": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Headline Chars"
+        },
+        "about_chars": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "About Chars"
+        },
+        "bullets_per_role": {
+          "default": 5,
+          "title": "Bullets Per Role",
+          "type": "integer"
+        },
+        "bullet_chars": {
+          "default": 220,
+          "title": "Bullet Chars",
+          "type": "integer"
+        },
+        "skills_max": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Skills Max"
+        }
+      },
+      "title": "ChannelLimits",
+      "type": "object"
+    },
+    "ChannelStyle": {
+      "additionalProperties": false,
+      "properties": {
+        "tone": {
+          "default": "professional",
+          "title": "Tone",
+          "type": "string"
+        },
+        "first_person": {
+          "default": false,
+          "title": "First Person",
+          "type": "boolean"
+        },
+        "metrics_first": {
+          "default": true,
+          "title": "Metrics First",
+          "type": "boolean"
+        },
+        "keyword_density": {
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Keyword Density",
+          "type": "string"
+        }
+      },
+      "title": "ChannelStyle",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/EvidenceType"
+        },
+        "ref": {
+          "description": "item id (project/testimonial/certification/publication) or URL",
+          "title": "Ref",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "type",
+        "ref"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "EvidenceType": {
+      "enum": [
+        "project",
+        "link",
+        "testimonial",
+        "certification",
+        "publication",
+        "file"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "ItemStatus": {
+      "enum": [
+        "draft",
+        "verified",
+        "retired"
+      ],
+      "title": "ItemStatus",
+      "type": "string"
+    },
+    "Platform": {
+      "enum": [
+        "linkedin",
+        "wellfound",
+        "upwork",
+        "toptal",
+        "ats",
+        "direct_outreach",
+        "email",
+        "other"
+      ],
+      "title": "Platform",
+      "type": "string"
+    },
+    "Visibility": {
+      "additionalProperties": false,
+      "properties": {
+        "linkedin": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Linkedin"
+        },
+        "wellfound": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Wellfound"
+        },
+        "upwork": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Upwork"
+        },
+        "toptal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Toptal"
+        },
+        "ats": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Ats"
+        },
+        "direct_outreach": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Direct Outreach"
+        }
+      },
+      "title": "Visibility",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "description": "stable identifier, never renamed",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ItemStatus",
+      "default": "draft"
+    },
+    "visibility": {
+      "$ref": "#/$defs/Visibility"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Notes"
+    },
+    "platform": {
+      "$ref": "#/$defs/Platform"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "limits": {
+      "$ref": "#/$defs/ChannelLimits"
+    },
+    "priorities": {
+      "description": "what this channel rewards, most important first",
+      "items": {
+        "type": "string"
+      },
+      "title": "Priorities",
+      "type": "array"
+    },
+    "required_sections": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Required Sections",
+      "type": "array"
+    },
+    "style": {
+      "$ref": "#/$defs/ChannelStyle"
+    },
+    "cta": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Cta"
+    },
+    "default_visibility": {
+      "default": true,
+      "title": "Default Visibility",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "platform",
+    "name"
+  ],
+  "title": "ChannelRules",
+  "type": "object"
+}

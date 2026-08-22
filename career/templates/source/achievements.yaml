@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://careeros.dev/schemas/achievements.schema.json
+# Atomic, verifiable facts. AI selects/rephrases these; it never adds to them without your approval.
+items:
+  - id: ach_example
+    status: draft
+    company_id: example_company
+    title: Example achievement
+    facts:
+      - Did X with Y, resulting in Z
+    metrics: []
+    technologies: {first_priority: [Python], additional: [], target: []}
+    keywords: []

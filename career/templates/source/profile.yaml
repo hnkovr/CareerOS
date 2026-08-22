@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://careeros.dev/schemas/profile.schema.json
+id: profile
+status: draft
+name: __OWNER__
+headline_baseline: Senior Data Engineer / Analytics Engineer
+summary_core: Replace with a 2-4 sentence factual summary.
+location: {city: City, country: XX, timezone: UTC}
+work_modes: [remote_us, remote_eu, eu_b2b, freelance, contract]
+eligibility: {eu_remote: true, us_remote_contractor: true, works_as_contractor: true, relocation_targets: []}
+contacts: {email: you@example.com}
+years_experience_since: 2015
+target_roles: [Senior Data Engineer]

@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../schemas/channels.schema.json
+id: toptal
+platform: toptal
+name: Toptal
+limits: {headline_chars: 100, about_chars: 2000, bullets_per_role: 5, bullet_chars: 220}
+priorities: [seniority, technical_ownership, architecture, consulting, client_communication, system_design, production_delivery, troubleshooting, leadership]
+required_sections: [headline, about, experience, projects, skills]
+style: {tone: senior, first_person: false, metrics_first: true, keyword_density: medium}
+default_visibility: true

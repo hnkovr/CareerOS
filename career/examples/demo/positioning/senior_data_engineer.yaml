@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../schemas/positioning.schema.json
+id: senior_data_engineer
+status: verified
+name: Senior Data Engineer / Analytics Engineer
+headline: >-
+  Senior Data Engineer / Analytics Engineer | GCP, BigQuery, Snowflake, dbt, Airflow, Dagster,
+  Python, SQL, Databricks, Kafka, ClickHouse, LLMOps
+summary: >-
+  Broad, market-core positioning: senior hands-on data engineer who owns analytics platforms end to
+  end, with enterprise-compatible stack coverage (Snowflake/Databricks/Airflow/AWS) and a modern
+  core (dbt, Dagster, BigQuery, ClickHouse).
+target_markets: [remote_us, remote_eu, eu_b2b, enterprise]
+emphasize:
+  skills: [sk_python, sk_sql, sk_dbt, sk_dagster, sk_bigquery, sk_clickhouse, sk_airflow, sk_snowflake, sk_kafka]
+  achievements: [ach_northwind_ci_cd, ach_northwind_clickhouse, ach_lumen_bq_cost, ach_orbit_streaming, ach_orbit_snowflake]
+  projects: [proj_pdp_ci, proj_clickhouse_realtime, proj_agentic_market_intel]
+deemphasize: [ach_brightpath_airflow]
+keywords_must: [Python, SQL, dbt, BigQuery, Snowflake, Airflow, Dagster, data pipelines, data modeling, CI/CD]
+keywords_nice: [Databricks, Spark, Kafka, ClickHouse, Terraform, data quality, LLMOps]
+tone: concise, factual, senior

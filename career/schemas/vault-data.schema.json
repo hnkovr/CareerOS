@@ -1,0 +1,2996 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/vault-data.schema.json",
+  "$defs": {
+    "Achievement": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "company_id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Company Id",
+          "type": "string"
+        },
+        "role_title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Role Title"
+        },
+        "type": {
+          "$ref": "#/$defs/AchievementType",
+          "default": "achievement"
+        },
+        "title": {
+          "description": "short label for UI/provenance",
+          "title": "Title",
+          "type": "string"
+        },
+        "facts": {
+          "description": "atomic, verifiable sentences",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Facts",
+          "type": "array"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/Metric"
+          },
+          "title": "Metrics",
+          "type": "array"
+        },
+        "technologies": {
+          "$ref": "#/$defs/TechnologyTiers"
+        },
+        "keywords": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Keywords",
+          "type": "array"
+        },
+        "period": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "free text, e.g. 2024-Q3",
+          "title": "Period"
+        }
+      },
+      "required": [
+        "id",
+        "company_id",
+        "title",
+        "facts"
+      ],
+      "title": "Achievement",
+      "type": "object"
+    },
+    "AchievementType": {
+      "enum": [
+        "achievement",
+        "responsibility",
+        "result"
+      ],
+      "title": "AchievementType",
+      "type": "string"
+    },
+    "CVInclude": {
+      "additionalProperties": false,
+      "properties": {
+        "years_back": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Years Back"
+        },
+        "companies": {
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Companies",
+          "type": "array"
+        },
+        "max_bullets_per_role": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Bullets Per Role"
+        },
+        "max_projects": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Projects"
+        },
+        "skills_tiers": {
+          "items": {
+            "$ref": "#/$defs/SkillTier"
+          },
+          "title": "Skills Tiers",
+          "type": "array"
+        }
+      },
+      "title": "CVInclude",
+      "type": "object"
+    },
+    "CVLength": {
+      "enum": [
+        "one_page",
+        "two_page",
+        "full"
+      ],
+      "title": "CVLength",
+      "type": "string"
+    },
+    "CVSection": {
+      "enum": [
+        "summary",
+        "experience",
+        "projects",
+        "skills",
+        "education",
+        "certifications",
+        "publications",
+        "languages",
+        "offers",
+        "testimonials"
+      ],
+      "title": "CVSection",
+      "type": "string"
+    },
+    "CVVariant": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "positioning_id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Positioning Id",
+          "type": "string"
+        },
+        "channel_id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Channel Id",
+          "type": "string"
+        },
+        "locale": {
+          "default": "en",
+          "title": "Locale",
+          "type": "string"
+        },
+        "length": {
+          "$ref": "#/$defs/CVLength",
+          "default": "two_page"
+        },
+        "sections": {
+          "items": {
+            "$ref": "#/$defs/CVSection"
+          },
+          "minItems": 1,
+          "title": "Sections",
+          "type": "array"
+        },
+        "rendercv_theme": {
+          "default": "classic",
+          "title": "Rendercv Theme",
+          "type": "string"
+        },
+        "include": {
+          "$ref": "#/$defs/CVInclude"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "positioning_id",
+        "channel_id",
+        "sections"
+      ],
+      "title": "CVVariant",
+      "type": "object"
+    },
+    "Certification": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "issuer": {
+          "title": "Issuer",
+          "type": "string"
+        },
+        "issued": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Issued"
+        },
+        "expires": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expires"
+        },
+        "credential_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Credential Id"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "issuer"
+      ],
+      "title": "Certification",
+      "type": "object"
+    },
+    "ChannelLimits": {
+      "additionalProperties": false,
+      "properties": {
+        "headline_chars": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Headline Chars"
+        },
+        "about_chars": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "About Chars"
+        },
+        "bullets_per_role": {
+          "default": 5,
+          "title": "Bullets Per Role",
+          "type": "integer"
+        },
+        "bullet_chars": {
+          "default": 220,
+          "title": "Bullet Chars",
+          "type": "integer"
+        },
+        "skills_max": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Skills Max"
+        }
+      },
+      "title": "ChannelLimits",
+      "type": "object"
+    },
+    "ChannelRules": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "platform": {
+          "$ref": "#/$defs/Platform"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "limits": {
+          "$ref": "#/$defs/ChannelLimits"
+        },
+        "priorities": {
+          "description": "what this channel rewards, most important first",
+          "items": {
+            "type": "string"
+          },
+          "title": "Priorities",
+          "type": "array"
+        },
+        "required_sections": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Required Sections",
+          "type": "array"
+        },
+        "style": {
+          "$ref": "#/$defs/ChannelStyle"
+        },
+        "cta": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Cta"
+        },
+        "default_visibility": {
+          "default": true,
+          "title": "Default Visibility",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "platform",
+        "name"
+      ],
+      "title": "ChannelRules",
+      "type": "object"
+    },
+    "ChannelStyle": {
+      "additionalProperties": false,
+      "properties": {
+        "tone": {
+          "default": "professional",
+          "title": "Tone",
+          "type": "string"
+        },
+        "first_person": {
+          "default": false,
+          "title": "First Person",
+          "type": "boolean"
+        },
+        "metrics_first": {
+          "default": true,
+          "title": "Metrics First",
+          "type": "boolean"
+        },
+        "keyword_density": {
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ],
+          "title": "Keyword Density",
+          "type": "string"
+        }
+      },
+      "title": "ChannelStyle",
+      "type": "object"
+    },
+    "CompensationTargets": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "default": "USD",
+          "title": "Currency",
+          "type": "string"
+        },
+        "min_annual": {
+          "title": "Min Annual",
+          "type": "integer"
+        },
+        "target_annual": {
+          "title": "Target Annual",
+          "type": "integer"
+        },
+        "min_hourly": {
+          "title": "Min Hourly",
+          "type": "integer"
+        },
+        "target_hourly": {
+          "title": "Target Hourly",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "min_annual",
+        "target_annual",
+        "min_hourly",
+        "target_hourly"
+      ],
+      "title": "CompensationTargets",
+      "type": "object"
+    },
+    "Contacts": {
+      "additionalProperties": false,
+      "properties": {
+        "email": {
+          "title": "Email",
+          "type": "string"
+        },
+        "phone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phone"
+        },
+        "website": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Website"
+        },
+        "github": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Github"
+        },
+        "linkedin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Linkedin"
+        },
+        "calendar": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calendar"
+        }
+      },
+      "required": [
+        "email"
+      ],
+      "title": "Contacts",
+      "type": "object"
+    },
+    "DimensionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "weight": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Weight",
+          "type": "number"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "weight"
+      ],
+      "title": "DimensionConfig",
+      "type": "object"
+    },
+    "Education": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "institution": {
+          "title": "Institution",
+          "type": "string"
+        },
+        "degree": {
+          "title": "Degree",
+          "type": "string"
+        },
+        "field": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Field"
+        },
+        "start": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start"
+        },
+        "end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location"
+        },
+        "highlights": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Highlights",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "institution",
+        "degree"
+      ],
+      "title": "Education",
+      "type": "object"
+    },
+    "Eligibility": {
+      "additionalProperties": false,
+      "properties": {
+        "eu_remote": {
+          "default": true,
+          "title": "Eu Remote",
+          "type": "boolean"
+        },
+        "us_remote_contractor": {
+          "default": true,
+          "title": "Us Remote Contractor",
+          "type": "boolean"
+        },
+        "us_w2": {
+          "default": false,
+          "title": "Us W2",
+          "type": "boolean"
+        },
+        "works_as_contractor": {
+          "default": true,
+          "title": "Works As Contractor",
+          "type": "boolean"
+        },
+        "relocation_targets": {
+          "description": "ISO country codes",
+          "items": {
+            "type": "string"
+          },
+          "title": "Relocation Targets",
+          "type": "array"
+        },
+        "work_authorization": {
+          "description": "countries with right to work",
+          "items": {
+            "type": "string"
+          },
+          "title": "Work Authorization",
+          "type": "array"
+        }
+      },
+      "title": "Eligibility",
+      "type": "object"
+    },
+    "EligibilityRules": {
+      "additionalProperties": false,
+      "properties": {
+        "home_country": {
+          "title": "Home Country",
+          "type": "string"
+        },
+        "home_timezone": {
+          "title": "Home Timezone",
+          "type": "string"
+        },
+        "contractor_ok": {
+          "default": true,
+          "title": "Contractor Ok",
+          "type": "boolean"
+        },
+        "us_overlap_hours_min": {
+          "default": 3,
+          "title": "Us Overlap Hours Min",
+          "type": "integer"
+        },
+        "eu_timezone_ok": {
+          "default": true,
+          "title": "Eu Timezone Ok",
+          "type": "boolean"
+        },
+        "relocation_targets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Relocation Targets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "home_country",
+        "home_timezone"
+      ],
+      "title": "EligibilityRules",
+      "type": "object"
+    },
+    "Emphasis": {
+      "additionalProperties": false,
+      "properties": {
+        "skills": {
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Skills",
+          "type": "array"
+        },
+        "achievements": {
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Achievements",
+          "type": "array"
+        },
+        "projects": {
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Projects",
+          "type": "array"
+        },
+        "offers": {
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Offers",
+          "type": "array"
+        }
+      },
+      "title": "Emphasis",
+      "type": "object"
+    },
+    "EmploymentType": {
+      "enum": [
+        "full_time",
+        "part_time",
+        "contract",
+        "b2b",
+        "freelance",
+        "internship"
+      ],
+      "title": "EmploymentType",
+      "type": "string"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/EvidenceType"
+        },
+        "ref": {
+          "description": "item id (project/testimonial/certification/publication) or URL",
+          "title": "Ref",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "type",
+        "ref"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "EvidenceType": {
+      "enum": [
+        "project",
+        "link",
+        "testimonial",
+        "certification",
+        "publication",
+        "file"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "Experience": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "company_id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Company Id",
+          "type": "string"
+        },
+        "company_name": {
+          "title": "Company Name",
+          "type": "string"
+        },
+        "company_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Company Url"
+        },
+        "industry": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Industry"
+        },
+        "company_size": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Company Size"
+        },
+        "roles": {
+          "items": {
+            "$ref": "#/$defs/Role"
+          },
+          "minItems": 1,
+          "title": "Roles",
+          "type": "array"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "responsibilities": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Responsibilities",
+          "type": "array"
+        },
+        "technologies": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Technologies",
+          "type": "array"
+        },
+        "achievement_ids": {
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Achievement Ids",
+          "type": "array"
+        },
+        "project_ids": {
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Project Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "company_id",
+        "company_name",
+        "roles",
+        "summary"
+      ],
+      "title": "Experience",
+      "type": "object"
+    },
+    "ItemStatus": {
+      "enum": [
+        "draft",
+        "verified",
+        "retired"
+      ],
+      "title": "ItemStatus",
+      "type": "string"
+    },
+    "Language": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "level": {
+          "description": "CEFR or 'native'",
+          "title": "Level",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "level"
+      ],
+      "title": "Language",
+      "type": "object"
+    },
+    "Link": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "kind": {
+          "default": "other",
+          "description": "github | website | portfolio | profile | other",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "url"
+      ],
+      "title": "Link",
+      "type": "object"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "city": {
+          "title": "City",
+          "type": "string"
+        },
+        "country": {
+          "description": "ISO 3166-1 alpha-2",
+          "title": "Country",
+          "type": "string"
+        },
+        "timezone": {
+          "description": "IANA tz, e.g. Asia/Tbilisi",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "city",
+        "country",
+        "timezone"
+      ],
+      "title": "Location",
+      "type": "object"
+    },
+    "MarketGroup": {
+      "enum": [
+        "market_core",
+        "strategic_core",
+        "oss_builder",
+        "agentic"
+      ],
+      "title": "MarketGroup",
+      "type": "string"
+    },
+    "Metric": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "description": "kept as text to preserve units/precision exactly as verified",
+          "title": "Value",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "baseline": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Baseline"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "Metric",
+      "type": "object"
+    },
+    "Offer": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "customer_problem": {
+          "title": "Customer Problem",
+          "type": "string"
+        },
+        "deliverables": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Deliverables",
+          "type": "array"
+        },
+        "timeline": {
+          "title": "Timeline",
+          "type": "string"
+        },
+        "ideal_client": {
+          "title": "Ideal Client",
+          "type": "string"
+        },
+        "technologies": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Technologies",
+          "type": "array"
+        },
+        "proof": {
+          "description": "project/testimonial ids",
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Proof",
+          "type": "array"
+        },
+        "pricing_strategy": {
+          "title": "Pricing Strategy",
+          "type": "string"
+        },
+        "platforms": {
+          "items": {
+            "$ref": "#/$defs/Platform"
+          },
+          "title": "Platforms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "customer_problem",
+        "deliverables",
+        "timeline",
+        "ideal_client",
+        "pricing_strategy"
+      ],
+      "title": "Offer",
+      "type": "object"
+    },
+    "Platform": {
+      "enum": [
+        "linkedin",
+        "wellfound",
+        "upwork",
+        "toptal",
+        "ats",
+        "direct_outreach",
+        "email",
+        "other"
+      ],
+      "title": "Platform",
+      "type": "string"
+    },
+    "Positioning": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "headline": {
+          "title": "Headline",
+          "type": "string"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "target_markets": {
+          "items": {
+            "$ref": "#/$defs/TargetMarket"
+          },
+          "title": "Target Markets",
+          "type": "array"
+        },
+        "emphasize": {
+          "$ref": "#/$defs/Emphasis"
+        },
+        "deemphasize": {
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Deemphasize",
+          "type": "array"
+        },
+        "keywords_must": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Keywords Must",
+          "type": "array"
+        },
+        "keywords_nice": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Keywords Nice",
+          "type": "array"
+        },
+        "tone": {
+          "default": "concise, factual, senior",
+          "title": "Tone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "headline",
+        "summary",
+        "target_markets"
+      ],
+      "title": "Positioning",
+      "type": "object"
+    },
+    "Profile": {
+      "additionalProperties": false,
+      "description": "Singleton: identity and public profile basics.",
+      "properties": {
+        "id": {
+          "default": "profile",
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "headline_baseline": {
+          "description": "the default broad headline",
+          "title": "Headline Baseline",
+          "type": "string"
+        },
+        "summary_core": {
+          "description": "2-4 sentence factual summary",
+          "title": "Summary Core",
+          "type": "string"
+        },
+        "location": {
+          "$ref": "#/$defs/Location"
+        },
+        "work_modes": {
+          "items": {
+            "$ref": "#/$defs/WorkMode"
+          },
+          "title": "Work Modes",
+          "type": "array"
+        },
+        "eligibility": {
+          "$ref": "#/$defs/Eligibility"
+        },
+        "contacts": {
+          "$ref": "#/$defs/Contacts"
+        },
+        "years_experience_since": {
+          "description": "first professional year, e.g. 2013",
+          "title": "Years Experience Since",
+          "type": "integer"
+        },
+        "target_roles": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Target Roles",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "headline_baseline",
+        "summary_core",
+        "location",
+        "work_modes",
+        "contacts",
+        "years_experience_since"
+      ],
+      "title": "Profile",
+      "type": "object"
+    },
+    "Project": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ProjectKind"
+        },
+        "company_id": {
+          "anyOf": [
+            {
+              "description": "stable identifier, never renamed",
+              "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Company Id"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "problem": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Problem"
+        },
+        "solution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Solution"
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outcome"
+        },
+        "technologies": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Technologies",
+          "type": "array"
+        },
+        "links": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Links",
+          "type": "array"
+        },
+        "period": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Period"
+        },
+        "public": {
+          "default": false,
+          "title": "Public",
+          "type": "boolean"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/Metric"
+          },
+          "title": "Metrics",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "summary"
+      ],
+      "title": "Project",
+      "type": "object"
+    },
+    "ProjectKind": {
+      "enum": [
+        "work",
+        "oss",
+        "portfolio",
+        "consulting"
+      ],
+      "title": "ProjectKind",
+      "type": "string"
+    },
+    "Prompt": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "version": {
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "purpose": {
+          "title": "Purpose",
+          "type": "string"
+        },
+        "area": {
+          "description": "opportunity | cv | profile | inbox | interview | negotiation | dev-agent",
+          "title": "Area",
+          "type": "string"
+        },
+        "inputs": {
+          "description": "names of template variables",
+          "items": {
+            "type": "string"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "output_schema": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pydantic model name validated against",
+          "title": "Output Schema"
+        },
+        "provider_preferences": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Provider Preferences",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "template": {
+          "description": "Jinja2 template",
+          "title": "Template",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "purpose",
+        "area",
+        "template"
+      ],
+      "title": "Prompt",
+      "type": "object"
+    },
+    "Publication": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "kind": {
+          "description": "article | talk | course | podcast | repo",
+          "title": "Kind",
+          "type": "string"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Url"
+        },
+        "published": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Published"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "kind"
+      ],
+      "title": "Publication",
+      "type": "object"
+    },
+    "RecommendationThresholds": {
+      "additionalProperties": false,
+      "properties": {
+        "high_priority": {
+          "default": 80,
+          "title": "High Priority",
+          "type": "integer"
+        },
+        "apply": {
+          "default": 65,
+          "title": "Apply",
+          "type": "integer"
+        },
+        "watch": {
+          "default": 45,
+          "title": "Watch",
+          "type": "integer"
+        }
+      },
+      "title": "RecommendationThresholds",
+      "type": "object"
+    },
+    "Role": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "start": {
+          "format": "date",
+          "title": "Start",
+          "type": "string"
+        },
+        "end": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End"
+        },
+        "employment_type": {
+          "$ref": "#/$defs/EmploymentType",
+          "default": "full_time"
+        },
+        "location": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location"
+        },
+        "remote": {
+          "default": true,
+          "title": "Remote",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "title",
+        "start"
+      ],
+      "title": "Role",
+      "type": "object"
+    },
+    "ScoreDimension": {
+      "enum": [
+        "overall_fit",
+        "remote_us_fit",
+        "eu_fit",
+        "poland_fallback_fit",
+        "upwork_fit",
+        "startup_fit",
+        "enterprise_fit",
+        "technical_fit",
+        "seniority_fit",
+        "compensation_fit",
+        "learning_roi",
+        "strategic_upside",
+        "application_effort",
+        "risk"
+      ],
+      "title": "ScoreDimension",
+      "type": "string"
+    },
+    "ScoringModel": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "tech_groups": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/MarketGroup"
+          },
+          "title": "Tech Groups",
+          "type": "object"
+        },
+        "aliases": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "alias \u2192 canonical tech name",
+          "title": "Aliases",
+          "type": "object"
+        },
+        "dimensions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/DimensionConfig"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/ScoreDimension"
+          },
+          "title": "Dimensions",
+          "type": "object"
+        },
+        "eligibility": {
+          "$ref": "#/$defs/EligibilityRules"
+        },
+        "compensation": {
+          "$ref": "#/$defs/CompensationTargets"
+        },
+        "seniority_targets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Seniority Targets",
+          "type": "array"
+        },
+        "thresholds": {
+          "$ref": "#/$defs/RecommendationThresholds"
+        }
+      },
+      "required": [
+        "tech_groups",
+        "dimensions",
+        "eligibility",
+        "compensation"
+      ],
+      "title": "ScoringModel",
+      "type": "object"
+    },
+    "Skill": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "category": {
+          "description": "e.g. orchestration, warehouse, language, cloud, ai",
+          "title": "Category",
+          "type": "string"
+        },
+        "tier": {
+          "$ref": "#/$defs/SkillTier"
+        },
+        "level": {
+          "$ref": "#/$defs/SkillLevel"
+        },
+        "years": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Years"
+        },
+        "last_used": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Used"
+        },
+        "market_groups": {
+          "items": {
+            "$ref": "#/$defs/MarketGroup"
+          },
+          "title": "Market Groups",
+          "type": "array"
+        },
+        "aliases": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Aliases",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "category",
+        "tier",
+        "level"
+      ],
+      "title": "Skill",
+      "type": "object"
+    },
+    "SkillLevel": {
+      "enum": [
+        "expert",
+        "proficient",
+        "working",
+        "learning"
+      ],
+      "title": "SkillLevel",
+      "type": "string"
+    },
+    "SkillTier": {
+      "enum": [
+        "first_priority",
+        "additional",
+        "target"
+      ],
+      "title": "SkillTier",
+      "type": "string"
+    },
+    "TargetMarket": {
+      "enum": [
+        "remote_us",
+        "remote_eu",
+        "eu_b2b",
+        "freelance",
+        "poland",
+        "startup",
+        "enterprise",
+        "consulting"
+      ],
+      "title": "TargetMarket",
+      "type": "string"
+    },
+    "TechnologyTiers": {
+      "additionalProperties": false,
+      "properties": {
+        "first_priority": {
+          "items": {
+            "type": "string"
+          },
+          "title": "First Priority",
+          "type": "array"
+        },
+        "additional": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Additional",
+          "type": "array"
+        },
+        "target": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Target",
+          "type": "array"
+        }
+      },
+      "title": "TechnologyTiers",
+      "type": "object"
+    },
+    "Testimonial": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "author": {
+          "title": "Author",
+          "type": "string"
+        },
+        "author_role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Author Role"
+        },
+        "company_id": {
+          "anyOf": [
+            {
+              "description": "stable identifier, never renamed",
+              "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Company Id"
+        },
+        "quote": {
+          "title": "Quote",
+          "type": "string"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        },
+        "given": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Given"
+        },
+        "permission_to_publish": {
+          "default": false,
+          "title": "Permission To Publish",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "author",
+        "quote"
+      ],
+      "title": "Testimonial",
+      "type": "object"
+    },
+    "VaultMeta": {
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "default": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "owner": {
+          "title": "Owner",
+          "type": "string"
+        },
+        "default_positioning": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Default Positioning",
+          "type": "string"
+        },
+        "default_cv_variant": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Default Cv Variant",
+          "type": "string"
+        }
+      },
+      "required": [
+        "owner",
+        "default_positioning",
+        "default_cv_variant"
+      ],
+      "title": "VaultMeta",
+      "type": "object"
+    },
+    "Visibility": {
+      "additionalProperties": false,
+      "properties": {
+        "linkedin": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Linkedin"
+        },
+        "wellfound": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Wellfound"
+        },
+        "upwork": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Upwork"
+        },
+        "toptal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Toptal"
+        },
+        "ats": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Ats"
+        },
+        "direct_outreach": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Direct Outreach"
+        }
+      },
+      "title": "Visibility",
+      "type": "object"
+    },
+    "WorkMode": {
+      "enum": [
+        "remote_us",
+        "remote_eu",
+        "eu_b2b",
+        "freelance",
+        "contract",
+        "relocation",
+        "onsite_local"
+      ],
+      "title": "WorkMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "$ref": "#/$defs/VaultMeta"
+    },
+    "profile": {
+      "$ref": "#/$defs/Profile"
+    },
+    "experience": {
+      "items": {
+        "$ref": "#/$defs/Experience"
+      },
+      "title": "Experience",
+      "type": "array"
+    },
+    "achievements": {
+      "items": {
+        "$ref": "#/$defs/Achievement"
+      },
+      "title": "Achievements",
+      "type": "array"
+    },
+    "projects": {
+      "items": {
+        "$ref": "#/$defs/Project"
+      },
+      "title": "Projects",
+      "type": "array"
+    },
+    "skills": {
+      "items": {
+        "$ref": "#/$defs/Skill"
+      },
+      "title": "Skills",
+      "type": "array"
+    },
+    "education": {
+      "items": {
+        "$ref": "#/$defs/Education"
+      },
+      "title": "Education",
+      "type": "array"
+    },
+    "certifications": {
+      "items": {
+        "$ref": "#/$defs/Certification"
+      },
+      "title": "Certifications",
+      "type": "array"
+    },
+    "languages": {
+      "items": {
+        "$ref": "#/$defs/Language"
+      },
+      "title": "Languages",
+      "type": "array"
+    },
+    "publications": {
+      "items": {
+        "$ref": "#/$defs/Publication"
+      },
+      "title": "Publications",
+      "type": "array"
+    },
+    "testimonials": {
+      "items": {
+        "$ref": "#/$defs/Testimonial"
+      },
+      "title": "Testimonials",
+      "type": "array"
+    },
+    "links": {
+      "items": {
+        "$ref": "#/$defs/Link"
+      },
+      "title": "Links",
+      "type": "array"
+    },
+    "offers": {
+      "items": {
+        "$ref": "#/$defs/Offer"
+      },
+      "title": "Offers",
+      "type": "array"
+    },
+    "positioning": {
+      "items": {
+        "$ref": "#/$defs/Positioning"
+      },
+      "title": "Positioning",
+      "type": "array"
+    },
+    "channels": {
+      "items": {
+        "$ref": "#/$defs/ChannelRules"
+      },
+      "title": "Channels",
+      "type": "array"
+    },
+    "cv_variants": {
+      "items": {
+        "$ref": "#/$defs/CVVariant"
+      },
+      "title": "Cv Variants",
+      "type": "array"
+    },
+    "scoring": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ScoringModel"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "prompts": {
+      "items": {
+        "$ref": "#/$defs/Prompt"
+      },
+      "title": "Prompts",
+      "type": "array"
+    }
+  },
+  "required": [
+    "meta",
+    "profile"
+  ],
+  "title": "VaultData",
+  "type": "object"
+}

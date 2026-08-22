@@ -1,0 +1,112 @@
+# yaml-language-server: $schema=../../../schemas/experience.schema.json
+items:
+  - id: exp_northwind
+    status: verified
+    company_id: northwind_commerce
+    company_name: Northwind Commerce
+    company_url: https://northwind.example.com
+    industry: e-commerce platform (B2B2C)
+    company_size: 200-500
+    roles:
+      - title: Senior Data Engineer
+        start: 2023-03-01
+        employment_type: b2b
+        location: Remote (EU timezone)
+        remote: true
+    summary: >-
+      Own the analytics data platform: dbt on ClickHouse and BigQuery orchestrated by Dagster,
+      GitLab CI/CD for data, and AI-assisted development workflows for the data team.
+    responsibilities:
+      - Design and operate the dbt + Dagster analytics platform used by 40+ internal consumers
+      - Own CI/CD for data (GitLab), environments, releases and rollback
+      - Lead migration of event analytics from PostgreSQL to ClickHouse
+      - Introduce AI-assisted development practices for the data team
+    technologies: [dbt, Dagster, ClickHouse, BigQuery, GitLab CI, Docker, Python, SQL, Metabase, Claude Code]
+    achievement_ids: [ach_northwind_ci_cd, ach_northwind_clickhouse, ach_northwind_ai_dev]
+    project_ids: [proj_pdp_ci, proj_clickhouse_realtime]
+    updated_at: 2026-07-15
+
+  - id: exp_lumen
+    status: verified
+    company_id: lumen_analytics
+    company_name: Lumen Analytics
+    industry: analytics consultancy
+    company_size: 20-50
+    roles:
+      - title: Lead Analytics Engineer
+        start: 2022-01-01
+        end: 2023-02-28
+        employment_type: contract
+        remote: true
+      - title: Analytics Engineer
+        start: 2020-04-01
+        end: 2021-12-31
+        employment_type: contract
+        remote: true
+    summary: >-
+      Delivered dbt/BigQuery warehouses and dashboards for 9 consulting clients (marketing tech,
+      SaaS, retail); led a team of three engineers in the last year.
+    responsibilities:
+      - Scope and deliver GA4 / CRM → BigQuery → dashboard projects end to end
+      - Design dbt project standards, tests and CI used across client engagements
+      - Reduce BigQuery spend through partitioning, clustering and materialisation reviews
+      - Lead three engineers; run client discovery and proposal work
+    technologies: [BigQuery, dbt, Airflow, Cloud Composer, Looker Studio, Python, SQL, GA4, Fivetran, Terraform]
+    achievement_ids: [ach_lumen_bq_cost, ach_lumen_dbt_standards, ach_lumen_ga4]
+    project_ids: [proj_ga4_bigquery]
+    updated_at: 2026-06-01
+
+  - id: exp_orbit
+    status: verified
+    company_id: orbit_fintech
+    company_name: Orbit Fintech
+    industry: fintech (payments)
+    company_size: 500-1000
+    roles:
+      - title: Data Engineer
+        start: 2017-06-01
+        end: 2020-03-31
+        employment_type: full_time
+        location: Warsaw, Poland (hybrid)
+        remote: false
+    summary: >-
+      Built streaming and batch pipelines for payment analytics on AWS: Kafka → Spark → Snowflake,
+      orchestrated with Airflow; owned data quality for regulatory reporting.
+    responsibilities:
+      - Build and operate Kafka/Spark ingestion for 30M+ daily payment events
+      - Migrate reporting from Redshift to Snowflake
+      - Implement data quality checks for regulatory reports
+    technologies: [AWS, Kafka, Spark, Airflow, Snowflake, Redshift, Python, SQL, Terraform, Great Expectations]
+    achievement_ids: [ach_orbit_streaming, ach_orbit_snowflake]
+    project_ids: []
+    updated_at: 2026-06-01
+
+  - id: exp_brightpath
+    status: verified
+    company_id: brightpath_edtech
+    company_name: BrightPath EdTech
+    industry: edtech
+    company_size: 50-200
+    roles:
+      - title: Data Engineer
+        start: 2015-09-01
+        end: 2017-05-31
+        employment_type: full_time
+        location: Tbilisi, Georgia
+        remote: false
+      - title: BI Developer
+        start: 2014-02-01
+        end: 2015-08-31
+        employment_type: full_time
+        location: Tbilisi, Georgia
+        remote: false
+    summary: >-
+      Started in BI (SQL Server, SSIS, Power BI) and moved to data engineering: Python ETL,
+      PostgreSQL warehouse, first Airflow deployment at the company.
+    responsibilities:
+      - Build ETL and reporting for learning analytics
+      - Introduce Airflow and Python-based ETL replacing SSIS packages
+    technologies: [SQL Server, SSIS, Power BI, PostgreSQL, Python, Airflow]
+    achievement_ids: [ach_brightpath_airflow]
+    project_ids: []
+    updated_at: 2026-06-01

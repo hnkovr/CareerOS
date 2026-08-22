@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/links.schema.json",
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/EvidenceType"
+        },
+        "ref": {
+          "description": "item id (project/testimonial/certification/publication) or URL",
+          "title": "Ref",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "type",
+        "ref"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "EvidenceType": {
+      "enum": [
+        "project",
+        "link",
+        "testimonial",
+        "certification",
+        "publication",
+        "file"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "ItemStatus": {
+      "enum": [
+        "draft",
+        "verified",
+        "retired"
+      ],
+      "title": "ItemStatus",
+      "type": "string"
+    },
+    "Link": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "label": {
+          "title": "Label",
+          "type": "string"
+        },
+        "url": {
+          "title": "Url",
+          "type": "string"
+        },
+        "kind": {
+          "default": "other",
+          "description": "github | website | portfolio | profile | other",
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "label",
+        "url"
+      ],
+      "title": "Link",
+      "type": "object"
+    },
+    "Visibility": {
+      "additionalProperties": false,
+      "properties": {
+        "linkedin": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Linkedin"
+        },
+        "wellfound": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Wellfound"
+        },
+        "upwork": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Upwork"
+        },
+        "toptal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Toptal"
+        },
+        "ats": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Ats"
+        },
+        "direct_outreach": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Direct Outreach"
+        }
+      },
+      "title": "Visibility",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "items": {
+        "$ref": "#/$defs/Link"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "title": "LinksFile",
+  "type": "object"
+}

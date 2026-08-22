@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../schemas/positioning.schema.json
+id: agentic_data_platform_consultant
+status: verified
+name: Agentic Data Platform Engineer / Consultant
+headline: >-
+  Agentic Data Platform Engineer / Senior Data Engineer — AI-ready analytics platforms with
+  GCP/BigQuery, dbt, Dagster, ClickHouse, OSS, and enterprise-compatible Snowflake/Databricks/Airflow
+summary: >-
+  Strategic positioning: builds analytics platforms that AI agents can safely use — semantic layers,
+  evaluation, tool-calling analysts — on a modern OSS core, while staying compatible with enterprise
+  stacks. Packaged offers for consulting engagements.
+target_markets: [remote_us, consulting, freelance, startup]
+emphasize:
+  skills: [sk_llmops, sk_semantic_layer, sk_claude_code, sk_dagster, sk_dbt, sk_duckdb, sk_clickhouse, sk_bigquery]
+  achievements: [ach_northwind_ai_dev, ach_northwind_ci_cd, ach_lumen_bq_cost]
+  projects: [proj_agentic_market_intel, proj_clickhouse_realtime]
+  offers: [offer_ai_analyst, offer_bq_cost_audit, offer_dagster_observability]
+deemphasize: [ach_brightpath_airflow, ach_orbit_snowflake]
+keywords_must: [LLMOps, AI analytics, semantic layer, agentic workflows, dbt, Dagster, evaluation]
+keywords_nice: [RAG, AgentOps, tool calling, DuckDB, ClickHouse, BigQuery]
+tone: confident, outcome-first

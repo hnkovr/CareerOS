@@ -1,0 +1,386 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/projects.schema.json",
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/EvidenceType"
+        },
+        "ref": {
+          "description": "item id (project/testimonial/certification/publication) or URL",
+          "title": "Ref",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "type",
+        "ref"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "EvidenceType": {
+      "enum": [
+        "project",
+        "link",
+        "testimonial",
+        "certification",
+        "publication",
+        "file"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "ItemStatus": {
+      "enum": [
+        "draft",
+        "verified",
+        "retired"
+      ],
+      "title": "ItemStatus",
+      "type": "string"
+    },
+    "Metric": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "value": {
+          "description": "kept as text to preserve units/precision exactly as verified",
+          "title": "Value",
+          "type": "string"
+        },
+        "unit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Unit"
+        },
+        "baseline": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Baseline"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "name",
+        "value"
+      ],
+      "title": "Metric",
+      "type": "object"
+    },
+    "Project": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "kind": {
+          "$ref": "#/$defs/ProjectKind"
+        },
+        "company_id": {
+          "anyOf": [
+            {
+              "description": "stable identifier, never renamed",
+              "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Company Id"
+        },
+        "summary": {
+          "title": "Summary",
+          "type": "string"
+        },
+        "problem": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Problem"
+        },
+        "solution": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Solution"
+        },
+        "outcome": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Outcome"
+        },
+        "technologies": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Technologies",
+          "type": "array"
+        },
+        "links": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Links",
+          "type": "array"
+        },
+        "period": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Period"
+        },
+        "public": {
+          "default": false,
+          "title": "Public",
+          "type": "boolean"
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/Metric"
+          },
+          "title": "Metrics",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "kind",
+        "summary"
+      ],
+      "title": "Project",
+      "type": "object"
+    },
+    "ProjectKind": {
+      "enum": [
+        "work",
+        "oss",
+        "portfolio",
+        "consulting"
+      ],
+      "title": "ProjectKind",
+      "type": "string"
+    },
+    "Visibility": {
+      "additionalProperties": false,
+      "properties": {
+        "linkedin": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Linkedin"
+        },
+        "wellfound": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Wellfound"
+        },
+        "upwork": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Upwork"
+        },
+        "toptal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Toptal"
+        },
+        "ats": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Ats"
+        },
+        "direct_outreach": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Direct Outreach"
+        }
+      },
+      "title": "Visibility",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "items": {
+        "$ref": "#/$defs/Project"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "title": "ProjectsFile",
+  "type": "object"
+}

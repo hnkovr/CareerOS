@@ -1,0 +1,410 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/profile.schema.json",
+  "$defs": {
+    "Contacts": {
+      "additionalProperties": false,
+      "properties": {
+        "email": {
+          "title": "Email",
+          "type": "string"
+        },
+        "phone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Phone"
+        },
+        "website": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Website"
+        },
+        "github": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Github"
+        },
+        "linkedin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Linkedin"
+        },
+        "calendar": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Calendar"
+        }
+      },
+      "required": [
+        "email"
+      ],
+      "title": "Contacts",
+      "type": "object"
+    },
+    "Eligibility": {
+      "additionalProperties": false,
+      "properties": {
+        "eu_remote": {
+          "default": true,
+          "title": "Eu Remote",
+          "type": "boolean"
+        },
+        "us_remote_contractor": {
+          "default": true,
+          "title": "Us Remote Contractor",
+          "type": "boolean"
+        },
+        "us_w2": {
+          "default": false,
+          "title": "Us W2",
+          "type": "boolean"
+        },
+        "works_as_contractor": {
+          "default": true,
+          "title": "Works As Contractor",
+          "type": "boolean"
+        },
+        "relocation_targets": {
+          "description": "ISO country codes",
+          "items": {
+            "type": "string"
+          },
+          "title": "Relocation Targets",
+          "type": "array"
+        },
+        "work_authorization": {
+          "description": "countries with right to work",
+          "items": {
+            "type": "string"
+          },
+          "title": "Work Authorization",
+          "type": "array"
+        }
+      },
+      "title": "Eligibility",
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/EvidenceType"
+        },
+        "ref": {
+          "description": "item id (project/testimonial/certification/publication) or URL",
+          "title": "Ref",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "type",
+        "ref"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "EvidenceType": {
+      "enum": [
+        "project",
+        "link",
+        "testimonial",
+        "certification",
+        "publication",
+        "file"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "ItemStatus": {
+      "enum": [
+        "draft",
+        "verified",
+        "retired"
+      ],
+      "title": "ItemStatus",
+      "type": "string"
+    },
+    "Location": {
+      "additionalProperties": false,
+      "properties": {
+        "city": {
+          "title": "City",
+          "type": "string"
+        },
+        "country": {
+          "description": "ISO 3166-1 alpha-2",
+          "title": "Country",
+          "type": "string"
+        },
+        "timezone": {
+          "description": "IANA tz, e.g. Asia/Tbilisi",
+          "title": "Timezone",
+          "type": "string"
+        }
+      },
+      "required": [
+        "city",
+        "country",
+        "timezone"
+      ],
+      "title": "Location",
+      "type": "object"
+    },
+    "Visibility": {
+      "additionalProperties": false,
+      "properties": {
+        "linkedin": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Linkedin"
+        },
+        "wellfound": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Wellfound"
+        },
+        "upwork": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Upwork"
+        },
+        "toptal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Toptal"
+        },
+        "ats": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Ats"
+        },
+        "direct_outreach": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Direct Outreach"
+        }
+      },
+      "title": "Visibility",
+      "type": "object"
+    },
+    "WorkMode": {
+      "enum": [
+        "remote_us",
+        "remote_eu",
+        "eu_b2b",
+        "freelance",
+        "contract",
+        "relocation",
+        "onsite_local"
+      ],
+      "title": "WorkMode",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Singleton: identity and public profile basics.",
+  "properties": {
+    "id": {
+      "default": "profile",
+      "description": "stable identifier, never renamed",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ItemStatus",
+      "default": "draft"
+    },
+    "visibility": {
+      "$ref": "#/$defs/Visibility"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "private notes, never projected",
+      "title": "Notes"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "headline_baseline": {
+      "description": "the default broad headline",
+      "title": "Headline Baseline",
+      "type": "string"
+    },
+    "summary_core": {
+      "description": "2-4 sentence factual summary",
+      "title": "Summary Core",
+      "type": "string"
+    },
+    "location": {
+      "$ref": "#/$defs/Location"
+    },
+    "work_modes": {
+      "items": {
+        "$ref": "#/$defs/WorkMode"
+      },
+      "title": "Work Modes",
+      "type": "array"
+    },
+    "eligibility": {
+      "$ref": "#/$defs/Eligibility"
+    },
+    "contacts": {
+      "$ref": "#/$defs/Contacts"
+    },
+    "years_experience_since": {
+      "description": "first professional year, e.g. 2013",
+      "title": "Years Experience Since",
+      "type": "integer"
+    },
+    "target_roles": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Target Roles",
+      "type": "array"
+    }
+  },
+  "required": [
+    "name",
+    "headline_baseline",
+    "summary_core",
+    "location",
+    "work_modes",
+    "contacts",
+    "years_experience_since"
+  ],
+  "title": "Profile",
+  "type": "object"
+}

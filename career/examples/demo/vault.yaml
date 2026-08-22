@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../schemas/meta.schema.json
+# Demo vault — a SYNTHETIC persona. Every company, number and link is invented.
+version: 1
+owner: Dana Kovalenko
+default_positioning: senior_data_engineer
+default_cv_variant: general-core

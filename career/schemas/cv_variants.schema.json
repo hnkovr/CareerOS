@@ -1,0 +1,354 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/cv_variants.schema.json",
+  "$defs": {
+    "CVInclude": {
+      "additionalProperties": false,
+      "properties": {
+        "years_back": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Years Back"
+        },
+        "companies": {
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Companies",
+          "type": "array"
+        },
+        "max_bullets_per_role": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Bullets Per Role"
+        },
+        "max_projects": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max Projects"
+        },
+        "skills_tiers": {
+          "items": {
+            "$ref": "#/$defs/SkillTier"
+          },
+          "title": "Skills Tiers",
+          "type": "array"
+        }
+      },
+      "title": "CVInclude",
+      "type": "object"
+    },
+    "CVLength": {
+      "enum": [
+        "one_page",
+        "two_page",
+        "full"
+      ],
+      "title": "CVLength",
+      "type": "string"
+    },
+    "CVSection": {
+      "enum": [
+        "summary",
+        "experience",
+        "projects",
+        "skills",
+        "education",
+        "certifications",
+        "publications",
+        "languages",
+        "offers",
+        "testimonials"
+      ],
+      "title": "CVSection",
+      "type": "string"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/EvidenceType"
+        },
+        "ref": {
+          "description": "item id (project/testimonial/certification/publication) or URL",
+          "title": "Ref",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "type",
+        "ref"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "EvidenceType": {
+      "enum": [
+        "project",
+        "link",
+        "testimonial",
+        "certification",
+        "publication",
+        "file"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "ItemStatus": {
+      "enum": [
+        "draft",
+        "verified",
+        "retired"
+      ],
+      "title": "ItemStatus",
+      "type": "string"
+    },
+    "SkillTier": {
+      "enum": [
+        "first_priority",
+        "additional",
+        "target"
+      ],
+      "title": "SkillTier",
+      "type": "string"
+    },
+    "Visibility": {
+      "additionalProperties": false,
+      "properties": {
+        "linkedin": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Linkedin"
+        },
+        "wellfound": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Wellfound"
+        },
+        "upwork": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Upwork"
+        },
+        "toptal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Toptal"
+        },
+        "ats": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Ats"
+        },
+        "direct_outreach": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Direct Outreach"
+        }
+      },
+      "title": "Visibility",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "description": "stable identifier, never renamed",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/ItemStatus",
+      "default": "draft"
+    },
+    "visibility": {
+      "$ref": "#/$defs/Visibility"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "title": "Evidence",
+      "type": "array"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "notes": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "private notes, never projected",
+      "title": "Notes"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
+    },
+    "positioning_id": {
+      "description": "stable identifier, never renamed",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+      "title": "Positioning Id",
+      "type": "string"
+    },
+    "channel_id": {
+      "description": "stable identifier, never renamed",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+      "title": "Channel Id",
+      "type": "string"
+    },
+    "locale": {
+      "default": "en",
+      "title": "Locale",
+      "type": "string"
+    },
+    "length": {
+      "$ref": "#/$defs/CVLength",
+      "default": "two_page"
+    },
+    "sections": {
+      "items": {
+        "$ref": "#/$defs/CVSection"
+      },
+      "minItems": 1,
+      "title": "Sections",
+      "type": "array"
+    },
+    "rendercv_theme": {
+      "default": "classic",
+      "title": "Rendercv Theme",
+      "type": "string"
+    },
+    "include": {
+      "$ref": "#/$defs/CVInclude"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Description"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "positioning_id",
+    "channel_id",
+    "sections"
+  ],
+  "title": "CVVariant",
+  "type": "object"
+}

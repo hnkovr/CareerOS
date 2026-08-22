@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://careeros.dev/schemas/channels.schema.json
+id: ats
+platform: ats
+name: Generic ATS / PDF CV
+limits: {bullets_per_role: 5, bullet_chars: 220, skills_max: 30}
+priorities: [keyword_match, clarity, chronology, metrics, parseability]
+required_sections: [summary, experience, skills, education]
+style: {tone: professional, first_person: false, metrics_first: true, keyword_density: high}

@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=../../schemas/positioning.schema.json
+id: consultant
+status: verified
+name: Data Platform Consultant (Upwork / Toptal)
+headline: Data platform consultant — BigQuery cost audits, dbt warehouses in 7 days, ClickHouse MVPs, AI analysts
+summary: >-
+  Client-problem-first: packaged offers with fixed timelines, proof from past deliveries and
+  testimonials, clear call to action.
+target_markets: [freelance, consulting]
+emphasize:
+  skills: [sk_bigquery, sk_dbt, sk_clickhouse, sk_dagster, sk_llmops, sk_gcp]
+  achievements: [ach_lumen_bq_cost, ach_lumen_ga4, ach_northwind_clickhouse, ach_northwind_ci_cd]
+  projects: [proj_ga4_bigquery, proj_clickhouse_realtime, proj_agentic_market_intel, proj_dbt_cost_guard]
+  offers: [offer_bq_cost_audit, offer_dbt_warehouse_7d, offer_ga4_crm_bq_dashboard, offer_ai_analyst, offer_clickhouse_mvp, offer_dagster_observability]
+deemphasize: [ach_brightpath_airflow, ach_orbit_snowflake]
+keywords_must: [BigQuery, dbt, ClickHouse, cost optimization, dashboards, delivery, consulting]
+keywords_nice: [GA4, Dagster, AI analyst, semantic layer, Metabase]
+tone: client-facing, results and timelines first

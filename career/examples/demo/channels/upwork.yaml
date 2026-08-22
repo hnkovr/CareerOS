@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../schemas/channels.schema.json
+id: upwork
+platform: upwork
+name: Upwork
+limits: {headline_chars: 70, about_chars: 5000, bullets_per_role: 3, bullet_chars: 180}
+priorities: [client_problem, result, delivery_speed, confidence, packaged_services, proof, portfolio, call_to_action]
+required_sections: [headline, about, offers, portfolio, testimonials, skills]
+style: {tone: client-facing, first_person: true, metrics_first: true, keyword_density: medium}
+cta: "Message me with your stack and the problem — I reply within one business day with a scoped plan."
+default_visibility: true
+notes: Treat as a consultant landing page, not a CV.

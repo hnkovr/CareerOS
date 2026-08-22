@@ -1,0 +1,94 @@
+# yaml-language-server: $schema=../../../schemas/offers.schema.json
+# Packaged consulting offers — projected to Upwork, direct outreach, LinkedIn Featured.
+items:
+  - id: offer_bq_cost_audit
+    status: verified
+    title: BigQuery Cost Optimization Audit
+    customer_problem: BigQuery bill grows faster than usage; nobody knows which queries and models burn money.
+    deliverables:
+      - Query and model cost breakdown (bytes scanned, slots, storage)
+      - Partitioning / clustering / materialisation recommendations with estimated savings
+      - dbt incremental model refactors for the top offenders
+      - Budget guard in CI (dbt-cost-guard) and a monitoring dashboard
+    timeline: 1-2 weeks
+    ideal_client: Companies spending $3k-50k/month on BigQuery with dbt or Looker in place
+    technologies: [BigQuery, dbt, GCP, Looker Studio]
+    proof: [proj_dbt_cost_guard, proj_ga4_bigquery, tst_lumen_client]
+    pricing_strategy: fixed price, tiered by monthly spend; savings typically exceed the fee within 2 months
+    platforms: [upwork, direct_outreach, linkedin]
+
+  - id: offer_dbt_warehouse_7d
+    status: verified
+    title: dbt Analytics Warehouse in 7 Days
+    customer_problem: Spreadsheets and ad-hoc SQL; no trusted metrics; new hires cannot find data.
+    deliverables:
+      - Source ingestion (Fivetran/Airbyte or custom) into BigQuery or ClickHouse
+      - dbt project with staging / marts layers, tests and docs
+      - 3-5 core dashboards and a metrics glossary
+      - Handover session and runbook
+    timeline: 7 working days
+    ideal_client: Seed-to-Series-B startups with 1-3 main data sources
+    technologies: [dbt, BigQuery, ClickHouse, Dagster, Metabase]
+    proof: [proj_ga4_bigquery, tst_lumen_client]
+    pricing_strategy: fixed price; optional monthly retainer afterwards
+    platforms: [upwork, wellfound, direct_outreach]
+
+  - id: offer_ga4_crm_bq_dashboard
+    status: verified
+    title: GA4 / CRM → BigQuery → Dashboard
+    customer_problem: Marketing and sales data live in silos; attribution and funnel questions take days.
+    deliverables:
+      - GA4 export + CRM (HubSpot/Salesforce) modelled in dbt on BigQuery
+      - Attribution, funnel and cohort marts
+      - Looker Studio / Metabase dashboards
+    timeline: 2-4 weeks
+    ideal_client: B2B SaaS and e-commerce teams with GA4 and a CRM
+    technologies: [GA4, BigQuery, dbt, Looker Studio]
+    proof: [proj_ga4_bigquery, tst_lumen_client]
+    pricing_strategy: fixed price per scope tier
+    platforms: [upwork, direct_outreach]
+
+  - id: offer_ai_analyst
+    status: verified
+    title: AI Analyst over Your Warehouse
+    customer_problem: Stakeholders wait for analysts; LLM chatbots over raw tables hallucinate.
+    deliverables:
+      - Semantic layer over existing dbt marts
+      - Tool-calling AI analyst with guardrails and evaluation dashboard
+      - Cost and quality monitoring; handover
+    timeline: 3-5 weeks
+    ideal_client: Teams with a dbt warehouse and recurring ad-hoc analytics requests
+    technologies: [dbt, semantic layers, Dagster, Anthropic API, OpenAI API, Evidence]
+    proof: [proj_agentic_market_intel]
+    pricing_strategy: discovery sprint (fixed) + build (fixed) + optional retainer
+    platforms: [upwork, wellfound, direct_outreach, linkedin]
+
+  - id: offer_clickhouse_mvp
+    status: verified
+    title: ClickHouse Realtime Analytics MVP
+    customer_problem: Product analytics queries are slow and expensive on the OLTP database or a general-purpose warehouse.
+    deliverables:
+      - ClickHouse schema design (MergeTree, materialised views) for your event model
+      - Ingestion path (Kafka/Redpanda or batch) and dbt-clickhouse models
+      - Dashboards with sub-second queries; load and cost report
+    timeline: 2-3 weeks
+    ideal_client: Product companies with 100M+ events/month
+    technologies: [ClickHouse, dbt, Dagster, Kafka, Metabase]
+    proof: [proj_clickhouse_realtime, tst_northwind_cto]
+    pricing_strategy: fixed price MVP; T&M for production hardening
+    platforms: [upwork, direct_outreach, toptal]
+
+  - id: offer_dagster_observability
+    status: verified
+    title: Dagster Pipeline Observability
+    customer_problem: Pipelines fail silently; nobody knows freshness or lineage.
+    deliverables:
+      - Asset checks, freshness policies and alerting (Slack/Mattermost/email)
+      - Run/cost dashboards; OpenLineage export where needed
+      - Runbooks for the top failure modes
+    timeline: 1-2 weeks
+    ideal_client: Teams already on Dagster (or migrating from Airflow)
+    technologies: [Dagster, dbt, OpenLineage, Grafana]
+    proof: [proj_pdp_ci, tst_northwind_cto]
+    pricing_strategy: fixed price
+    platforms: [upwork, direct_outreach]

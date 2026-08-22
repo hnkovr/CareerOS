@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=../../../schemas/projects.schema.json
+items:
+  - id: proj_pdp_ci
+    status: verified
+    name: Analytics platform CI/CD (dbt + Dagster + GitLab)
+    kind: work
+    company_id: northwind_commerce
+    summary: GitLab CI/CD for a dbt + Dagster analytics platform with Slim CI, environment validation and gated deploys.
+    problem: Long pipelines and frequent broken deploys blocked the data team; no safe path to production.
+    solution: State-based dbt Slim CI, per-environment validation jobs, resource-group deploy queue, rollback recipe.
+    outcome: Pipelines 34 → 9 min; failed prod deploys from ~3/month to <1/quarter.
+    technologies: [GitLab CI, dbt, Dagster, Docker, Python]
+    period: 2023-2024
+    public: false
+    updated_at: 2026-07-15
+
+  - id: proj_clickhouse_realtime
+    status: verified
+    name: ClickHouse real-time event analytics
+    kind: work
+    company_id: northwind_commerce
+    summary: Migration of event analytics from PostgreSQL to ClickHouse with a dbt modelling layer and Metabase dashboards.
+    problem: 12-second dashboards and an expensive read-replica fleet.
+    solution: MergeTree schemas, materialised views, dbt-clickhouse models, Dagster-scheduled loads.
+    outcome: p95 latency under 600 ms; infra cost -45%.
+    technologies: [ClickHouse, dbt, Dagster, Metabase, PostgreSQL]
+    period: 2024
+    public: false
+    updated_at: 2026-07-15
+
+  - id: proj_ga4_bigquery
+    status: verified
+    name: GA4 + CRM → BigQuery → dashboards (consulting template)
+    kind: consulting
+    company_id: lumen_analytics
+    summary: "Repeatable 2-4 week delivery: GA4 export and CRM data modelled in dbt on BigQuery with attribution and funnel dashboards."
+    outcome: Delivered 7 times; became the consultancy's standard offer.
+    technologies: [BigQuery, dbt, GA4, Fivetran, Looker Studio]
+    period: 2020-2022
+    public: false
+    updated_at: 2026-06-01
+
+  - id: proj_agentic_market_intel
+    status: verified
+    name: Agentic Market Intelligence Platform (OSS)
+    kind: portfolio
+    summary: Open-source demo platform — Dagster + DuckDB + dbt ingest public market data, an LLM agent layer answers questions with tool calls, with an evaluation dashboard for answer quality.
+    problem: Show, end to end, how an AI-ready analytics platform is built and evaluated.
+    solution: Dagster assets → DuckDB/dbt marts → semantic layer → tool-calling agent → RAG/eval dashboard (Evidence).
+    outcome: Public repo with CI, 1.2k stars (demo number), used as a reference in consulting proposals.
+    technologies: [Dagster, DuckDB, dbt, Python, Evidence, OpenAI API, Anthropic API]
+    links: [https://github.com/dana-kovalenko-demo/agentic-market-intel]
+    period: 2025-present
+    public: true
+    metrics:
+      - name: GitHub stars
+        value: "1200"
+    updated_at: 2026-08-01
+
+  - id: proj_dbt_cost_guard
+    status: verified
+    name: dbt-cost-guard (OSS)
+    kind: oss
+    summary: dbt macros + CI check that estimates BigQuery bytes scanned per model and fails the pipeline above a budget.
+    technologies: [dbt, BigQuery, Python, GitHub Actions]
+    links: [https://github.com/dana-kovalenko-demo/dbt-cost-guard]
+    period: 2022-present
+    public: true
+    updated_at: 2026-05-01

@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schemas/channels.schema.json
+id: linkedin
+platform: linkedin
+name: LinkedIn
+limits: {headline_chars: 220, about_chars: 2600, bullets_per_role: 6, bullet_chars: 240, skills_max: 50}
+priorities: [recruiter_search, keyword_coverage, market_core, credibility, career_graph, featured, skills, projects, certifications]
+required_sections: [headline, about, experience, skills, projects, certifications, featured]
+style: {tone: professional, first_person: true, metrics_first: true, keyword_density: high}
+default_visibility: true
+notes: Keep broader than the PDF CV; cover market-core keywords even where secondary.

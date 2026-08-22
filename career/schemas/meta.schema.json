@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/meta.schema.json",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "owner": {
+      "title": "Owner",
+      "type": "string"
+    },
+    "default_positioning": {
+      "description": "stable identifier, never renamed",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+      "title": "Default Positioning",
+      "type": "string"
+    },
+    "default_cv_variant": {
+      "description": "stable identifier, never renamed",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+      "title": "Default Cv Variant",
+      "type": "string"
+    }
+  },
+  "required": [
+    "owner",
+    "default_positioning",
+    "default_cv_variant"
+  ],
+  "title": "VaultMeta",
+  "type": "object"
+}

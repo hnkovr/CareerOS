@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://careeros.dev/schemas/experience.schema.json
+items:
+  - id: exp_example
+    status: draft
+    company_id: example_company
+    company_name: Example Company
+    roles:
+      - {title: Data Engineer, start: 2020-01-01, employment_type: full_time, remote: true}
+    summary: What you owned there, in one or two sentences.
+    responsibilities: [Replace me]
+    technologies: [Python, SQL]
+    achievement_ids: [ach_example]
+    project_ids: []

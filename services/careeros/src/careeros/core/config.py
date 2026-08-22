@@ -34,6 +34,7 @@ class Settings(BaseSettings):
 
     # --- vault (canonical career data) ---
     vault_path: Path = Path("career/private")
+    career_dir: Path = Path("career")  # repo-shipped schemas, templates, prompt library, demo
     vault_git_user_name: str = "CareerOS"
     vault_git_user_email: str = "careeros@localhost"
     vault_auto_push: bool = False

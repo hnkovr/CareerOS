@@ -1,0 +1,7 @@
+# yaml-language-server: $schema=https://careeros.dev/schemas/meta.schema.json
+# Your private career vault. Canonical facts live here; the app commits changes as
+# `career(<collection>): ...`. Keep this repository private.
+version: 1
+owner: __OWNER__
+default_positioning: senior_data_engineer
+default_cv_variant: general-core

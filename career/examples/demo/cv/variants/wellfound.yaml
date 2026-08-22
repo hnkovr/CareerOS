@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../schemas/cv_variants.schema.json
+id: wellfound
+name: Wellfound / Startup
+description: "Startup-flavoured profile: ownership, speed, GCP/BigQuery/dbt/Dagster, OSS and AI."
+positioning_id: startup_data_engineer
+channel_id: wellfound
+locale: en
+length: one_page
+sections: [summary, experience, projects, skills]
+rendercv_theme: sb2nov
+include: {years_back: 8, max_bullets_per_role: 3, max_projects: 3}

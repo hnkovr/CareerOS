@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../../schemas/certifications.schema.json
+items:
+  - id: cert_gcp_de
+    status: verified
+    name: Professional Data Engineer
+    issuer: Google Cloud
+    issued: 2021-11-15
+    expires: 2025-11-15
+    credential_id: DEMO-GCP-PDE-000000
+  - id: cert_dbt
+    status: verified
+    name: dbt Analytics Engineering Certification
+    issuer: dbt Labs
+    issued: 2022-05-02
+    credential_id: DEMO-DBT-000000

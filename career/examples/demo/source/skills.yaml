@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../../schemas/skills.schema.json
+# tier: first_priority (lead with), additional (solid, secondary), target (learning / want more of)
+# level: expert | proficient | working | learning
+items:
+  - {id: sk_python, name: Python, category: language, tier: first_priority, level: expert, years: 11, last_used: 2026-08-01, market_groups: [market_core, strategic_core], status: verified}
+  - {id: sk_sql, name: SQL, category: language, tier: first_priority, level: expert, years: 12, last_used: 2026-08-01, market_groups: [market_core, strategic_core], status: verified}
+  - {id: sk_dbt, name: dbt, category: transformation, tier: first_priority, level: expert, years: 6, last_used: 2026-08-01, market_groups: [market_core, strategic_core], status: verified, evidence: [{type: project, ref: proj_pdp_ci}, {type: certification, ref: cert_dbt}]}
+  - {id: sk_dagster, name: Dagster, category: orchestration, tier: first_priority, level: expert, years: 3.5, last_used: 2026-08-01, market_groups: [strategic_core, oss_builder], status: verified, evidence: [{type: project, ref: proj_pdp_ci}]}
+  - {id: sk_clickhouse, name: ClickHouse, category: warehouse, tier: first_priority, level: expert, years: 2.5, last_used: 2026-08-01, market_groups: [strategic_core, oss_builder], status: verified, evidence: [{type: project, ref: proj_clickhouse_realtime}]}
+  - {id: sk_gitlab_ci, name: GitLab CI, category: devops, tier: first_priority, level: expert, years: 4, last_used: 2026-08-01, aliases: [GitLab CI/CD, GitLab], status: verified}
+  - {id: sk_docker, name: Docker, category: devops, tier: first_priority, level: proficient, years: 7, last_used: 2026-08-01, status: verified}
+  - {id: sk_claude_code, name: Claude Code, category: ai, tier: first_priority, level: proficient, years: 1.5, last_used: 2026-08-01, aliases: [AI coding agents, agentic coding, AI-assisted development], market_groups: [agentic], status: verified}
+  - {id: sk_bigquery, name: BigQuery, category: warehouse, tier: target, level: expert, years: 5, last_used: 2025-12-01, aliases: [BQ], market_groups: [strategic_core], status: verified, evidence: [{type: project, ref: proj_ga4_bigquery}]}
+  - {id: sk_gcp, name: GCP, category: cloud, tier: target, level: proficient, years: 5, last_used: 2025-12-01, aliases: [Google Cloud, Google Cloud Platform], market_groups: [strategic_core], status: verified, evidence: [{type: certification, ref: cert_gcp_de}]}
+  - {id: sk_snowflake, name: Snowflake, category: warehouse, tier: target, level: proficient, years: 2, last_used: 2020-03-01, market_groups: [market_core], status: verified}
+  - {id: sk_databricks, name: Databricks, category: platform, tier: target, level: working, years: 0.5, last_used: 2025-06-01, market_groups: [market_core], status: verified}
+  - {id: sk_aws, name: AWS, category: cloud, tier: target, level: proficient, years: 3, last_used: 2020-03-01, market_groups: [market_core], status: verified}
+  - {id: sk_airflow, name: Airflow, category: orchestration, tier: additional, level: proficient, years: 6, last_used: 2023-02-01, aliases: [Cloud Composer, Apache Airflow], market_groups: [market_core], status: verified}
+  - {id: sk_spark, name: Spark, category: processing, tier: additional, level: proficient, years: 3, last_used: 2020-03-01, aliases: [Apache Spark, PySpark], market_groups: [market_core], status: verified}
+  - {id: sk_kafka, name: Kafka, category: streaming, tier: additional, level: proficient, years: 3, last_used: 2020-03-01, aliases: [Apache Kafka, Redpanda, Pub/Sub], market_groups: [market_core], status: verified}
+  - {id: sk_iceberg, name: Iceberg, category: storage, tier: additional, level: working, years: 0.5, last_used: 2025-10-01, aliases: [Apache Iceberg], status: verified}
+  - {id: sk_trino, name: Trino, category: query engine, tier: additional, level: working, years: 1, last_used: 2025-03-01, status: verified}
+  - {id: sk_prefect, name: Prefect, category: orchestration, tier: additional, level: working, years: 1, last_used: 2024-06-01, status: verified}
+  - {id: sk_duckdb, name: DuckDB, category: warehouse, tier: additional, level: proficient, years: 2, last_used: 2026-08-01, market_groups: [strategic_core, oss_builder], status: verified, evidence: [{type: project, ref: proj_agentic_market_intel}]}
+  - {id: sk_sqlmesh, name: SQLMesh, category: transformation, tier: additional, level: working, years: 0.5, last_used: 2026-02-01, market_groups: [oss_builder], status: verified}
+  - {id: sk_metabase, name: Metabase, category: bi, tier: additional, level: proficient, years: 3, last_used: 2026-08-01, market_groups: [oss_builder], status: verified}
+  - {id: sk_evidence, name: Evidence, category: bi, tier: additional, level: working, years: 1, last_used: 2026-08-01, aliases: [Evidence.dev], market_groups: [oss_builder], status: verified}
+  - {id: sk_great_expectations, name: Great Expectations, category: data quality, tier: additional, level: proficient, years: 2, last_used: 2020-03-01, market_groups: [oss_builder], status: verified}
+  - {id: sk_terraform, name: Terraform, category: devops, tier: additional, level: working, years: 3, last_used: 2023-02-01, status: verified}
+  - {id: sk_llmops, name: LLMOps, category: ai, tier: additional, level: proficient, years: 2, last_used: 2026-08-01, aliases: [LLM evaluation, RAG evaluation, AgentOps], market_groups: [agentic], status: verified, evidence: [{type: project, ref: proj_agentic_market_intel}]}
+  - {id: sk_semantic_layer, name: Semantic layers, category: bi, tier: additional, level: proficient, years: 3, last_used: 2026-08-01, aliases: [semantic layer, semantic BI, metrics layer, Cube, MetricFlow], market_groups: [strategic_core, agentic], status: verified}
+  - {id: sk_openlineage, name: OpenLineage, category: governance, tier: target, level: learning, years: 0.2, market_groups: [oss_builder], status: draft}

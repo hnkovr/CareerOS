@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schemas/positioning.schema.json
+id: startup_data_engineer
+status: verified
+name: Startup Data Engineer (Wellfound)
+headline: Senior Data Engineer for startups | GCP, BigQuery, dbt, Dagster, ClickHouse, OSS, AI automation
+summary: >-
+  Ownership and speed: sets up the whole analytics stack in weeks, keeps it cheap, ships product
+  analytics and AI features without a big team.
+target_markets: [startup, remote_us, remote_eu]
+emphasize:
+  skills: [sk_bigquery, sk_gcp, sk_dbt, sk_dagster, sk_clickhouse, sk_duckdb, sk_llmops, sk_python]
+  achievements: [ach_northwind_clickhouse, ach_lumen_dbt_standards, ach_northwind_ai_dev, ach_lumen_bq_cost]
+  projects: [proj_agentic_market_intel, proj_clickhouse_realtime, proj_ga4_bigquery]
+deemphasize: [ach_orbit_snowflake, ach_brightpath_airflow]
+keywords_must: [ownership, MVP, GCP, BigQuery, dbt, Dagster, product analytics, AI]
+keywords_nice: [ClickHouse, OSS, LLMOps, DuckDB, Metabase]
+tone: energetic, ownership-first

@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../schemas/cv_variants.schema.json
+id: general-core
+name: General Core CV
+description: Broad two-page CV for ATS and recruiter screening.
+positioning_id: senior_data_engineer
+channel_id: ats
+locale: en
+length: two_page
+sections: [summary, experience, projects, skills, certifications, education, languages]
+rendercv_theme: classic
+include: {years_back: 12, max_bullets_per_role: 5, max_projects: 3}

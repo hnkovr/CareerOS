@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../../schemas/profile.schema.json
+id: profile
+status: verified
+name: Dana Kovalenko
+headline_baseline: >-
+  Senior Data Engineer / Analytics Engineer | GCP, BigQuery, Snowflake, dbt, Airflow, Dagster,
+  Python, SQL, Databricks, Kafka, ClickHouse, LLMOps
+summary_core: >-
+  Senior Data Engineer with 11+ years building analytics platforms for e-commerce, fintech and
+  consulting clients. Owns the full path from ingestion to semantic layer: dbt + Dagster on
+  BigQuery and ClickHouse, CI/CD for data, cost control, and AI-assisted analytics workflows.
+  Works remotely with US and EU teams as an independent contractor.
+location:
+  city: Tbilisi
+  country: GE
+  timezone: Asia/Tbilisi
+work_modes: [remote_us, remote_eu, eu_b2b, freelance, contract, relocation]
+eligibility:
+  eu_remote: true
+  us_remote_contractor: true
+  us_w2: false
+  works_as_contractor: true
+  relocation_targets: [PL]
+  work_authorization: [GE]
+contacts:
+  email: dana.kovalenko@example.com
+  website: https://dana-kovalenko.example.com
+  github: https://github.com/dana-kovalenko-demo
+  linkedin: https://www.linkedin.com/in/dana-kovalenko-demo
+years_experience_since: 2014
+target_roles:
+  - Senior Data Engineer
+  - Analytics Engineer
+  - Data Platform Engineer
+  - Agentic Data Platform Consultant
+updated_at: 2026-08-01

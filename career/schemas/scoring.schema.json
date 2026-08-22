@@ -1,0 +1,229 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/scoring.schema.json",
+  "$defs": {
+    "CompensationTargets": {
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "default": "USD",
+          "title": "Currency",
+          "type": "string"
+        },
+        "min_annual": {
+          "title": "Min Annual",
+          "type": "integer"
+        },
+        "target_annual": {
+          "title": "Target Annual",
+          "type": "integer"
+        },
+        "min_hourly": {
+          "title": "Min Hourly",
+          "type": "integer"
+        },
+        "target_hourly": {
+          "title": "Target Hourly",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "min_annual",
+        "target_annual",
+        "min_hourly",
+        "target_hourly"
+      ],
+      "title": "CompensationTargets",
+      "type": "object"
+    },
+    "DimensionConfig": {
+      "additionalProperties": false,
+      "properties": {
+        "weight": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Weight",
+          "type": "number"
+        },
+        "enabled": {
+          "default": true,
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
+        }
+      },
+      "required": [
+        "weight"
+      ],
+      "title": "DimensionConfig",
+      "type": "object"
+    },
+    "EligibilityRules": {
+      "additionalProperties": false,
+      "properties": {
+        "home_country": {
+          "title": "Home Country",
+          "type": "string"
+        },
+        "home_timezone": {
+          "title": "Home Timezone",
+          "type": "string"
+        },
+        "contractor_ok": {
+          "default": true,
+          "title": "Contractor Ok",
+          "type": "boolean"
+        },
+        "us_overlap_hours_min": {
+          "default": 3,
+          "title": "Us Overlap Hours Min",
+          "type": "integer"
+        },
+        "eu_timezone_ok": {
+          "default": true,
+          "title": "Eu Timezone Ok",
+          "type": "boolean"
+        },
+        "relocation_targets": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Relocation Targets",
+          "type": "array"
+        }
+      },
+      "required": [
+        "home_country",
+        "home_timezone"
+      ],
+      "title": "EligibilityRules",
+      "type": "object"
+    },
+    "MarketGroup": {
+      "enum": [
+        "market_core",
+        "strategic_core",
+        "oss_builder",
+        "agentic"
+      ],
+      "title": "MarketGroup",
+      "type": "string"
+    },
+    "RecommendationThresholds": {
+      "additionalProperties": false,
+      "properties": {
+        "high_priority": {
+          "default": 80,
+          "title": "High Priority",
+          "type": "integer"
+        },
+        "apply": {
+          "default": 65,
+          "title": "Apply",
+          "type": "integer"
+        },
+        "watch": {
+          "default": 45,
+          "title": "Watch",
+          "type": "integer"
+        }
+      },
+      "title": "RecommendationThresholds",
+      "type": "object"
+    },
+    "ScoreDimension": {
+      "enum": [
+        "overall_fit",
+        "remote_us_fit",
+        "eu_fit",
+        "poland_fallback_fit",
+        "upwork_fit",
+        "startup_fit",
+        "enterprise_fit",
+        "technical_fit",
+        "seniority_fit",
+        "compensation_fit",
+        "learning_roi",
+        "strategic_upside",
+        "application_effort",
+        "risk"
+      ],
+      "title": "ScoreDimension",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "tech_groups": {
+      "additionalProperties": {
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/MarketGroup"
+      },
+      "title": "Tech Groups",
+      "type": "object"
+    },
+    "aliases": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "description": "alias \u2192 canonical tech name",
+      "title": "Aliases",
+      "type": "object"
+    },
+    "dimensions": {
+      "additionalProperties": {
+        "$ref": "#/$defs/DimensionConfig"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/ScoreDimension"
+      },
+      "title": "Dimensions",
+      "type": "object"
+    },
+    "eligibility": {
+      "$ref": "#/$defs/EligibilityRules"
+    },
+    "compensation": {
+      "$ref": "#/$defs/CompensationTargets"
+    },
+    "seniority_targets": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Seniority Targets",
+      "type": "array"
+    },
+    "thresholds": {
+      "$ref": "#/$defs/RecommendationThresholds"
+    }
+  },
+  "required": [
+    "tech_groups",
+    "dimensions",
+    "eligibility",
+    "compensation"
+  ],
+  "title": "ScoringModel",
+  "type": "object"
+}

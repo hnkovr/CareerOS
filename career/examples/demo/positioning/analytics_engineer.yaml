@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schemas/positioning.schema.json
+id: analytics_engineer
+status: verified
+name: Analytics Engineer (dbt-centric)
+headline: Analytics Engineer | dbt, BigQuery, ClickHouse, Dagster, semantic layers, data modeling
+summary: >-
+  dbt-first analytics engineering: modelling standards, tests, docs, CI, semantic layers and
+  dashboards that business teams trust. Strong on cost and performance of the warehouse.
+target_markets: [remote_us, remote_eu, startup, consulting]
+emphasize:
+  skills: [sk_dbt, sk_sql, sk_bigquery, sk_clickhouse, sk_semantic_layer, sk_metabase, sk_dagster]
+  achievements: [ach_lumen_dbt_standards, ach_lumen_ga4, ach_lumen_bq_cost, ach_northwind_clickhouse]
+  projects: [proj_ga4_bigquery, proj_dbt_cost_guard]
+deemphasize: [ach_orbit_streaming]
+keywords_must: [dbt, SQL, data modeling, BigQuery, semantic layer, testing, documentation]
+keywords_nice: [Looker, Metabase, Dagster, ClickHouse, GA4, attribution]
+tone: concise, practical

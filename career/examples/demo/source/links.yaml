@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=../../../schemas/links.schema.json
+items:
+  - {id: link_github, label: GitHub, url: https://github.com/dana-kovalenko-demo, kind: github, status: verified}
+  - {id: link_site, label: Website, url: https://dana-kovalenko.example.com, kind: website, status: verified}
+  - {id: link_amip, label: Agentic Market Intelligence Platform, url: https://github.com/dana-kovalenko-demo/agentic-market-intel, kind: portfolio, status: verified}

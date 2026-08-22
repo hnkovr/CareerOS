@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../../schemas/education.schema.json
+items:
+  - id: edu_bsc_cs
+    status: verified
+    institution: Tbilisi Polytechnic Institute (demo)
+    degree: BSc
+    field: Computer Science
+    start: 2009-09-01
+    end: 2013-06-30
+    location: Tbilisi, Georgia

@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://careeros.dev/schemas/channels.schema.json
+id: linkedin
+platform: linkedin
+name: LinkedIn
+limits: {headline_chars: 220, about_chars: 2600, bullets_per_role: 6, bullet_chars: 240, skills_max: 50}
+priorities: [recruiter_search, keyword_coverage, credibility]
+required_sections: [headline, about, experience, skills]
+style: {tone: professional, first_person: true, metrics_first: true, keyword_density: high}

@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=https://careeros.dev/schemas/positioning.schema.json
+id: senior_data_engineer
+status: draft
+name: Senior Data Engineer / Analytics Engineer
+headline: Senior Data Engineer / Analytics Engineer | Python, SQL, dbt
+summary: Broad market-core positioning.
+target_markets: [remote_us, remote_eu, eu_b2b]
+emphasize: {skills: [sk_python, sk_sql], achievements: [ach_example], projects: []}
+deemphasize: []
+keywords_must: [Python, SQL, dbt]
+keywords_nice: []

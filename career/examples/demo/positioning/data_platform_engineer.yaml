@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../schemas/positioning.schema.json
+id: data_platform_engineer
+status: verified
+name: Data Platform Engineer
+headline: Data Platform Engineer | Dagster, dbt, ClickHouse, CI/CD for data, Kafka, Docker, GCP/AWS
+summary: >-
+  Platform ownership: orchestration, environments, CI/CD, observability and cost for analytics
+  platforms; migrations between warehouses and orchestrators with zero-surprise releases.
+target_markets: [remote_us, remote_eu, eu_b2b, enterprise]
+emphasize:
+  skills: [sk_dagster, sk_gitlab_ci, sk_docker, sk_clickhouse, sk_kafka, sk_terraform, sk_python]
+  achievements: [ach_northwind_ci_cd, ach_northwind_clickhouse, ach_orbit_streaming, ach_orbit_snowflake]
+  projects: [proj_pdp_ci, proj_clickhouse_realtime]
+deemphasize: [ach_lumen_ga4]
+keywords_must: [Dagster, CI/CD, Docker, platform, orchestration, observability, migration]
+keywords_nice: [Kubernetes, Terraform, Kafka, OpenLineage, Airflow]
+tone: technical, ownership-oriented

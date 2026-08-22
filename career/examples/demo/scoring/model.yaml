@@ -1,0 +1,103 @@
+# yaml-language-server: $schema=../../schemas/scoring.schema.json
+# Deterministic scoring model (ADR-010). Weights of enabled dimensions (except overall_fit) sum to 1.
+version: 1
+
+tech_groups:
+  market_core: [python, sql, dbt, snowflake, databricks, airflow, aws, spark, kafka]
+  strategic_core: [gcp, bigquery, dbt, dagster, python, sql, duckdb, clickhouse, semantic layer]
+  oss_builder: [dagster, sqlmesh, duckdb, clickhouse, redpanda, evidence, metabase, openlineage, datahub, soda, great expectations]
+  agentic: [llmops, agentops, rag, ai analytics, semantic layer, ai-assisted development, agentic workflows, llm, langchain, mcp]
+
+# alias → canonical (lower-case) used when matching JD text and skill names
+aliases:
+  google cloud: gcp
+  google cloud platform: gcp
+  bq: bigquery
+  big query: bigquery
+  apache airflow: airflow
+  cloud composer: airflow
+  apache spark: spark
+  pyspark: spark
+  apache kafka: kafka
+  pub/sub: kafka
+  pubsub: kafka
+  redpanda: kafka
+  semantic layers: semantic layer
+  metrics layer: semantic layer
+  metricflow: semantic layer
+  cube: semantic layer
+  llm evaluation: llmops
+  rag evaluation: rag
+  retrieval augmented generation: rag
+  ai coding agents: ai-assisted development
+  claude code: ai-assisted development
+  cursor: ai-assisted development
+  copilot: ai-assisted development
+  gitlab ci/cd: gitlab ci
+  github actions: ci/cd
+  ci/cd pipelines: ci/cd
+  data build tool: dbt
+  evidence.dev: evidence
+
+dimensions:
+  overall_fit:
+    weight: 0.0
+    description: weighted sum of the dimensions below
+  technical_fit:
+    weight: 0.20
+    description: overlap between required/preferred tech and verified skills, weighted by tier
+  seniority_fit:
+    weight: 0.10
+    description: role seniority vs targets
+  compensation_fit:
+    weight: 0.12
+    description: stated compensation vs targets; unknown = neutral
+  remote_us_fit:
+    weight: 0.08
+    description: remote from outside the US and contractor allowed
+  eu_fit:
+    weight: 0.07
+    description: EU remote / B2B compatibility and timezone
+  poland_fallback_fit:
+    weight: 0.03
+    description: relocation-compatible (Poland) role and stack
+  upwork_fit:
+    weight: 0.04
+    description: freelance/project shape matching packaged offers
+  startup_fit:
+    weight: 0.05
+    description: startup signals (ownership, MVP, small team) vs positioning
+  enterprise_fit:
+    weight: 0.04
+    description: enterprise signals vs enterprise-compatible stack
+  learning_roi:
+    weight: 0.07
+    description: share of target-tier technologies required
+  strategic_upside:
+    weight: 0.10
+    description: strategic_core + agentic group coverage
+  application_effort:
+    weight: 0.04
+    description: inverse of expected effort (take-home, long process, relocation)
+  risk:
+    weight: 0.06
+    description: inverse of red flags (unclear remote, missing company, agency spam)
+
+eligibility:
+  home_country: GE
+  home_timezone: Asia/Tbilisi
+  contractor_ok: true
+  us_overlap_hours_min: 3
+  eu_timezone_ok: true
+  relocation_targets: [PL]
+
+compensation:
+  currency: USD
+  min_annual: 90000
+  target_annual: 140000
+  min_hourly: 55
+  target_hourly: 95
+
+seniority_targets: [senior, lead, staff, principal]
+
+thresholds: {high_priority: 80, apply: 65, watch: 45}

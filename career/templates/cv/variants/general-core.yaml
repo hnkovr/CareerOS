@@ -1,0 +1,8 @@
+# yaml-language-server: $schema=https://careeros.dev/schemas/cv_variants.schema.json
+id: general-core
+name: General Core CV
+positioning_id: senior_data_engineer
+channel_id: ats
+length: two_page
+sections: [summary, experience, skills, education]
+rendercv_theme: classic

@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=../../schemas/channels.schema.json
+id: wellfound
+platform: wellfound
+name: Wellfound
+limits: {headline_chars: 120, about_chars: 1500, bullets_per_role: 4, bullet_chars: 200}
+priorities: [startups, ownership, product_thinking, speed_to_mvp, gcp, bigquery, dbt, oss, dagster, ai_automation, llmops]
+required_sections: [headline, about, experience, skills, links]
+style: {tone: direct, first_person: true, metrics_first: true, keyword_density: medium}
+default_visibility: true

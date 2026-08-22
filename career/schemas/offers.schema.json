@@ -1,0 +1,290 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/offers.schema.json",
+  "$defs": {
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/EvidenceType"
+        },
+        "ref": {
+          "description": "item id (project/testimonial/certification/publication) or URL",
+          "title": "Ref",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "type",
+        "ref"
+      ],
+      "title": "Evidence",
+      "type": "object"
+    },
+    "EvidenceType": {
+      "enum": [
+        "project",
+        "link",
+        "testimonial",
+        "certification",
+        "publication",
+        "file"
+      ],
+      "title": "EvidenceType",
+      "type": "string"
+    },
+    "ItemStatus": {
+      "enum": [
+        "draft",
+        "verified",
+        "retired"
+      ],
+      "title": "ItemStatus",
+      "type": "string"
+    },
+    "Offer": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "stable identifier, never renamed",
+          "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+          "title": "Id",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/ItemStatus",
+          "default": "draft"
+        },
+        "visibility": {
+          "$ref": "#/$defs/Visibility"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Updated At"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "private notes, never projected",
+          "title": "Notes"
+        },
+        "title": {
+          "title": "Title",
+          "type": "string"
+        },
+        "customer_problem": {
+          "title": "Customer Problem",
+          "type": "string"
+        },
+        "deliverables": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Deliverables",
+          "type": "array"
+        },
+        "timeline": {
+          "title": "Timeline",
+          "type": "string"
+        },
+        "ideal_client": {
+          "title": "Ideal Client",
+          "type": "string"
+        },
+        "technologies": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Technologies",
+          "type": "array"
+        },
+        "proof": {
+          "description": "project/testimonial ids",
+          "items": {
+            "description": "stable identifier, never renamed",
+            "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+            "type": "string"
+          },
+          "title": "Proof",
+          "type": "array"
+        },
+        "pricing_strategy": {
+          "title": "Pricing Strategy",
+          "type": "string"
+        },
+        "platforms": {
+          "items": {
+            "$ref": "#/$defs/Platform"
+          },
+          "title": "Platforms",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "customer_problem",
+        "deliverables",
+        "timeline",
+        "ideal_client",
+        "pricing_strategy"
+      ],
+      "title": "Offer",
+      "type": "object"
+    },
+    "Platform": {
+      "enum": [
+        "linkedin",
+        "wellfound",
+        "upwork",
+        "toptal",
+        "ats",
+        "direct_outreach",
+        "email",
+        "other"
+      ],
+      "title": "Platform",
+      "type": "string"
+    },
+    "Visibility": {
+      "additionalProperties": false,
+      "properties": {
+        "linkedin": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Linkedin"
+        },
+        "wellfound": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Wellfound"
+        },
+        "upwork": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Upwork"
+        },
+        "toptal": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Toptal"
+        },
+        "ats": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Ats"
+        },
+        "direct_outreach": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "optional",
+              "type": "string"
+            }
+          ],
+          "default": true,
+          "title": "Direct Outreach"
+        }
+      },
+      "title": "Visibility",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "items": {
+        "$ref": "#/$defs/Offer"
+      },
+      "title": "Items",
+      "type": "array"
+    }
+  },
+  "title": "OffersFile",
+  "type": "object"
+}

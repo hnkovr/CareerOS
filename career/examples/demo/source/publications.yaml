@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../../schemas/publications.schema.json
+items:
+  - id: pub_slim_ci_talk
+    status: verified
+    title: "dbt Slim CI in practice: from 34 to 9 minutes"
+    kind: talk
+    url: https://example.com/talks/dbt-slim-ci
+    published: 2024-10-12
+    summary: Conference talk on state-based CI for dbt + Dagster platforms.
+  - id: pub_clickhouse_article
+    status: verified
+    title: Moving event analytics from PostgreSQL to ClickHouse
+    kind: article
+    url: https://dana-kovalenko.example.com/posts/clickhouse-migration
+    published: 2025-02-03

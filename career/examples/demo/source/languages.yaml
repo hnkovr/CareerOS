@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../schemas/languages.schema.json
+items:
+  - {id: lang_en, name: English, level: C1, status: verified}
+  - {id: lang_ka, name: Georgian, level: native, status: verified}
+  - {id: lang_ru, name: Russian, level: C2, status: verified}
+  - {id: lang_pl, name: Polish, level: A2, status: verified}

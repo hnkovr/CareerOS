@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../../schemas/testimonials.schema.json
+items:
+  - id: tst_lumen_client
+    status: verified
+    author: Marta Nowak (demo)
+    author_role: Head of Growth, Meridian SaaS (demo client)
+    company_id: lumen_analytics
+    quote: >-
+      Dana delivered our GA4 + HubSpot warehouse in three weeks, explained every modelling decision,
+      and left us with dbt tests and docs we still use a year later.
+    given: 2022-09-10
+    permission_to_publish: true
+  - id: tst_northwind_cto
+    status: verified
+    author: Ilya Petrov (demo)
+    author_role: CTO, Northwind Commerce
+    company_id: northwind_commerce
+    quote: >-
+      The ClickHouse migration and the CI/CD work turned analytics from a weekly fire drill into a
+      boring, reliable service. Dana owns problems end to end.
+    given: 2025-01-20
+    permission_to_publish: true

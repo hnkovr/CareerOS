@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schemas/channels.schema.json
+id: direct_outreach
+platform: direct_outreach
+name: Direct B2B outreach
+limits: {about_chars: 800, bullets_per_role: 3, bullet_chars: 160}
+priorities: [client_problem, proof, offer, call_to_action, brevity]
+required_sections: [summary, offers, projects]
+style: {tone: conversational, first_person: true, metrics_first: true, keyword_density: low}
+cta: "Worth a 20-minute call this week?"
+default_visibility: true

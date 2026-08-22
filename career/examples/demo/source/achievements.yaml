@@ -1,0 +1,231 @@
+# yaml-language-server: $schema=../../../schemas/achievements.schema.json
+# Each item: atomic, verifiable facts. AI may select/rephrase/combine these — never add to them.
+items:
+  - id: ach_northwind_ci_cd
+    status: verified
+    company_id: northwind_commerce
+    role_title: Senior Data Engineer
+    type: achievement
+    title: GitLab CI/CD architecture for the dbt + Dagster platform
+    facts:
+      - Designed the GitLab CI/CD architecture for the analytics platform (dbt + Dagster)
+      - Introduced dbt Slim CI (state-based selection) for merge request pipelines
+      - Added automated environment validation and a deploy resource-group queue to prevent concurrent deploys
+      - Cut median merge-request pipeline time from 34 to 9 minutes
+      - Reduced failed production deploys from roughly 3 per month to under 1 per quarter
+    metrics:
+      - name: MR pipeline time (median)
+        value: "9"
+        unit: minutes
+        baseline: "34"
+      - name: Failed production deploys
+        value: "<1 per quarter"
+        baseline: "~3 per month"
+    technologies:
+      first_priority: [dbt, Dagster, GitLab CI, ClickHouse, Docker]
+      additional: [Python, Bash]
+      target: []
+    keywords: [CI/CD, Slim CI, dbt, Dagster, GitLab, deployment reliability, DataOps]
+    evidence:
+      - type: project
+        ref: proj_pdp_ci
+    period: 2023-2024
+    visibility: {linkedin: true, wellfound: true, upwork: true, toptal: true}
+    updated_at: 2026-07-15
+
+  - id: ach_northwind_clickhouse
+    status: verified
+    company_id: northwind_commerce
+    type: achievement
+    title: Event analytics migration PostgreSQL → ClickHouse
+    facts:
+      - Led migration of event analytics (≈2B rows, 350 GB) from PostgreSQL to ClickHouse
+      - Designed MergeTree schemas, materialised views and a dbt-clickhouse modelling layer
+      - Reduced p95 dashboard query latency from 12 s to under 600 ms
+      - Cut analytics infrastructure cost by about 45% by retiring the read-replica fleet
+    metrics:
+      - name: p95 dashboard latency
+        value: "0.6"
+        unit: s
+        baseline: "12"
+      - name: Infra cost
+        value: "-45%"
+    technologies:
+      first_priority: [ClickHouse, dbt, Dagster]
+      additional: [PostgreSQL, Metabase]
+      target: []
+    keywords: [ClickHouse, migration, realtime analytics, MergeTree, performance]
+    evidence:
+      - type: project
+        ref: proj_clickhouse_realtime
+    period: 2024
+    updated_at: 2026-07-15
+
+  - id: ach_northwind_ai_dev
+    status: verified
+    company_id: northwind_commerce
+    type: achievement
+    title: AI-assisted development workflow for the data team
+    facts:
+      - Introduced AI coding agents (Claude Code) with repository guides, skills and review checklists for the data team of 6
+      - Built an internal prompt/skill library for dbt model scaffolding, test generation and incident triage
+      - Team shipped roughly 30% more dbt models per sprint with the same headcount (measured over two quarters)
+    metrics:
+      - name: dbt models shipped per sprint
+        value: "+30%"
+        note: two-quarter comparison, same team size
+    technologies:
+      first_priority: [Claude Code, dbt, GitLab CI]
+      additional: [Python]
+      target: []
+    keywords: [AI-assisted development, agentic workflows, LLMOps, developer productivity]
+    period: 2025
+    visibility: {linkedin: true, wellfound: true, upwork: true, toptal: optional}
+    updated_at: 2026-07-15
+
+  - id: ach_lumen_bq_cost
+    status: verified
+    company_id: lumen_analytics
+    type: achievement
+    title: BigQuery cost optimisation programme
+    facts:
+      - Ran BigQuery cost audits for 6 clients (partitioning, clustering, materialisation, slot reservations)
+      - Reduced BigQuery spend by 38% on average per client, 61% for the largest (≈$14k/month saved)
+      - Produced a reusable audit checklist and dbt macros for incremental models
+    metrics:
+      - name: BigQuery spend
+        value: "-38%"
+        note: average across 6 clients
+      - name: Largest client savings
+        value: "14000"
+        unit: USD/month
+    technologies:
+      first_priority: [BigQuery, dbt]
+      additional: [Looker Studio, Terraform]
+      target: [GCP]
+    keywords: [BigQuery, cost optimization, FinOps, partitioning, clustering]
+    period: 2021-2022
+    updated_at: 2026-06-01
+
+  - id: ach_lumen_dbt_standards
+    status: verified
+    company_id: lumen_analytics
+    type: achievement
+    title: dbt project standards and CI across client engagements
+    facts:
+      - Authored the consultancy's dbt project standard (layers, naming, tests, docs) used on 9 engagements
+      - Set up Cloud Composer / Airflow orchestration templates for dbt runs
+      - Led a team of three analytics engineers; ran client discovery and proposals
+    technologies:
+      first_priority: [dbt, BigQuery]
+      additional: [Airflow, Cloud Composer]
+      target: [GCP]
+    keywords: [dbt, standards, leadership, consulting, Airflow]
+    evidence:
+      - type: testimonial
+        ref: tst_lumen_client
+    period: 2020-2023
+    updated_at: 2026-06-01
+
+  - id: ach_lumen_ga4
+    status: verified
+    company_id: lumen_analytics
+    type: achievement
+    title: GA4 / CRM → BigQuery → dashboard deliveries
+    facts:
+      - Delivered 7 GA4 + CRM (HubSpot, Salesforce) → BigQuery → dashboard projects, typically in 2-4 weeks each
+      - Built a reusable dbt package for GA4 export modelling (sessions, attribution, funnels)
+    metrics:
+      - name: Typical delivery time
+        value: "2-4"
+        unit: weeks
+    technologies:
+      first_priority: [BigQuery, dbt]
+      additional: [GA4, Fivetran, Looker Studio]
+      target: []
+    keywords: [GA4, marketing analytics, attribution, dashboards, BigQuery]
+    evidence:
+      - type: project
+        ref: proj_ga4_bigquery
+      - type: testimonial
+        ref: tst_lumen_client
+    period: 2020-2022
+    updated_at: 2026-06-01
+
+  - id: ach_orbit_streaming
+    status: verified
+    company_id: orbit_fintech
+    type: achievement
+    title: Streaming payment analytics on AWS
+    facts:
+      - Built Kafka → Spark Structured Streaming ingestion for 30M+ daily payment events
+      - Reached end-to-end latency under 2 minutes for fraud-monitoring dashboards
+      - Implemented Great Expectations checks for regulatory reports with zero missed filings in 2 years
+    metrics:
+      - name: Daily events
+        value: "30M+"
+      - name: End-to-end latency
+        value: "<2"
+        unit: minutes
+    technologies:
+      first_priority: []
+      additional: [Kafka, Spark, Airflow, Great Expectations]
+      target: [AWS]
+    keywords: [streaming, Kafka, Spark, AWS, data quality, fintech]
+    period: 2018-2020
+    updated_at: 2026-06-01
+
+  - id: ach_orbit_snowflake
+    status: verified
+    company_id: orbit_fintech
+    type: achievement
+    title: Redshift → Snowflake reporting migration
+    facts:
+      - Migrated 140 reporting tables and 60 scheduled jobs from Redshift to Snowflake in 4 months
+      - Cut warehouse cost by 28% and removed weekly vacuum/maintenance windows
+    metrics:
+      - name: Warehouse cost
+        value: "-28%"
+    technologies:
+      first_priority: []
+      additional: [Airflow]
+      target: [Snowflake, AWS]
+    keywords: [Snowflake, Redshift, migration, cost]
+    period: 2019
+    updated_at: 2026-06-01
+
+  - id: ach_brightpath_airflow
+    status: verified
+    company_id: brightpath_edtech
+    type: achievement
+    title: First Airflow deployment replacing SSIS
+    facts:
+      - Replaced 40 SSIS packages with Python ETL orchestrated by Airflow
+      - Reduced nightly load window from 6 hours to 1.5 hours
+    metrics:
+      - name: Nightly load window
+        value: "1.5"
+        unit: hours
+        baseline: "6"
+    technologies:
+      first_priority: []
+      additional: [Airflow, Python, PostgreSQL]
+      target: []
+    keywords: [Airflow, ETL, PostgreSQL]
+    period: 2016
+    visibility: {linkedin: true, wellfound: false, upwork: false, toptal: optional}
+    updated_at: 2026-06-01
+
+  - id: ach_legacy_ssrs
+    status: retired
+    company_id: brightpath_edtech
+    type: responsibility
+    title: SSRS report maintenance
+    facts:
+      - Maintained 120 SSRS reports
+    technologies:
+      first_priority: []
+      additional: [SQL Server]
+      target: []
+    keywords: [SSRS]
+    notes: retired — not relevant to current positioning

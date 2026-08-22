@@ -36,6 +36,7 @@ reportMissingTypeStubs = false
 
 [tool.pytest.ini_options]
 testpaths = ["services/careeros/tests", "tests"]
+pythonpath = ["services/careeros"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 addopts = "-q -ra"
@@ -49,5 +50,11 @@ include_external_packages = true
 [[tool.importlinter.contracts]]
 name = "AI providers are isolated"
 type = "forbidden"
-source_modules = ["careeros.api", "careeros.core"]
+source_modules = ["careeros.api", "careeros.core", "careeros.modules.vault"]
 forbidden_modules = ["anthropic", "openai"]
+
+[[tool.importlinter.contracts]]
+name = "vault does not depend on the database or other modules"
+type = "forbidden"
+source_modules = ["careeros.modules.vault"]
+forbidden_modules = ["sqlalchemy", "careeros.core.db", "careeros.core.models"]

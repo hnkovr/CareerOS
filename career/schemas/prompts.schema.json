@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://careeros.dev/schemas/prompts.schema.json",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "description": "stable identifier, never renamed",
+      "pattern": "^[a-z0-9][a-z0-9_-]{1,79}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "version": {
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    },
+    "purpose": {
+      "title": "Purpose",
+      "type": "string"
+    },
+    "area": {
+      "description": "opportunity | cv | profile | inbox | interview | negotiation | dev-agent",
+      "title": "Area",
+      "type": "string"
+    },
+    "inputs": {
+      "description": "names of template variables",
+      "items": {
+        "type": "string"
+      },
+      "title": "Inputs",
+      "type": "array"
+    },
+    "output_schema": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Pydantic model name validated against",
+      "title": "Output Schema"
+    },
+    "provider_preferences": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Provider Preferences",
+      "type": "array"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    },
+    "template": {
+      "description": "Jinja2 template",
+      "title": "Template",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "purpose",
+    "area",
+    "template"
+  ],
+  "title": "Prompt",
+  "type": "object"
+}
