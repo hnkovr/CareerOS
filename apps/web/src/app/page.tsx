@@ -23,6 +23,10 @@ export default function DashboardPage() {
     queryKey: ["cv-artifacts", "recent"],
     queryFn: async () => unwrap(await api.GET("/api/cv/artifacts", { params: { query: { limit: 5 } } })),
   });
+  const inboxStats = useQuery({
+    queryKey: ["inbox", "stats"],
+    queryFn: async () => unwrap(await api.GET("/api/inbox/stats")),
+  });
   const followUps = useQuery({
     queryKey: ["pipeline-follow-ups"],
     queryFn: async () =>
@@ -166,6 +170,36 @@ export default function DashboardPage() {
               </li>
             ))}
           </ul>
+        )}
+      </Card>
+
+      <Card title="Career Inbox" action={<Link className="btn" href="/inbox">Open</Link>}>
+        {inboxStats.isPending ? (
+          <Spinner />
+        ) : inboxStats.isError || !inboxStats.data ? (
+          <Empty>—</Empty>
+        ) : inboxStats.data.total === 0 ? (
+          <Empty>No messages yet — paste an email to triage it.</Empty>
+        ) : (
+          <div className="space-y-2 text-sm">
+            <div className="flex gap-2">
+              <Badge tone={inboxStats.data.needs_attention > 0 ? "warn" : "good"}>
+                {inboxStats.data.needs_attention} need attention
+              </Badge>
+              <Badge>{inboxStats.data.unread} unread</Badge>
+            </div>
+            <ul className="space-y-1 text-xs text-ink-dim">
+              {Object.entries(inboxStats.data.by_class)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5)
+                .map(([cls, n]) => (
+                  <li key={cls} className="flex justify-between">
+                    <span>{cls.replaceAll("_", " ")}</span>
+                    <span className="tabular-nums">{n}</span>
+                  </li>
+                ))}
+            </ul>
+          </div>
         )}
       </Card>
 

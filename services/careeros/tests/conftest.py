@@ -49,7 +49,9 @@ async def db(settings: Settings) -> AsyncIterator[bool]:
         "careeros.modules.cv.models",
         "careeros.modules.opportunities.models",
         "careeros.modules.profiles.models",
+        "careeros.modules.platform.models",
         "careeros.modules.pipeline.models",
+        "careeros.modules.inbox.models",
     ):
         with contextlib.suppress(ModuleNotFoundError):
             importlib.import_module(mod)

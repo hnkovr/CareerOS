@@ -1,12 +1,13 @@
 "use client";
 
-import { Briefcase, Contact, FileText, KanbanSquare, LayoutDashboard, Library, UserCircle } from "lucide-react";
+import { Briefcase, Contact, FileText, Inbox, KanbanSquare, LayoutDashboard, Library, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const items = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
   { href: "/vault", label: "Vault", icon: Library },
+  { href: "/inbox", label: "Inbox", icon: Inbox },
   { href: "/opportunities", label: "Opportunities", icon: Briefcase },
   { href: "/pipeline", label: "Pipeline", icon: KanbanSquare },
   { href: "/cv", label: "CV", icon: FileText },

@@ -289,6 +289,32 @@ class AIService:
         )
         return DevPacketOut(agent=req.agent, path=str(path), markdown=rendered.user, run_id=run_id)
 
+    async def record_suggestion(
+        self,
+        *,
+        target_type: str,
+        target_ref: str,
+        title: str,
+        payload: dict[str, Any],
+        ai_run_id: uuid.UUID | None = None,
+    ) -> uuid.UUID | None:
+        """Store an approval-gated AI proposal (ADR-010 §3). Returns None without a session."""
+        if self.session is None or self.user_id is None:
+            return None
+        from careeros.modules.ai.models import Suggestion
+
+        row = Suggestion(
+            user_id=self.user_id,
+            ai_run_id=ai_run_id,
+            target_type=target_type,
+            target_ref=target_ref,
+            title=title[:300],
+            payload=payload,
+        )
+        self.session.add(row)
+        await self.session.commit()
+        return row.id
+
     # ------------------------------------------------------------------ ledger
     async def list_runs(
         self, *, entity_type: str | None = None, entity_id: str | None = None, limit: int = 50

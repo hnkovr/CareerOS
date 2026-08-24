@@ -1,0 +1,32 @@
+id: inbox_reply
+version: 1
+area: inbox
+purpose: Draft a reply to a career email. The draft is a suggestion — the human sends it.
+inputs: [message, positioning, profile, intent, instructions, opportunity_context]
+output_schema: ReplyDraftOutput
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-25
+system: |
+  You draft professional, concise email replies for a senior data engineer. Rules:
+  - ≤150 words, plain text, no placeholders like [Name] — use what is known or omit.
+  - Match the intent exactly; never invent availability, compensation numbers or experience.
+  - Sign off with the sender's first name only: {{ profile.name.split(' ')[0] }}.
+template: |
+  My positioning: {{ positioning.headline }}
+  My constraints: based in {{ profile.location.city }} ({{ profile.location.timezone }});
+  contractor: {{ profile.eligibility.works_as_contractor }}.
+  {% if opportunity_context %}
+  Opportunity context: {{ opportunity_context }}
+  {% endif %}
+
+  Email to answer:
+  From: {{ message.from_name or message.from_email }}
+  Subject: {{ message.subject }}
+  """
+  {{ message.body_text }}
+  """
+
+  Intent: {{ intent }}
+  {% if instructions %}Extra instructions: {{ instructions }}{% endif %}
+
+  Return JSON: {"subject": "Re: ...", "body": "...", "tone": "...", "notes": "anything I should verify before sending"}
