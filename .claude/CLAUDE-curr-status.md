@@ -29,6 +29,8 @@ e2e smoke (built web + real API + proxy) verified.
   P1.4 suggestion approval flow, P1.5b notifications + PWA
 
 ## Known quirks
+- Concurrent sessions sharing `careeros_test` make db-marked tests flaky; this lane runs its
+  gates against `careeros_test_d1` (see developer guide).
 - Demo vault lives inside the monorepo, so its `vault status` reports the monorepo git state
   (`is_repo: true, dirty` reflects the outer repo). A real private vault at `CAREEROS_VAULT_PATH`
   behaves as its own repo.
