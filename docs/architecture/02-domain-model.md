@@ -61,6 +61,13 @@ Common columns: `id uuid`, `user_id uuid FK`, `created_at`, `updated_at`; soft-d
 | `company` | `name`, `domain?`, `size?`, `industry?`, `hq_location?`, `remote_friendly?`, `notes`, `links[]` |
 | `contact` | `name`, `company_id FK?`, `role?`, `email?`, `linkedin_url?`, `relationship` (recruiter\|hiring_manager\|client\|peer\|other), `last_contact_at`, `next_action?`, `notes` |
 
+### Platform context ([ADR-011](../adr/011-platform-connectors.md))
+| Table | Key fields |
+|---|---|
+| `platform_connection` | `platform` (unique per user), `status` (disconnected\|connected\|needs_reauth\|error), `auth_kind`, `account_id?`, `account_label?`, `scopes[]`, `token_expires_at?`, `last_sync_at?`, `last_error?`, `meta jsonb` — **no secrets** (tokens live in the 0600 token file) |
+| `platform_sync_run` | `platform`, `kind` (profile\|jobs\|applications), `method` (api\|export\|paste), `status` (ok\|partial\|failed\|skipped), `started_at`, `finished_at`, `items_seen/created/updated/skipped`, `error?`, `details jsonb` (created ids, duplicates, errors) |
+| `application_observation` | `platform`, `external_id?`, `job_title`, `company?`, `job_url?`, `status_raw`, `status` (applied\|viewed\|invited\|interview\|offer\|rejected\|withdrawn\|unknown), `applied_at?`, `updated_at_platform?`, `observed_at`, `opportunity_id?` (matched by URL), `sync_run_id?`, `content_hash`, `raw_payload`, `history[]` (previous statuses) |
+
 ### CV context
 | Table | Key fields |
 |---|---|
@@ -105,7 +112,8 @@ Common columns: `id uuid`, `user_id uuid FK`, `created_at`, `updated_at`; soft-d
 
 Defined once in `careeros.modules.*.enums` and exported via OpenAPI; TS imports generated types.
 
-* `Platform`: linkedin, wellfound, upwork, toptal, ats, direct_outreach, email, other
+* `Platform`: linkedin, wellfound, upwork, toptal, hh, indeed, getmatch, ats, direct_outreach, email, other
+* `SyncMethod`: api, export, paste · `SyncKind`: profile, jobs, applications · `ApplicationStatus`: applied, viewed, invited, interview, offer, rejected, withdrawn, unknown
 * `Recommendation`: ignore, watch, apply, high_priority, reply_now, ask_questions_first, negotiate, prepare_interview
 * `ScoreDimension`: overall_fit, remote_us_fit, eu_fit, poland_fallback_fit, upwork_fit, startup_fit, enterprise_fit, technical_fit, seniority_fit, compensation_fit, learning_roi, strategic_upside, application_effort, risk
 * `SuggestionState`: suggested, reviewed, approved, executed, rejected

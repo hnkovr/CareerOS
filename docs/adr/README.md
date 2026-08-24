@@ -16,3 +16,5 @@ New ADRs: copy `000-template.md`, next number, link from here. Superseding an AD
 | [008](008-modular-monolith.md) | Modular monolith in one Python project; task-runner port (ARQ now, Temporal-ready) | accepted |
 | [009](009-schema-source-of-truth.md) | Pydantic models are the schema source of truth; JSON Schema and TS are generated | accepted |
 | [010](010-deterministic-first-ai-as-suggestion.md) | Deterministic code first; AI outputs are suggestions with provenance and approval states | accepted |
+| [011](011-platform-connectors.md) | Platform connectors: one submodule per platform, OAuth tokens allowed, paste path everywhere, sync placement | accepted |
+| [011](011-telegram-bot-surface.md) | Telegram bot as the P0 mobile surface: webhook, owner-gated, read-only vault | accepted |

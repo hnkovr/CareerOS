@@ -27,6 +27,26 @@ unreachable. Tests that call a real AI provider are marked `@pytest.mark.ai` and
 6. Docs: update `docs/architecture/02-domain-model.md` if tables/enums changed; ADR for any
    boundary decision.
 
+## Telegram bot
+
+Phone-first capture and triage surface, deployed on Fly. Setup, webhook ownership rules and
+diagnosis: [`telegram-bot.md`](telegram-bot.md). Decision: [ADR 011](../adr/011-telegram-bot-surface.md).
+
+## Platform connectors
+
+`careeros.modules.platform` ([ADR-011](../adr/011-platform-connectors.md), user guide: [docs/platform](../platform/README.md)).
+To add a connector: create `modules/platform/connectors/<name>/connector.py` with
+`class Connector(BaseConnector)` declaring `platform` and `capabilities` (only the methods you
+implement: `read_profile` / `import_profile_export` / `parse_profile_text`, `search_jobs` /
+`import_jobs_export` / `parse_jobs_text`, `application_statuses` / `import_applications_export` /
+`parse_applications_text`, plus `oauth_config`, `whoami`, `doctor` for API platforms), add the name to
+`connectors/__init__.py:CONNECTOR_MODULES`, the `Platform`/`Source` enum members if new, fixtures +
+`tests/platform/test_<name>.py` (no network: `httpx.MockTransport`), and `docs/platform/<name>.md`.
+`PlatformRegistry.verify()` (run by `test_core.py`) fails when a declared capability has no
+implementation. Connectors may not import the DB or any service module (import-linter contract).
+Shared paste heuristics live in `platform/parsers.py`; HTTP goes through `platform/http.py`.
+The `careeros-platform-connector-dev` sub-agent (`.claude/agents/`) encodes this checklist.
+
 ## Web app
 
 `apps/web` (Next.js 15, App Router, Tailwind 4, TanStack Query). All data access goes through the

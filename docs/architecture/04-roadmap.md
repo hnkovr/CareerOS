@@ -23,6 +23,8 @@ linking, Application Kanban (employment + freelance stages), contacts, follow-up
 pgvector semantic search, PWA service worker.
 
 ## P2 — Platform & Multiplatform
+**Pulled forward (done 2026-08-25, [ADR-011](../adr/011-platform-connectors.md)):** `modules/platform` with seven connectors — hh.ru (API), Upwork (API, conditional), LinkedIn (export importer), Wellfound / Indeed / getmatch / Toptal (paste) — for own profile, job search and application statuses; CLI/API/Justfile; capabilities matrix endpoint. Remaining P2 platform items: web Platforms page ([#20](https://github.com/hnkovr/CareerOS/issues/20)), single job-URL capture and email fallbacks ([#21](https://github.com/hnkovr/CareerOS/issues/21)).
+
 Per-platform workflows (LinkedIn/Wellfound/Upwork/Toptal update checklists from audit findings),
 LinkedIn export importer, Upwork API spike (if approved), drift detection across snapshots & vs
 vault, browser extension + iOS Share Sheet capture (user-initiated), Expo iOS app (triage, inbox,

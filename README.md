@@ -53,6 +53,7 @@ produces prompt bundles for external chats.
 | `make validate-career` | validate the vault |
 | `make generate-cv VARIANT=remote-us` | generate a CV variant |
 | `make seed` · `make migrate` · `make openapi` | db + contracts |
+| `make platform-sync PLATFORM=hh` · `just platform-*` | platform connectors: own profile, job search, application statuses ([docs/platform](docs/platform/README.md)) |
 
 Granular recipes: `just --list`.
 
@@ -83,3 +84,9 @@ docs/               architecture · ADRs · product · developer guide
 * No scraping, no stored platform passwords, no auto-apply, no auto-send.
 
 License: MIT.
+
+## Telegram bot
+
+Phone-first capture and triage: forward a job description to the bot, get it parsed, deduped and
+scored, and triage it inline. Owner-gated, webhook-based, deployed on Fly.
+See [`docs/developer-guide/telegram-bot.md`](docs/developer-guide/telegram-bot.md).

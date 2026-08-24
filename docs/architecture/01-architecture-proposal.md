@@ -67,7 +67,7 @@ through the other context's `service.py` — never through its ORM models.
 | 6 | **Inbox** (career inbox) | Gmail/IMAP ingestion, classification, linking to opportunity/company/contact, reply drafts | Postgres | P1 |
 | 7 | **Pipeline** (applications CRM) | Applications Kanban, freelance lead pipeline, interviews, contacts, companies, follow-ups, timeline | Postgres | P1 (Company/Contact entities exist in P0 as minimal tables because Opportunity references them) |
 | 8 | **Insights** (analytics & strategy) | Funnel analytics, market intelligence over observed stream, skills gap, portfolio planner, daily brief | Postgres (derived) | P3 |
-| — | **Platform** (integration layer) | Adapter interfaces + `Capabilities` matrix, `ManualCaptureAdapter`, `EmailAdapter`, `GmailAdapter`, later LinkedIn/Wellfound/Upwork/Toptal | — | interface + manual adapter P0 |
+| — | **Platform** (integration layer) | Connector contract + `Capabilities` matrix, `PlatformRegistry`, OAuth token store, sync orchestration; connectors `hh`, `upwork`, `linkedin`, `wellfound`, `indeed`, `getmatch`, `toptal` (own profile · job search · application statuses; api > export > paste) — [ADR-011](../adr/011-platform-connectors.md) | Postgres (connections without secrets, sync runs, application observations); token file | ✅ (2026-08-25) |
 | — | **Core** (cross-cutting) | config, DB session, migrations, auth, audit log, task runner, logging/telemetry, search | — | ✅ |
 
 Context map (arrows = "depends on the service interface of"):
@@ -86,7 +86,7 @@ Rules of the map:
 
 * **Vault has no inbound dependencies on Postgres contexts.** It can run with no database (CLI: validate, render).
 * **AI depends on nothing domain-specific.** Callers pass it facts/prompts; it returns validated structured output + a run record. Domain "assistants" (CV assistant, Opportunity assistant) live in *their* context and compose AI.
-* **Platform is a port.** Domain contexts call `PlatformRegistry.get(platform).capabilities` and the adapter's read methods; adapters never call domain services.
+* **Platform is a port.** Domain contexts call `PlatformRegistry.get(platform).capabilities` and the adapter's read methods; adapters never call domain services (import-linter enforced). The one sanctioned exception is `platform/sync.py`, which orchestrates *connector → ProfileService / OpportunityService / application observations* ([ADR-011](../adr/011-platform-connectors.md)) — the edge *Platform(sync) → Profiles, Opportunities*.
 
 ---
 
