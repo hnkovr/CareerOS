@@ -1069,7 +1069,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Oauth Callback */
+        /**
+         * Oauth Callback
+         * @description Landing point of the provider redirect — the browser carries no bearer token, so the
+         *     single-use, TTL-bound ``state`` issued by ``/connect`` is the authentication here.
+         */
         get: operations["oauth_callback_api_platform_oauth__platform__callback_get"];
         put?: never;
         post?: never;
@@ -2017,6 +2021,12 @@ export interface components {
             auth: components["schemas"]["AuthKind"];
             /** Has Tokens */
             has_tokens: boolean;
+            /**
+             * Pinned
+             * @description tokens come from env, not the token file
+             * @default false
+             */
+            pinned: boolean;
             /** Account Id */
             account_id?: string | null;
             /** Account Label */
@@ -2467,6 +2477,18 @@ export interface components {
             received_at?: string | null;
             /** Notes */
             notes?: string | null;
+            /**
+             * External Id
+             * @description the source platform's own id (kept in raw_payload)
+             */
+            external_id?: string | null;
+            /**
+             * Raw Payload
+             * @description verbatim source payload; defaults to the structured fields
+             */
+            raw_payload?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** InterviewIn */
         InterviewIn: {
@@ -3375,6 +3397,8 @@ export interface components {
             preview?: {
                 [key: string]: unknown;
             }[];
+            /** Warnings */
+            warnings?: string[];
             /** Message */
             message?: string | null;
         };
@@ -3491,6 +3515,11 @@ export interface components {
             path: string;
             /** Exists */
             exists: boolean;
+            /**
+             * Read Only
+             * @default false
+             */
+            read_only: boolean;
             /** Is Repo */
             is_repo: boolean;
             /** Head Sha */
@@ -5833,7 +5862,7 @@ export interface operations {
         parameters: {
             query?: {
                 platform?: components["schemas"]["Platform"] | null;
-                status_filter?: components["schemas"]["ApplicationStatus"] | null;
+                status?: components["schemas"]["ApplicationStatus"] | null;
                 limit?: number;
             };
             header?: never;

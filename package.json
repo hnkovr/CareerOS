@@ -7,7 +7,9 @@
     "packages/api-client"
   ],
   "scripts": {
-    "generate": "uv run careeros export-openapi && openapi-typescript services/careeros/openapi.json -o packages/schemas/src/api.d.ts",
+    "generate": "npm run generate:schema && npm run generate:types",
+    "generate:schema": "uv run careeros export-openapi",
+    "generate:types": "openapi-typescript services/careeros/openapi.json -o packages/schemas/src/api.d.ts",
     "dev": "npm run -w apps/web dev",
     "build": "npm run -w apps/web build",
     "lint": "npm run -w apps/web lint",

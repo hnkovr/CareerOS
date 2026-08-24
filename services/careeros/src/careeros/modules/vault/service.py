@@ -37,6 +37,10 @@ class VaultInvalid(VaultError):
         super().__init__("; ".join(str(i) for i in issues[:5]))
 
 
+class VaultReadOnly(VaultError):
+    """Write attempted against a vault opened read-only (the bundled demo vault)."""
+
+
 class VaultConflict(VaultError):
     pass
 
@@ -55,6 +59,7 @@ class IssueOut(BaseModel):
 class VaultStatus(BaseModel):
     path: str
     exists: bool
+    read_only: bool = False  # true when reads fall back to the bundled demo vault
     is_repo: bool
     head_sha: str | None
     dirty: bool
@@ -107,10 +112,12 @@ class Vault:
         git_user_name: str = "CareerOS",
         git_user_email: str = "careeros@localhost",
         auto_push: bool = False,
+        read_only: bool = False,
     ) -> None:
         self.root = Path(root)
         self.git = GitRepo(self.root, user_name=git_user_name, user_email=git_user_email)
         self.auto_push = auto_push
+        self.read_only = read_only  # set for the bundled demo vault: reads yes, commits no
         self._lock = threading.Lock()
 
     # ------------------------------------------------------------------ read
@@ -140,6 +147,7 @@ class Vault:
         return VaultStatus(
             path=str(self.root),
             exists=self.root.exists(),
+            read_only=self.read_only,
             is_repo=self.git.is_repo(),
             head_sha=self.git.head_sha(),
             dirty=self.git.is_dirty() if self.git.is_repo() else False,
@@ -161,6 +169,11 @@ class Vault:
             return self._prepare(req)[0]
 
     def apply_change(self, req: ChangeRequest) -> ChangeResult:
+        if self.read_only:
+            raise VaultReadOnly(
+                f"{self.root} is the bundled demo vault and cannot be written to — create your "
+                "own with `just vault-init <path>` and point CAREEROS_VAULT_PATH at it"
+            )
         with self._lock:
             preview, rel_path, new_text = self._prepare(req)
             if not preview.ok:

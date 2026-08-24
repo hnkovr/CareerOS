@@ -26,7 +26,8 @@ Read first: `docs/architecture/01-architecture-proposal.md`, `docs/adr/README.md
 `config/` — env templates; `deploy/docker/`; `docs/`.
 
 ## Commands
-`make dev` · `make test` · `make lint` · `make validate-career` · `make generate-cv` · `make seed` — see `Justfile` for granular recipes.
+`make dev` · `make check` (gate: lint+test) · `make all` (whole local pipeline, ordered) · `make validate-career` · `make generate-cv` · `make seed` — `make help` lists every target, `Justfile` has the granular recipes.
+The vault default: `CAREEROS_VAULT_PATH` when initialised, else the bundled demo vault, opened **read-only** (`Vault.read_only` → `VaultReadOnly` on write).
 
 ## Conventions
 Commits: conventional (`feat(vault): …`, `career(experience): …` for vault data). Python: ruff + pyright strict-ish, pytest, loguru/structlog. TS: eslint, tsc, vitest. Each slice = code + tests + docs + commit.

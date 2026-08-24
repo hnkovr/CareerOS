@@ -45,6 +45,13 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [ ] Web Platforms page ([#20](https://github.com/hnkovr/CareerOS/issues/20)): capabilities, connections/connect, paste box, sync runs, application statuses
 - [ ] Follow-ups ([#21](https://github.com/hnkovr/CareerOS/issues/21)): Fly volume/redirect base if sync moves to Fly, single job-URL capture, email-based statuses via inbox, observations ↔ pipeline Application, live token tests, VERIFY LIVE Upwork fields, shared-parser improvements (relative dates, `now` propagation, schema fields)
 
+## Build pipeline
+- [x] `make all` — ordered 12-step local pipeline (green, exit 0); `make check` = gate only;
+  `make run` opens the web app instead of Finder; `clean` no longer deletes `generated/platform`
+  (OAuth tokens); `distclean` drops `.venv`/`node_modules`
+- [ ] `just build` — docker image build still unverified (carried over from P0.8); `make build` runs it
+- [ ] wire `make check` into CI (`.github/workflows`) so the gate is one command in both places
+
 ## Parked
 - `packages/ui` extraction (when Tauri lands)
 - Embedding model choice for P1 semantic search

@@ -37,6 +37,21 @@ e2e smoke (built web + real API + proxy) verified.
 - tracking: GitHub [#10](https://github.com/hnkovr/CareerOS/issues/10) epic (connectors #12–#18 closed; #19 docs, #20 web page, #21 follow-ups open) · Linear MY-26…MY-37
 - deploy: local-only for now — platform credentials are excluded from the Fly env push; see `docs/platform/README.md#deployment-notes`
 
+## Build pipeline — `make all` (2026-08-25)
+`make all` is now the whole local pipeline in dependency order and exits 0:
+env → infra → openapi → fmt → lint → test → migrate → seed → validate-career → generate-cv →
+platform-sync → bot-check. `make check` is the gate alone (lint + test, mutates nothing).
+Two blockers found and fixed while wiring it up:
+- `platform sync all` counted "not connected" as **failed** (hh's public job search needs query
+  text without a token), so a sweep on a fresh install exited 1. `sync_all` now reports
+  `NotConnected`/`CapabilityUnavailable` as **skipped** with the next step, and the CLI prints a
+  tally; only a real upstream failure exits non-zero.
+- The vault default had no fallback: `CAREEROS_VAULT_PATH=career/private` is an empty scaffold on
+  a fresh checkout, so `validate-career` and `generate-cv` failed even though README promised the
+  demo vault. `get_vault()` now falls back to `career/examples/demo` when the configured path has
+  no `vault.yaml`, and opens it **read-only** (`VaultReadOnly` → HTTP 403) so demo facts can never
+  be committed as the owner's. `VaultStatus.read_only` exposes it.
+
 ## Known quirks
 - Concurrent sessions sharing `careeros_test` make db-marked tests flaky; this lane runs its
   gates against `careeros_test_d1` (see developer guide); the platform lane uses `careeros_test_d2`.

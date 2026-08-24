@@ -21,6 +21,7 @@ from careeros.modules.vault.service import (
     VaultConflict,
     VaultError,
     VaultInvalid,
+    VaultReadOnly,
     VaultStatus,
     search_facts,
 )
@@ -79,6 +80,8 @@ async def preview_change(req: ChangeRequest, vault: VaultDep, _: CurrentUserDep)
 async def apply_change(req: ChangeRequest, vault: VaultDep, _: CurrentUserDep) -> ChangeResult:
     try:
         return await asyncio.to_thread(vault.apply_change, req)
+    except VaultReadOnly as exc:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, str(exc)) from exc
     except VaultConflict as exc:
         raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
     except VaultInvalid as exc:

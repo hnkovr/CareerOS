@@ -6,6 +6,13 @@ from pathlib import Path
 import pytest
 from httpx import AsyncClient
 
+from careeros.core.config import Settings
+from careeros.modules.vault.deps import (
+    demo_vault_path,
+    get_vault,
+    is_initialised,
+    reset_vault_cache,
+)
 from careeros.modules.vault.enums import ItemStatus
 from careeros.modules.vault.export import export_schemas
 from careeros.modules.vault.loader import load_vault
@@ -16,6 +23,7 @@ from careeros.modules.vault.service import (
     VaultConflict,
     VaultError,
     VaultInvalid,
+    VaultReadOnly,
     search_facts,
 )
 from careeros.modules.vault.validator import validate_vault
@@ -296,3 +304,37 @@ async def test_vault_api(client: AsyncClient) -> None:
     )
     assert r.status_code == 200
     assert r.json()["ok"] is True and "+" in r.json()["diff"]
+
+
+# ----------------------------------------------------------------------------- default resolution
+
+
+def test_uninitialised_vault_reads_the_demo_vault_read_only(settings: Settings, tmp_path) -> None:
+    """A fresh checkout points CAREEROS_VAULT_PATH at an empty scaffold; reads fall back."""
+    reset_vault_cache()
+    try:
+        scaffold = tmp_path / "private"
+        scaffold.mkdir()
+        (scaffold / "README.md").write_text("your vault goes here\n", encoding="utf-8")
+        assert not is_initialised(scaffold)
+        fresh = settings.model_copy(update={"vault_path": scaffold})
+
+        vault = get_vault(fresh)
+        assert vault.root == demo_vault_path(settings).resolve()
+        assert vault.read_only is True
+        assert vault.load().ok and vault.status().read_only is True
+
+        # …but the demo vault is never written to: demo facts must not pass as the owner's
+        with pytest.raises(VaultReadOnly):
+            vault.apply_change(ChangeRequest(collection="skills", data={"id": "x", "name": "X"}))
+
+        # an explicit --path is taken at face value, fallback or not
+        explicit = get_vault(fresh, path=scaffold)
+        assert explicit.root == scaffold.resolve() and explicit.read_only is False
+
+        # an initialised vault is used as configured
+        assert is_initialised(demo_vault_path(settings))
+        as_configured = settings.model_copy(update={"vault_path": demo_vault_path(settings)})
+        assert get_vault(as_configured).read_only is False
+    finally:
+        reset_vault_cache()

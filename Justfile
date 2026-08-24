@@ -140,9 +140,10 @@ db-reset:
 
 # ---------- contracts ----------
 
+# export the OpenAPI schema once, then regenerate the TS types from it
 openapi:
     uv run careeros export-openapi
-    if [ -d node_modules ]; then npm run generate; fi
+    if [ -d node_modules ]; then npm run generate:types; fi
 
 # ---------- e2e ----------
 

@@ -37,7 +37,9 @@ Smoke-test a running stack end to end: `just e2e` (API) or `just e2e http://loca
 Full stack in containers: `make up` (adds the web UI on http://localhost:3000).
 
 Point CareerOS at **your** private vault: set `CAREEROS_VAULT_PATH=/path/to/private-career-repo`
-(create one with `just vault-init /path`). `career/private/` is git-ignored and is the default.
+(create one with `just vault-init /path`). `career/private/` is git-ignored and is the default;
+until it is initialised, reads fall back to the bundled demo vault — **read-only**, so demo facts
+can never be committed as if they were yours.
 
 AI features need a key in `config/.env.secrets` (`CAREEROS_ANTHROPIC_API_KEY` or
 `CAREEROS_OPENAI_API_KEY` + `CAREEROS_OPENAI_BASE_URL` for any OpenAI-compatible endpoint).
@@ -50,12 +52,16 @@ produces prompt bundles for external chats.
 |---|---|
 | `make dev` | infra in docker, API + worker locally with reload |
 | `make test` / `make lint` / `make fmt` | quality gate (pytest · ruff · pyright · import-linter · eslint · tsc) |
+| `make check` | the gate only — lint + tests, mutates nothing (what CI runs) |
+| `make all` | the whole local pipeline in dependency order: env → infra → contracts → gate → db → CV artifacts → platform sync → bot check |
+| `make run` | full stack in docker, then open the web app |
 | `make validate-career` | validate the vault |
 | `make generate-cv VARIANT=remote-us` | generate a CV variant |
 | `make seed` · `make migrate` · `make openapi` | db + contracts |
 | `make platform-sync PLATFORM=hh` · `just platform-*` | platform connectors: own profile, job search, application statuses ([docs/platform](docs/platform/README.md)) |
+| `make clean` / `make distclean` | drop build artifacts / also drop `.venv` + `node_modules` |
 
-Granular recipes: `just --list`.
+Granular recipes: `just --list`. `make help` lists every target.
 
 ## Repository layout
 

@@ -8,6 +8,14 @@ uv run pre-commit install
 ```
 
 Run: `make dev` (API with reload on :8000 + worker). Tests: `make test`. Quality gate: `make lint`.
+`make check` runs the gate alone (lint + tests, mutates nothing); `make all` runs the whole
+local pipeline in dependency order — env → infra → openapi → fmt → lint → test → migrate →
+seed → validate-career → generate-cv → platform-sync → bot-check. `make help` lists every target.
+
+**Vault default:** the CLI and API read `CAREEROS_VAULT_PATH` when that directory carries a
+`vault.yaml`; otherwise they fall back to the bundled demo vault (`career/examples/demo`) and
+open it **read-only** — `apply_change()` raises `VaultReadOnly` (HTTP 403) so demo facts can
+never be committed as the owner's. `just vault-init <path>` creates a real one.
 
 **Concurrent agent sessions:** point each session's gates at its own database to avoid
 cross-run interference — `CAREEROS_TEST_DATABASE_URL=postgresql+asyncpg://careeros:careeros@localhost:5432/careeros_test_<lane> uv run pytest`
