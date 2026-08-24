@@ -27,6 +27,14 @@ unreachable. Tests that call a real AI provider are marked `@pytest.mark.ai` and
 6. Docs: update `docs/architecture/02-domain-model.md` if tables/enums changed; ADR for any
    boundary decision.
 
+## Web app
+
+`apps/web` (Next.js 15, App Router, Tailwind 4, TanStack Query). All data access goes through the
+generated client: `npm run generate` exports OpenAPI from FastAPI and regenerates
+`packages/schemas/src/api.d.ts`; `packages/api-client` wraps it with `openapi-fetch`. Never
+hand-write response types. Dev: `npm run dev` (rewrites `/api/*` to `API_INTERNAL_URL`, default
+`http://localhost:8000`). Gates: `npm run -w apps/web typecheck | lint | test | build`.
+
 ## Configuration
 
 All settings: `services/careeros/src/careeros/core/config.py` (`CAREEROS_*`). Templates in

@@ -1,21 +1,36 @@
 # Current status
 
-Updated: 2026-08-22
+Updated: 2026-08-24
 
-## Last completed
-1. `docs(architecture)` — proposal, domain model, capabilities matrix, roadmap, risks, ADR 001–010
-2. `feat(core)` P0.1 — uv monolith, FastAPI factory, settings, async DB, task-runner port, compose, CI, Make/Just
-3. `feat(vault)` P0.2 — Pydantic schema SoT → JSON Schema export, loader/validator (referential integrity),
-   git-backed preview/apply with conflict check, demo vault (synthetic persona), scaffold template, API + CLI, 24 tests
+## P0 "Career Core": complete (pending final hardening commit)
 
-## In progress
-- P0.3 CV engine (fact selection → provenance-guarded rewriting → RenderCV adapter → variants → comparison)
+| Slice | Commit | State |
+|---|---|---|
+| Architecture + ADR 001–010 | `docs(architecture)` | done |
+| P0.1 foundation (uv monolith, compose, CI) | `feat(core)` | done |
+| P0.2 vault (schema SoT, git-backed changes, demo vault) | `feat(vault)` | done |
+| P0.3 AI gateway (provider port, prompts, runs, Mode B/C) | `feat(ai)` | done |
+| P0.4 CV engine (selection → guarded rewrite → RenderCV) | `feat(cv)` | done |
+| P0.5 opportunities (parse, dedup, scoring, analysis) | `feat(opportunities)` | done |
+| P0.6 profiles (snapshots, audit engine, health) | `feat(profiles)` | done |
+| P0.7 web (dashboard, editor, triage, provenance viewer) | `feat(web)` | done |
+| P0.8 hardening (e2e smoke, docs, docker build) | in progress | — |
 
-## Next
-- P0.4 opportunities (ingest/parse/dedup/deterministic scoring)
-- P0.5 AI gateway (provider port, Anthropic + OpenAI-compatible, prompt registry, runs ledger, analysis, external bundles, dev packets)
-- P0.6 profiles (snapshots + audit), P0.7 web, P0.8 hardening
+Backend: 68 tests, ruff/pyright/import-linter clean. Web: tsc/eslint clean, vitest 5, prod build OK,
+e2e smoke (built web + real API + proxy) verified.
+
+## Next (P1 — Inbox & Pipeline)
+Gmail OAuth + incremental sync, classification, email→opportunity extraction, application Kanban,
+contacts, follow-ups, notifications, pgvector search. See `docs/architecture/04-roadmap.md`.
+
+## Known quirks
+- Demo vault lives inside the monorepo, so its `vault status` reports the monorepo git state
+  (`is_repo: true, dirty` reflects the outer repo). A real private vault at `CAREEROS_VAULT_PATH`
+  behaves as its own repo.
+- Web `next build` prerenders pages that call the API at request time only (client components) —
+  no API needed at build time.
 
 ## How to run
-`docker compose up -d postgres redis && uv sync --all-groups && just migrate && just seed && uv run careeros-api`
-Tests: `uv run pytest` · gate: `just lint`
+`make env && docker compose up -d postgres redis && uv sync --all-groups && just migrate && just seed`
+API: `uv run careeros-api` · web: `npm install && npm run dev` · all-in-docker: `make up`
+Gates: `uv run pytest` · `just lint` · `npm run -w apps/web test` · smoke: `scripts/e2e-smoke.sh`

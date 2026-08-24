@@ -91,6 +91,12 @@ openapi:
     uv run careeros export-openapi
     if [ -d node_modules ]; then npm run generate; fi
 
+# ---------- e2e ----------
+
+# smoke-test a running stack (default: local API :8000; pass URLs to override)
+e2e API="http://localhost:8000" WEB="":
+    scripts/e2e-smoke.sh {{API}} {{WEB}}
+
 # ---------- docker ----------
 
 build:

@@ -12,7 +12,7 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 
 - [x] P0.6 Profiles: snapshots (paste/structured capture), deterministic audit engine + optional AI findings, health scores, platform health endpoint
 - [x] P0.7 Web: dashboard, vault editor w/ diff, opportunities triage + detail, CV generate/compare + provenance viewer, profiles + audits, ⌘K palette
-- [ ] P0.8 Hardening: compose smoke e2e, contract tests, README walkthrough, seed
+- [x] P0.8 Hardening: e2e smoke script (12 checks green), README walkthrough, docs; ⏳ docker image build re-verify: `just build`
 
 ## Parked
 - `packages/ui` extraction (when Tauri lands)

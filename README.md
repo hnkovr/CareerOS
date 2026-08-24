@@ -29,7 +29,10 @@ just seed                      # single user + demo vault pointer
 just validate-career           # validates the demo vault at career/examples/demo
 just generate-cv general-core  # RenderCV → generated/cv/...
 uv run careeros-api            # http://localhost:8000/docs
+npm install && npm run dev     # web UI on http://localhost:3000
 ```
+
+Smoke-test a running stack end to end: `just e2e` (API) or `just e2e http://localhost:8000 http://localhost:3000`.
 
 Full stack in containers: `make up` (adds the web UI on http://localhost:3000).
 
