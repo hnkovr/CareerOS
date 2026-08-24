@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@theme {
+  --color-surface: #0b0f17;
+  --color-panel: #111827;
+  --color-panel-2: #1a2333;
+  --color-line: #263247;
+  --color-ink: #e5eaf3;
+  --color-ink-dim: #94a3b8;
+  --color-accent: #38bdf8;
+  --color-accent-2: #a78bfa;
+  --color-good: #34d399;
+  --color-warn: #fbbf24;
+  --color-bad: #f87171;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-surface text-ink antialiased;
+}
+
+.card {
+  @apply rounded-xl border border-line bg-panel p-4;
+}
+
+.btn {
+  @apply inline-flex items-center gap-1.5 rounded-lg border border-line bg-panel-2 px-3 py-1.5 text-sm font-medium text-ink transition-colors hover:border-accent/60 hover:text-accent disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+.btn-primary {
+  @apply border-accent/50 bg-accent/15 text-accent hover:bg-accent/25;
+}
+
+.input {
+  @apply w-full rounded-lg border border-line bg-panel-2 px-3 py-2 text-sm text-ink placeholder:text-ink-dim focus:border-accent focus:outline-none;
+}
+
+.label {
+  @apply mb-1 block text-xs font-semibold uppercase tracking-wide text-ink-dim;
+}
+
+pre.diff {
+  @apply overflow-x-auto rounded-lg border border-line bg-surface p-3 text-xs leading-5;
+}
+pre.diff .add { @apply text-good; }
+pre.diff .del { @apply text-bad; }
+pre.diff .hunk { @apply text-accent-2; }

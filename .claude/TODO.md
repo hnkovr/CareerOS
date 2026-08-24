@@ -11,7 +11,7 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] P0.5 Opportunities: ingest, parser (heuristic + optional AI), dedup, deterministic scoring, recommendation, AI analysis, compare, external prompt
 
 - [x] P0.6 Profiles: snapshots (paste/structured capture), deterministic audit engine + optional AI findings, health scores, platform health endpoint
-- [ ] P0.7 Web: dashboard, vault editor w/ diff, CV generate/compare, opportunities, prompts, snapshots/audit, ⌘K
+- [x] P0.7 Web: dashboard, vault editor w/ diff, opportunities triage + detail, CV generate/compare + provenance viewer, profiles + audits, ⌘K palette
 - [ ] P0.8 Hardening: compose smoke e2e, contract tests, README walkthrough, seed
 
 ## Parked

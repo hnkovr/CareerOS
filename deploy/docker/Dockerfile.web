@@ -1,11 +1,11 @@
 # Next.js web app (standalone output)
 FROM node:22-alpine AS deps
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/schemas/package.json ./packages/schemas/
 COPY packages/api-client/package.json ./packages/api-client/
-RUN npm ci --ignore-scripts
+RUN npm ci --ignore-scripts --no-audit --no-fund
 
 FROM node:22-alpine AS build
 WORKDIR /app

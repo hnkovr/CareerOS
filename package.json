@@ -1,0 +1,20 @@
+{
+  "name": "career-os",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "packages/schemas",
+    "packages/api-client"
+  ],
+  "scripts": {
+    "generate": "uv run careeros export-openapi && openapi-typescript services/careeros/openapi.json -o packages/schemas/src/api.d.ts",
+    "dev": "npm run -w apps/web dev",
+    "build": "npm run -w apps/web build",
+    "lint": "npm run -w apps/web lint",
+    "typecheck": "npm run -w apps/web typecheck",
+    "test": "npm run -w apps/web test"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0"
+  }
+}
