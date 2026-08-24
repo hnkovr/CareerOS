@@ -169,3 +169,29 @@ def test_settings_handle_and_token_var_are_consistent():
     assert deploy["handle"].startswith("@")
     assert deploy["deploy"]["targets"]["fly"]["bot"] == deploy["handle"]
     assert deploy["deploy"]["targets"]["fly"]["token_var"] == deploy["deploy"]["token_secret"]
+
+
+def test_platform_credentials_are_not_pushed_to_the_host(overlay):
+    """Platform sync is local-only, so the deployed app cannot use these.
+
+    The `CAREEROS_*` allow-list admits any new CAREEROS_-prefixed variable
+    automatically — including OAuth client secrets and refresh tokens. Shipping
+    credentials to a host that never uses them is exposure for nothing.
+    Re-admit only when platform sync actually runs there (GH #21).
+    """
+    exclude = overlay["env_push"]["exclude"]
+    for pattern in ("CAREEROS_HH_*", "CAREEROS_UPWORK_*", "CAREEROS_PLATFORM_*"):
+        assert pattern in exclude, f"{pattern} must not reach the platform"
+
+
+def test_exclude_patterns_actually_cover_the_declared_credential_settings(overlay):
+    """Guards against a settings rename silently escaping the exclusion."""
+    import fnmatch
+
+    config_py = (REPO_ROOT / "services/careeros/src/careeros/core/config.py").read_text()
+    creds = re.findall(r"^\s+((?:hh|upwork)_\w*(?:secret|token|client_id))\s*:", config_py, re.M)
+    assert creds, "no platform credential settings found — did config.py change shape?"
+    exclude = overlay["env_push"]["exclude"]
+    for field in creds:
+        var = f"CAREEROS_{field.upper()}"
+        assert any(fnmatch.fnmatch(var, pat) for pat in exclude), f"{var} would be pushed"

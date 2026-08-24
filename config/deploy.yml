@@ -18,3 +18,12 @@ env_push:
     # Injected by the platform itself (`fly mpg attach --variable-name`), so pushing
     # a local value would overwrite the real one with a localhost DSN.
     - CAREEROS_DATABASE_URL
+    # Platform-connector credentials. Sync is LOCAL-ONLY (the owner runs `just platform-*`
+    # on the workstation), so the deployed app never uses these — shipping OAuth client
+    # secrets and refresh tokens to a host that cannot use them is exposure for nothing.
+    # The allow-list above would otherwise admit them automatically, since they are all
+    # CAREEROS_-prefixed. Re-admit them only when platform sync actually runs on Fly,
+    # which also needs a volume for the token file (GH #21).
+    - "CAREEROS_HH_*"
+    - "CAREEROS_UPWORK_*"
+    - "CAREEROS_PLATFORM_*"
