@@ -1,0 +1,21 @@
+{
+  "id": "70011223",
+  "auth_type": "applicant",
+  "is_applicant": true,
+  "is_employer": false,
+  "is_admin": false,
+  "is_application": false,
+  "is_employer_integration": false,
+  "first_name": "Dana",
+  "last_name": "Kovalenko",
+  "middle_name": null,
+  "email": "dana.kovalenko@example.com",
+  "phone": null,
+  "counters": {
+    "new_resume_views": 3,
+    "unread_negotiations": 1,
+    "resumes_count": 2
+  },
+  "resumes_url": "https://api.hh.ru/resumes/mine",
+  "negotiations_url": "https://api.hh.ru/negotiations"
+}
