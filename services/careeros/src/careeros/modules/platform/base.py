@@ -142,7 +142,10 @@ class BaseConnector(ABC):
 
     # ---- auth / health
     def oauth_config(self, settings: Settings) -> OAuthConfig | None:
-        """OAuth2 endpoints for API platforms; ``None`` when the platform needs no tokens."""
+        """OAuth2 endpoints for API platforms; ``None`` when the platform needs no tokens.
+
+        API connectors raise ``NotConnected`` with a hint when client credentials are missing.
+        """
         return None
 
     async def whoami(self, ctx: ConnectorContext) -> AccountInfo:
@@ -176,7 +179,7 @@ class BaseConnector(ABC):
                 ),
             )
         )
-        if self.oauth_config(ctx.settings) is None and caps.auth != "none":
+        if caps.auth == "oauth2":
             creds = client_credentials(ctx.settings, self.platform)
             checks.append(
                 DoctorCheck(
