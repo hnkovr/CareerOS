@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schemas/channels.schema.json
+id: getmatch
+platform: getmatch
+name: getmatch
+limits: {headline_chars: 80, about_chars: 1500, bullets_per_role: 3, bullet_chars: 180, skills_max: 20}
+priorities: [stack, salary, remote, seniority, english_level, recent_projects]
+required_sections: [headline, skills, experience]
+style: {tone: professional, first_person: false, metrics_first: true, keyword_density: medium}
+default_visibility: true
+notes: Companies match on stack + salary + remote/relocation flags; English level is a filter.

@@ -20,7 +20,7 @@ from careeros.modules.profiles.audit import (
     category_scores,
     health_score,
 )
-from careeros.modules.profiles.enums import FindingResolution, Severity
+from careeros.modules.profiles.enums import PROFILE_PLATFORMS, FindingResolution, Severity
 from careeros.modules.profiles.models import AuditFinding, ProfileAudit, ProfileSnapshot
 from careeros.modules.profiles.schemas import (
     AuditOut,
@@ -234,7 +234,7 @@ class ProfileService:
     async def platform_health(self) -> list[PlatformHealth]:
         """Latest audited health per platform — the dashboard's profile card."""
         out: list[PlatformHealth] = []
-        for platform in (Platform.linkedin, Platform.wellfound, Platform.upwork, Platform.toptal):
+        for platform in PROFILE_PLATFORMS:
             snap = await self.session.scalar(
                 select(ProfileSnapshot)
                 .options(selectinload(ProfileSnapshot.audits).selectinload(ProfileAudit.findings))

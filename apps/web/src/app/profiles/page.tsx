@@ -7,7 +7,7 @@ import { api, unwrap, type AuditOut } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
 import { Badge, Card, Empty, ErrorBox, ScoreRing, severityTone, Spinner } from "@/components/ui";
 
-const PLATFORMS = ["linkedin", "wellfound", "upwork", "toptal"] as const;
+const PLATFORMS = ["linkedin", "wellfound", "upwork", "toptal", "hh", "indeed", "getmatch"] as const;
 
 function SnapshotForm({ onDone }: { onDone: () => void }) {
   const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]>("linkedin");

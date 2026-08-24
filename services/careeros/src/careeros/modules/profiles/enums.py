@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from enum import StrEnum
 
+from careeros.modules.vault.enums import Platform
+
 
 class CaptureMethod(StrEnum):
     api = "api"
@@ -42,3 +44,14 @@ class FindingResolution(StrEnum):
 
 
 SEVERITY_PENALTY = {Severity.critical: 30, Severity.high: 18, Severity.medium: 9, Severity.nice: 3}
+
+# Platforms that carry a public professional profile the audit engine knows how to check.
+PROFILE_PLATFORMS: tuple[Platform, ...] = (
+    Platform.linkedin,
+    Platform.wellfound,
+    Platform.upwork,
+    Platform.toptal,
+    Platform.hh,
+    Platform.indeed,
+    Platform.getmatch,
+)

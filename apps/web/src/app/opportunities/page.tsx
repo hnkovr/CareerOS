@@ -8,7 +8,7 @@ import { api, unwrap } from "@/lib/api";
 import { recommendationLabel, timeAgo, truncate } from "@/lib/format";
 import { Badge, Card, Empty, ErrorBox, ScoreRing, Spinner } from "@/components/ui";
 
-const SOURCES = ["manual", "linkedin", "wellfound", "upwork", "toptal", "recruiter", "email", "direct", "website", "url"] as const;
+const SOURCES = ["manual", "linkedin", "wellfound", "upwork", "toptal", "hh", "indeed", "getmatch", "recruiter", "email", "direct", "website", "url"] as const;
 
 function IngestForm({ onDone }: { onDone: (id: string) => void }) {
   const [text, setText] = useState("");

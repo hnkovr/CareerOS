@@ -1,0 +1,10 @@
+# yaml-language-server: $schema=../../schemas/channels.schema.json
+id: hh
+platform: hh
+name: hh.ru
+limits: {headline_chars: 100, about_chars: 3000, bullets_per_role: 4, bullet_chars: 200, skills_max: 30}
+priorities: [title_keywords, salary_expectation, key_skills, experience_relevance, about, schedule_remote]
+required_sections: [headline, about, experience, skills]
+style: {tone: professional, first_person: false, metrics_first: true, keyword_density: high}
+default_visibility: true
+notes: Recruiters search by resume title and key skills; salary expectation is filtered on, so keep it explicit.
