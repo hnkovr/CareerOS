@@ -62,6 +62,7 @@ PASSTHROUGH_EXTRA = (
 
 class Connector(BaseConnector):
     platform = Platform.hh
+    jobs_without_token = True  # GET /vacancies is public; resumes/negotiations need the token
     capabilities = Capabilities(
         platform=Platform.hh,
         profile=[SyncMethod.api, SyncMethod.paste],

@@ -109,6 +109,8 @@ class BaseConnector(ABC):
 
     platform: ClassVar[Platform]
     capabilities: ClassVar[Capabilities]
+    # True when the platform's job search is public (no user token needed, e.g. hh.ru).
+    jobs_without_token: ClassVar[bool] = False
 
     # ---- profile
     async def read_profile(self, ctx: ConnectorContext) -> ProfileRead:

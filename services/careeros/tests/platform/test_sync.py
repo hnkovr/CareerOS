@@ -262,3 +262,27 @@ def test_cli_parse_extra() -> None:
     }
     with pytest.raises(typer.BadParameter):
         parse_extra(["novalue"])
+
+
+class PublicJobs(FakeUpwork):
+    platform = Platform.hh
+    capabilities = FakeUpwork.capabilities.model_copy(update={"platform": Platform.hh})
+    jobs_without_token = True
+
+
+async def test_public_job_search_needs_no_token(settings: Settings) -> None:
+    svc = PlatformSyncService(
+        settings,
+        session=None,  # type: ignore[arg-type]
+        user_id=uuid.uuid4(),
+        registry=PlatformRegistry([PublicJobs()]),
+        store=MemoryTokenStore(),
+    )
+    assert svc.choose_method(Platform.hh, SyncKind.jobs, SyncRequest()) == SyncMethod.api
+    with pytest.raises(NotConnected):
+        svc.choose_method(Platform.hh, SyncKind.profile, SyncRequest())
+    res = await svc.sync(Platform.hh, SyncKind.jobs, SyncRequest(dry_run=True))
+    assert res.items_seen == 2 and res.method == SyncMethod.api
+    from careeros.modules.platform.registry import get_registry
+
+    assert get_registry().get("hh").jobs_without_token is True

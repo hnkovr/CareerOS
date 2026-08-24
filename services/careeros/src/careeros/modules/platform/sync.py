@@ -108,7 +108,10 @@ class PlatformSyncService:
             return SyncMethod.paste
         if req.file_path and SyncMethod.export in available:
             return SyncMethod.export
-        if SyncMethod.api in available and self.platform.tokens(platform) is not None:
+        if SyncMethod.api in available and (
+            self.platform.tokens(platform) is not None
+            or (kind == SyncKind.jobs and connector.jobs_without_token)
+        ):
             return SyncMethod.api
         if SyncMethod.api in available:
             raise NotConnected(platform)
@@ -152,7 +155,8 @@ class PlatformSyncService:
     ) -> ProfileRead | list[JobPosting] | list[ApplicationObservationIn]:
         async with build_http(self.settings, transport=self._transport) as http:
             ctx = self.platform.context(connector.platform, http)
-            if ctx.tokens is None:
+            public_search = kind == SyncKind.jobs and connector.jobs_without_token
+            if ctx.tokens is None and not public_search:
                 raise NotConnected(connector.platform)
             if kind == SyncKind.profile:
                 return await connector.read_profile(ctx)
@@ -312,7 +316,11 @@ class PlatformSyncService:
             caps = self.platform.connector(p).capabilities
             for kind in SyncKind:
                 available = caps.methods(kind)
-                if SyncMethod.api in available and self.platform.tokens(p) is not None:
+                connected = self.platform.tokens(p) is not None
+                public_jobs = (
+                    kind == SyncKind.jobs and self.platform.connector(p).jobs_without_token
+                )
+                if SyncMethod.api in available and (connected or public_jobs):
                     try:
                         results.append(
                             await self.sync(
