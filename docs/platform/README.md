@@ -15,7 +15,7 @@ that is available (`--api`, `--export PATH`, `--text-file FILE` force a method).
 
 | Platform | Own profile | Job search | Application statuses | Auth | Guide |
 |---|---|---|---|---|---|
-| hh.ru | API · paste | API · paste | API · paste | OAuth2 app at dev.hh.ru | [hh.md](hh.md) |
+| hh.ru | API · paste | API (search needs no token) · paste | API · paste | OAuth2 app at dev.hh.ru | [hh.md](hh.md) |
 | Upwork | API* · paste | API* · paste | API* · paste | OAuth2, *approved API key required | [upwork.md](upwork.md) |
 | LinkedIn | export · paste | export (`Saved Jobs.csv`) · paste | export (`Job Applications.csv`) · paste | none — "Download your data" archive | [linkedin.md](linkedin.md) |
 | Wellfound | paste | paste | paste | none | [wellfound.md](wellfound.md) |
