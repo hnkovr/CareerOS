@@ -37,6 +37,14 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
     [#9](https://github.com/hnkovr/CareerOS/issues/9) first deploy
   - BLOCKED on you: `CAREEROS_TG_OWNER_CHAT_ID` — message @careeros_hnkovr_bot once
 
+## P2 — Platform connectors ([GH #10](https://github.com/hnkovr/CareerOS/issues/10), [Linear MY-26](https://linear.app/my-1st/issue/MY-26), [ADR 013](../docs/adr/013-platform-connectors.md))
+- [x] core: contract/registry/matrix, token store + OAuth2, HTTP, tables, sync, API, CLI, just recipes ([#11](https://github.com/hnkovr/CareerOS/issues/11))
+- [x] hh.ru [#12](https://github.com/hnkovr/CareerOS/issues/12) · Upwork [#13](https://github.com/hnkovr/CareerOS/issues/13) · LinkedIn [#14](https://github.com/hnkovr/CareerOS/issues/14) · Wellfound [#15](https://github.com/hnkovr/CareerOS/issues/15) · Indeed [#16](https://github.com/hnkovr/CareerOS/issues/16) · getmatch [#17](https://github.com/hnkovr/CareerOS/issues/17) · Toptal [#18](https://github.com/hnkovr/CareerOS/issues/18)
+- [x] docs/agents/skill ([#19](https://github.com/hnkovr/CareerOS/issues/19)): ADR-013, matrix, `docs/platform/*`, `/careeros-platform-sync`, `careeros-platform-{ops,connector-dev}` agents
+- [ ] YOU: register OAuth apps — hh.ru (dev.hh.ru) and Upwork (API key approval) → `.env.secrets` → `just platform-connect hh|upwork`; download the LinkedIn archive
+- [ ] Web Platforms page ([#20](https://github.com/hnkovr/CareerOS/issues/20)): capabilities, connections/connect, paste box, sync runs, application statuses
+- [ ] Follow-ups ([#21](https://github.com/hnkovr/CareerOS/issues/21)): Fly volume/redirect base if sync moves to Fly, single job-URL capture, email-based statuses via inbox, observations ↔ pipeline Application, live token tests, VERIFY LIVE Upwork fields, shared-parser improvements (relative dates, `now` propagation, schema fields)
+
 ## Parked
 - `packages/ui` extraction (when Tauri lands)
 - Embedding model choice for P1 semantic search
