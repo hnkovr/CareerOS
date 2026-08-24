@@ -57,6 +57,20 @@ class Settings(BaseSettings):
     # model → (usd per 1M input tokens, usd per 1M output tokens); unknown models record cost=null
     ai_pricing: dict[str, tuple[float, float]] = Field(default_factory=dict)
 
+    # --- platform connectors (ADR-011): OAuth client credentials + optional env-pinned tokens ---
+    platform_token_file: Path = Path("generated/platform/tokens.json")
+    platform_oauth_redirect_base: str = "http://localhost:8000/api/platform/oauth"
+    platform_http_timeout_s: float = 20.0
+    platform_user_agent: str = "CareerOS/0.1 (careeros@localhost)"
+    hh_client_id: str | None = None
+    hh_client_secret: SecretStr | None = None
+    hh_access_token: SecretStr | None = None
+    hh_refresh_token: SecretStr | None = None
+    upwork_client_id: str | None = None
+    upwork_client_secret: SecretStr | None = None
+    upwork_access_token: SecretStr | None = None
+    upwork_refresh_token: SecretStr | None = None
+
     # --- tasks ---
     task_runner: Literal["inline", "arq"] = "arq"
 

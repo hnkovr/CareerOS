@@ -19,6 +19,9 @@ allowed-confusables = ["–", "—", "’", "“", "”", "≥", "≈", "·"]
 "**/seed.py" = ["T20"]
 "**/tests/**" = ["T20", "ASYNC"]
 "scripts/**" = ["T20"]
+# platform connectors parse Russian page text: Cyrillic literals are intentional
+"**/modules/platform/**" = ["RUF001", "RUF002", "RUF003"]
+"**/tests/platform/**" = ["RUF001", "RUF002", "RUF003"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["careeros"]
@@ -72,3 +75,16 @@ type = "forbidden"
 source_modules = ["careeros.api", "careeros.core", "careeros.modules.vault", "careeros.modules.ai", "careeros.modules.cv.service", "careeros.modules.cv.builder"]
 forbidden_modules = ["rendercv"]
 allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "platform connectors are pure I/O + mapping (ADR-004): no DB, no domain services"
+type = "forbidden"
+source_modules = ["careeros.modules.platform.connectors"]
+forbidden_modules = [
+  "sqlalchemy", "careeros.core.db", "careeros.core.models",
+  "careeros.modules.platform.service", "careeros.modules.platform.sync", "careeros.modules.platform.models",
+  "careeros.modules.platform.router", "careeros.modules.platform.cli",
+  "careeros.modules.profiles.service", "careeros.modules.profiles.models",
+  "careeros.modules.opportunities.service", "careeros.modules.opportunities.models",
+  "careeros.modules.ai", "careeros.modules.cv",
+]
