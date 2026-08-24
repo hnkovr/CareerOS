@@ -62,6 +62,18 @@ def _print_result(res: SyncResult, *, as_json: bool) -> None:
         print(f"  · {title}  {extra}  {status_txt}".rstrip())
 
 
+def parse_extra(pairs: list[str] | None) -> dict[str, Any]:
+    """``["area=1", "full=true"]`` → ``{"area": "1", "full": True}`` (true/false become bools)."""
+    out: dict[str, Any] = {}
+    for pair in pairs or []:
+        key, sep, value = pair.partition("=")
+        if not sep or not key.strip():
+            raise typer.BadParameter(f"--extra expects key=value, got {pair!r}")
+        low = value.strip().lower()
+        out[key.strip()] = True if low == "true" else False if low == "false" else value.strip()
+    return out
+
+
 def _text_from(text_file: Path | None) -> str | None:
     if text_file is None:
         return None
@@ -249,9 +261,14 @@ def jobs(
     use_ai: bool = typer.Option(False, "--use-ai"),
     dry_run: bool = typer.Option(False, "--dry-run"),
     as_json: bool = typer.Option(False, "--json"),
+    extra: list[str] | None = typer.Option(
+        None, "--extra", help="platform-specific knob key=value (hh: area=1; upwork: title=…)"
+    ),
 ) -> None:
     """Search jobs → opportunities (dedup + scoring happen in the opportunities module)."""
-    q = JobQuery(text=query, location=location, remote=remote, limit=limit)
+    q = JobQuery(
+        text=query, location=location, remote=remote, limit=limit, extra=parse_extra(extra)
+    )
     _sync_cmd(
         platform,
         SyncKind.jobs,

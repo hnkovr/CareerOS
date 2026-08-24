@@ -247,3 +247,18 @@ async def test_platform_api_smoke(db_client: AsyncClient) -> None:
     assert r.status_code == 200 and r.json()[0]["kind"] == "applications"
     r = await db_client.get("/api/platform/ats/doctor")
     assert r.status_code == 404
+
+
+def test_cli_parse_extra() -> None:
+    import typer
+
+    from careeros.modules.platform.cli import parse_extra
+
+    assert parse_extra(None) == {}
+    assert parse_extra(["area=1", "full=true", "title=data engineer"]) == {
+        "area": "1",
+        "full": True,
+        "title": "data engineer",
+    }
+    with pytest.raises(typer.BadParameter):
+        parse_extra(["novalue"])
