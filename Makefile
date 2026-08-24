@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 
-.PHONY: help env dev up down test lint fmt typecheck validate-career generate-cv seed migrate openapi clean bot-check bot-webhook deploy deploy-dry
+.PHONY: help env dev up down test lint fmt typecheck validate-career generate-cv seed migrate openapi platform-sync clean bot-check bot-webhook deploy deploy-dry
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -42,6 +42,9 @@ seed: ## Seed the database with the single user and demo data
 
 migrate: ## Apply alembic migrations
 	@just migrate
+
+platform-sync: ## Sync profile/jobs/applications from connected platforms: make platform-sync PLATFORM=hh
+	@just platform-sync $(or $(PLATFORM),all)
 
 openapi: ## Export OpenAPI + regenerate TS client/types
 	@just openapi

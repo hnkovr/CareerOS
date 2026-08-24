@@ -68,6 +68,59 @@ generate-cv VARIANT="general-core" *ARGS:
 export-schemas:
     uv run careeros vault export-schemas
 
+# ---------- platform connectors (ADR-011) ----------
+
+# shared helper: every platform recipe goes through the CLI
+_platform *ARGS:
+    uv run careeros platform {{ARGS}}
+
+platform-capabilities:
+    @just _platform capabilities
+
+platform-connections:
+    @just _platform connections
+
+# OAuth connect (hh, upwork): prints the authorize URL, then asks for the code
+platform-connect PLATFORM:
+    @just _platform connect {{PLATFORM}}
+
+platform-doctor PLATFORM:
+    @just _platform doctor {{PLATFORM}}
+
+# sync every API-backed capability of the connected platforms (paste-only ones are listed as skipped)
+platform-sync PLATFORM="all" *ARGS:
+    @just _platform sync {{PLATFORM}} {{ARGS}}
+
+platform-sync-dry PLATFORM="all" *ARGS:
+    @just _platform sync {{PLATFORM}} --dry-run {{ARGS}}
+
+# own profile → snapshot: just platform-profile hh --api | linkedin --export ~/Downloads/Basic_LinkedInDataExport.zip | toptal --text-file paste.txt
+platform-profile PLATFORM *ARGS:
+    @just _platform profile {{PLATFORM}} {{ARGS}}
+
+platform-profile-dry PLATFORM *ARGS:
+    @just _platform profile {{PLATFORM}} --dry-run {{ARGS}}
+
+# job search → opportunities: just platform-jobs hh -q "data engineer" --remote | wellfound --text-file jobs.txt
+platform-jobs PLATFORM *ARGS:
+    @just _platform jobs {{PLATFORM}} {{ARGS}}
+
+platform-jobs-dry PLATFORM *ARGS:
+    @just _platform jobs {{PLATFORM}} --dry-run {{ARGS}}
+
+# application statuses → observations: just platform-applications hh --api | indeed --text-file applied.txt
+platform-applications PLATFORM *ARGS:
+    @just _platform applications {{PLATFORM}} {{ARGS}}
+
+platform-applications-dry PLATFORM *ARGS:
+    @just _platform applications {{PLATFORM}} --dry-run {{ARGS}}
+
+platform-status *ARGS:
+    @just _platform status {{ARGS}}
+
+test-platform *ARGS:
+    uv run pytest services/careeros/tests/platform {{ARGS}}
+
 # ---------- db ----------
 
 migrate:

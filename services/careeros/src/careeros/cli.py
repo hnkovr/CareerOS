@@ -47,6 +47,7 @@ def _register_subcommands() -> None:
         ("careeros.modules.opportunities.cli", "opportunities"),
         ("careeros.modules.ai.cli", "ai"),
         ("careeros.modules.profiles.cli", "profiles"),
+        ("careeros.modules.platform.cli", "platform"),
         ("careeros.core.seed", "seed"),
     ):
         try:
