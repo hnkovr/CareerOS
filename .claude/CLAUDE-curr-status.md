@@ -24,6 +24,7 @@ e2e smoke (built web + real API + proxy) verified.
 - P1.2 inbox (paste capture, rule+AI classification, linking, extraction, reply suggestions) — `cb5495e`
 - P1.5a unified search (FTS + optional pgvector semantic, /search UI) — this commit
 - parallel worktree: platform connectors (hh/upwork OAuth, sync runs) + Telegram bot surface (ADR-011)
+- ADR numbering (coordination, 2026-08-25): Telegram bot surface = **012**, platform connectors = **013** (`docs/adr/013-platform-connectors.md`); the platform-connectors session yields on collisions — please keep 012 for the bot.
 - remaining: P1.3 Gmail adapter (needs user's Google OAuth app; can reuse platform token store),
   P1.4 suggestion approval flow, P1.5b notifications + PWA
 
