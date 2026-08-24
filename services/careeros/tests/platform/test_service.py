@@ -150,3 +150,91 @@ async def test_sync_runs_and_observation_upsert(
     assert [r.job_title for r in invited_only] == ["Data Engineer"]
     runs = await svc.list_runs(platform=Platform.hh)
     assert runs[0].id == run.id and runs[0].items_created == 2
+
+
+async def test_env_pinned_tokens_are_reported_and_not_refreshed(
+    settings: Settings, session: AsyncSession, user_id: uuid.UUID
+) -> None:
+    pinned = settings.model_copy(
+        update={
+            "hh_client_id": "cid",
+            "hh_client_secret": SecretStr("sec"),
+            "hh_access_token": SecretStr("env-token"),
+        }
+    )
+    svc = PlatformService(
+        pinned,
+        session=session,
+        user_id=user_id,
+        registry=PlatformRegistry([FakeApi()]),
+        store=MemoryTokenStore(),
+    )
+    conn = await svc.get_connection(Platform.hh)
+    assert conn.status == ConnectionStatus.connected and conn.pinned and conn.has_tokens
+    async with httpx.AsyncClient(
+        transport=httpx.MockTransport(lambda r: httpx.Response(500))
+    ) as http:
+        with pytest.raises(PlatformError, match="pinned"):
+            await svc.refresh(Platform.hh, http=http)
+    gone = await svc.disconnect(Platform.hh)
+    assert gone.pinned and gone.has_tokens and gone.status == ConnectionStatus.connected
+    assert gone.last_error is not None and "CAREEROS_HH_ACCESS_TOKEN" in gone.last_error
+
+
+async def test_oauth_callback_survives_whoami_failure(
+    settings: Settings, session: AsyncSession, user_id: uuid.UUID
+) -> None:
+    class Flaky(FakeApi):
+        async def whoami(self, ctx: ConnectorContext) -> AccountInfo:
+            raise PlatformError("me endpoint down")
+
+    svc = PlatformService(
+        settings.model_copy(update={"hh_client_id": "cid", "hh_client_secret": SecretStr("sec")}),
+        session=session,
+        user_id=user_id,
+        registry=PlatformRegistry([Flaky()]),
+        store=MemoryTokenStore(),
+    )
+    start = await svc.oauth_start(Platform.hh)
+    handler = lambda r: httpx.Response(200, json={"access_token": "acc", "expires_in": 3600})  # noqa: E731
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+        conn = await svc.oauth_callback(Platform.hh, "code", start.state, http=http)
+    assert conn.status == ConnectionStatus.connected and conn.has_tokens
+    assert conn.last_error == "whoami: me endpoint down"  # identity best-effort, tokens kept
+    # the state is single-use
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http:
+        with pytest.raises(PlatformError):
+            await svc.oauth_callback(Platform.hh, "code", start.state, http=http)
+
+
+async def test_observation_pasted_then_confirmed_by_api_is_one_row(
+    settings: Settings, session: AsyncSession, user_id: uuid.UUID
+) -> None:
+    svc = _svc(settings, session, user_id)
+    pasted = ApplicationObservationIn(
+        platform=Platform.hh,
+        job_title="Platform Engineer",
+        company="Orbit Fintech",
+        status_raw="Отклик",
+        status=ApplicationStatus.applied,
+    )
+    assert await svc.upsert_observations(Platform.hh, [pasted]) == (1, 0, 0)
+    via_api = pasted.model_copy(
+        update={
+            "external_id": "n-42",
+            "status_raw": "Приглашение",
+            "status": ApplicationStatus.invited,
+        }
+    )
+    assert await svc.upsert_observations(Platform.hh, [via_api]) == (0, 1, 0)
+    rows = [
+        r
+        for r in await svc.list_observations(platform=Platform.hh)
+        if r.job_title == "Platform Engineer"
+    ]
+    assert len(rows) == 1 and rows[0].external_id == "n-42"
+    assert rows[0].status == ApplicationStatus.invited and rows[0].history[0]["status"] == "applied"
+    # a later paste (no id) of the same application still lands on the same row
+    assert await svc.upsert_observations(
+        Platform.hh, [via_api.model_copy(update={"external_id": None})]
+    ) == (0, 0, 1)

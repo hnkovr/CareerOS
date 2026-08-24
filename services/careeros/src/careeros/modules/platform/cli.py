@@ -9,6 +9,7 @@ import asyncio
 import json
 import sys
 import webbrowser
+from collections import Counter
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Any
@@ -321,8 +322,13 @@ def sync(
         return
     for r in results:
         _print_result(r, as_json=False)
-    failed = [r for r in results if r.status == SyncStatus.failed]
-    if failed:
+    tally = Counter(r.status for r in results)
+    print(
+        "— "
+        + ", ".join(f"{tally[s]} {s}" for s in SyncStatus if tally[s])
+        + f" ({len(results)} capabilities)"
+    )
+    if tally[SyncStatus.failed]:
         raise typer.Exit(1)
 
 

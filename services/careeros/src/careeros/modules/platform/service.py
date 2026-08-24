@@ -5,13 +5,12 @@ No domain services are called here; ``sync.py`` composes this with profiles/oppo
 
 from __future__ import annotations
 
-import time
 import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 import httpx
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from careeros.core.config import Settings
@@ -56,8 +55,7 @@ from careeros.modules.vault.enums import Platform
 
 log = get_logger(__name__)
 
-OAUTH_STATE_TTL_S = 600
-_oauth_states: dict[str, tuple[Platform, float]] = {}
+OAUTH_STATE_TTL_S = 600  # the pending state is kept in platform_connection.meta (survives restarts)
 
 OpportunityResolver = Callable[[str], Awaitable[uuid.UUID | None]]
 
@@ -151,14 +149,20 @@ class PlatformService:
         tokens = self.tokens(connector.platform)
         status = ConnectionStatus(row.status) if row else ConnectionStatus.disconnected
         if tokens is not None and status == ConnectionStatus.disconnected:
-            status = ConnectionStatus.connected  # env-pinned tokens without a callback
-        if tokens is not None and tokens.is_expired() and tokens.refresh_token is None:
+            # tokens present (env-pinned or from the token file) without a callback
+            status = ConnectionStatus.connected
+        if (
+            tokens is not None
+            and tokens.is_expired()
+            and (tokens.refresh_token is None or tokens.pinned)
+        ):
             status = ConnectionStatus.needs_reauth
         return ConnectionOut(
             platform=connector.platform,
             status=status,
             auth=connector.capabilities.auth,
             has_tokens=tokens is not None,
+            pinned=tokens is not None and tokens.pinned,
             account_id=row.account_id if row else None,
             account_label=row.account_label if row else None,
             scopes=list(row.scopes or []) if row else [],
@@ -178,11 +182,10 @@ class PlatformService:
     async def oauth_start(self, platform: Platform) -> OAuthStartOut:
         cfg = self._oauth_config(platform)
         state = oauth.new_state()
-        now = time.monotonic()
-        for key, (_, ts) in list(_oauth_states.items()):
-            if now - ts > OAUTH_STATE_TTL_S:
-                _oauth_states.pop(key, None)
-        _oauth_states[state] = (platform, now)
+        row = await self._connection_row(platform)
+        meta = dict(row.meta or {}) if row else {}
+        meta["oauth_pending"] = {"state": state, "issued_at": _utcnow().isoformat()}
+        await self.upsert_connection(platform, meta=meta)
         return OAuthStartOut(
             platform=platform,
             authorize_url=oauth.authorize_url(cfg, state),
@@ -193,9 +196,21 @@ class PlatformService:
     async def oauth_callback(
         self, platform: Platform, code: str, state: str, *, http: httpx.AsyncClient
     ) -> ConnectionOut:
-        entry = _oauth_states.pop(state, None)
-        if entry is None or entry[0] != platform:
+        row = await self._connection_row(platform)
+        pending = dict((row.meta or {}).get("oauth_pending") or {}) if row else {}
+        issued = pending.get("issued_at")
+        fresh = False
+        if issued:
+            try:
+                age = (_utcnow() - datetime.fromisoformat(issued)).total_seconds()
+                fresh = age <= OAUTH_STATE_TTL_S
+            except ValueError:
+                fresh = False
+        if not pending or pending.get("state") != state or not fresh:
             raise PlatformError("unknown or expired OAuth state — start the connect flow again")
+        meta = dict(row.meta or {}) if row else {}
+        meta.pop("oauth_pending", None)
+        await self.upsert_connection(platform, meta=meta)
         cfg = self._oauth_config(platform)
         tokens = await oauth.exchange_code(http, platform, cfg, code)
         self.store.save(platform, tokens)
@@ -205,6 +220,11 @@ class PlatformService:
         tokens = self.tokens(platform)
         if tokens is None:
             raise NotConnected(platform)
+        if tokens.pinned:
+            raise PlatformError(
+                f"{platform}: token is pinned via CAREEROS_{str(platform).upper()}_ACCESS_TOKEN — "
+                "update the variable instead of refreshing"
+            )
         cfg = self._oauth_config(platform)
         fresh = await oauth.refresh_tokens(http, platform, cfg, tokens)
         self.store.save(platform, fresh)
@@ -212,7 +232,7 @@ class PlatformService:
 
     async def _after_tokens(self, platform: Platform, http: httpx.AsyncClient) -> ConnectionOut:
         connector = self.connector(platform)
-        tokens = self.tokens(platform)
+        tokens = self.store.load(platform) or self.tokens(platform)
         fields: dict[str, object] = {
             "status": str(ConnectionStatus.connected),
             "token_expires_at": tokens.expires_at if tokens else None,
@@ -238,11 +258,20 @@ class PlatformService:
 
     async def disconnect(self, platform: Platform) -> ConnectionOut:
         self.store.delete(platform)
+        remaining = self.tokens(platform)
+        error = None
+        if remaining is not None and remaining.pinned:
+            error = (
+                f"still connected: token pinned via CAREEROS_{str(platform).upper()}_ACCESS_TOKEN "
+                "— unset the variable to disconnect"
+            )
+            log.warning("platform.disconnect_pinned", platform=str(platform))
         row = await self.upsert_connection(
             platform,
             status=str(ConnectionStatus.disconnected),
             token_expires_at=None,
             scopes=[],
+            last_error=error,
         )
         return self._connection_out(self.connector(platform), row)
 
@@ -263,7 +292,7 @@ class PlatformService:
             started_at=_utcnow(),
         )
         self.session.add(run)
-        await self.session.flush()
+        await self.session.commit()  # survives a rollback of the persist step that follows
         return run
 
     async def finish_run(
@@ -362,6 +391,8 @@ class PlatformService:
                 )
                 created += 1
                 continue
+            if item.external_id and not row.external_id:
+                row.external_id = item.external_id  # paste row later confirmed by the API
             changed = (
                 row.status != str(item.status)
                 or row.status_raw != item.status_raw[:200]
@@ -403,15 +434,29 @@ class PlatformService:
     async def _find_observation(
         self, platform: Platform, item: ApplicationObservationIn
     ) -> ApplicationObservation | None:
+        """Match by the platform's id when present, else by content hash — either way the same
+        application pasted earlier (no id) and read via the API later (with id) is one row."""
         stmt = select(ApplicationObservation).where(
             ApplicationObservation.user_id == self.user_id,
             ApplicationObservation.platform == str(platform),
         )
+        content_hash = item.content_hash()
         if item.external_id:
-            stmt = stmt.where(ApplicationObservation.external_id == item.external_id)
+            stmt = stmt.where(
+                or_(
+                    ApplicationObservation.external_id == item.external_id,
+                    ApplicationObservation.content_hash == content_hash,
+                )
+            ).order_by(
+                # prefer the exact id match over a hash match
+                (ApplicationObservation.external_id == item.external_id).desc(),
+                ApplicationObservation.created_at,
+            )
         else:
-            stmt = stmt.where(ApplicationObservation.content_hash == item.content_hash())
-        return await self.session.scalar(stmt.order_by(ApplicationObservation.created_at).limit(1))
+            stmt = stmt.where(ApplicationObservation.content_hash == content_hash).order_by(
+                ApplicationObservation.created_at
+            )
+        return await self.session.scalar(stmt.limit(1))
 
     async def list_observations(
         self,

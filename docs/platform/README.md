@@ -49,13 +49,21 @@ Paste inputs: open the page on the platform, select all, copy, save as a `.txt` 
 stdin with `--text-file -`). Each guide says exactly which page to copy. Parsers never invent
 values — anything they cannot read stays empty, and the raw text is kept on the record.
 
+**Sweep semantics.** `platform sync all` walks every capability of every platform and ends with a
+tally. A capability that needs something from you — connect first, paste a page, pass a query —
+is reported `SKIPPED` with the exact next step. `FAILED` means the platform was actually reached
+and something went wrong. Only `FAILED` makes the command exit non-zero, so a sweep on a fresh
+install (nothing connected yet) is clean and safe to put in a pipeline such as `make all`.
+
 ## Deployment notes (read before shipping the platform layer to Fly/containers)
 
 * **Tokens are a file.** `CAREEROS_PLATFORM_TOKEN_FILE` defaults to `generated/platform/tokens.json`
   — on an ephemeral filesystem (Fly without a volume) it is lost on every redeploy and hh.ru/Upwork
   must be re-authorised. Options: mount a volume and point the variable at it (e.g.
   `/data/platform/tokens.json`), pin tokens via `CAREEROS_<PLATFORM>_ACCESS_TOKEN` /
-  `_REFRESH_TOKEN` secrets, or keep platform sync local-only (the default today). Tracked in
+  `_REFRESH_TOKEN` secrets (shown as `pinned` by `careeros platform connections`; pinned tokens are
+  never refreshed or deleted — `disconnect` tells you to unset the variable), or keep platform sync
+  local-only (the default today). Tracked in
   [#21](https://github.com/hnkovr/CareerOS/issues/21).
 * **Redirect URI must be public.** `CAREEROS_PLATFORM_OAUTH_REDIRECT_BASE` defaults to
   `http://localhost:8000/api/platform/oauth`; on a deployed instance set it to the public base URL

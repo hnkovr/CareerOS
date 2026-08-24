@@ -4,10 +4,10 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from careeros.core.auth import CurrentUser, CurrentUserDep
+from careeros.core.auth import SINGLE_USER_ID, CurrentUser, CurrentUserDep
 from careeros.core.db import get_session
 from careeros.modules.ai.provider import AIError
 from careeros.modules.opportunities.service import OpportunityError
@@ -96,9 +96,12 @@ async def oauth_callback(
     code: str,
     state: str,
     request: Request,
-    user: CurrentUserDep,
     session: SessionDep,
 ) -> ConnectionOut:
+    """Landing point of the provider redirect — the browser carries no bearer token, so the
+    single-use, TTL-bound ``state`` issued by ``/connect`` is the authentication here."""
+    settings = request.app.state.settings
+    user = CurrentUser(id=SINGLE_USER_ID, email=settings.user_email)
     svc = _svc(request, user, session)
     try:
         async with build_http(svc.settings) as http:
@@ -208,7 +211,7 @@ async def applications(
     user: CurrentUserDep,
     session: SessionDep,
     platform: Platform | None = None,
-    status_filter: Annotated[ApplicationStatus | None, "status"] = None,
+    status_filter: Annotated[ApplicationStatus | None, Query(alias="status")] = None,
     limit: int = 200,
 ) -> list[ApplicationObservationOut]:
     return await _svc(request, user, session).platform.list_observations(

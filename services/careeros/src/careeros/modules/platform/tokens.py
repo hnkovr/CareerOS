@@ -9,7 +9,7 @@ import json
 import os
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 from pydantic import BaseModel, Field, SecretStr
 
@@ -31,6 +31,9 @@ class OAuthTokens(BaseModel):
     expires_at: datetime | None = None
     scope: str | None = None
     obtained_at: datetime = Field(default_factory=_utcnow)
+    source: Literal["store", "env"] = Field(
+        default="store", description="env = pinned via CAREEROS_<PLATFORM>_ACCESS_TOKEN"
+    )
 
     def is_expired(self, now: datetime | None = None, skew_s: int = 60) -> bool:
         if self.expires_at is None:
@@ -38,8 +41,13 @@ class OAuthTokens(BaseModel):
         now = now or _utcnow()
         return (self.expires_at - now).total_seconds() <= skew_s
 
+    @property
+    def pinned(self) -> bool:
+        return self.source == "env"
+
     def redacted(self) -> dict[str, Any]:
         return {
+            "source": self.source,
             "access_token": "***",
             "refresh_token": "***" if self.refresh_token else None,
             "token_type": self.token_type,
@@ -140,7 +148,7 @@ def env_tokens(settings: Settings, platform: Platform) -> OAuthTokens | None:
     if access is None or not access.get_secret_value():
         return None
     refresh: SecretStr | None = getattr(settings, f"{platform}_refresh_token", None)
-    return OAuthTokens(access_token=access, refresh_token=refresh or None)
+    return OAuthTokens(access_token=access, refresh_token=refresh or None, source="env")
 
 
 def client_credentials(settings: Settings, platform: Platform) -> tuple[str, SecretStr] | None:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -48,6 +49,16 @@ class OpportunityError(Exception):
     pass
 
 
+def _raw_payload(req: IngestRequest) -> dict[str, Any] | None:
+    """Verbatim source payload when the caller has one, else the structured fields."""
+    payload: dict[str, Any] | None = req.raw_payload
+    if payload is None and req.structured is not None:
+        payload = req.structured.model_dump(mode="json")
+    if req.external_id:
+        payload = {**(payload or {}), "external_id": req.external_id}
+    return payload
+
+
 class OpportunityNotFound(OpportunityError):
     pass
 
@@ -85,7 +96,7 @@ class OpportunityService:
             source=str(req.source),
             url=req.url,
             raw_text=raw_text,
-            raw_payload=req.structured.model_dump(mode="json") if req.structured else None,
+            raw_payload=_raw_payload(req),
             content_hash=hashlib.sha256(raw_text.encode()).hexdigest(),
             capture_method="structured"
             if req.structured

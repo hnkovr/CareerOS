@@ -42,8 +42,12 @@ def parse_token_response(platform: Platform, data: dict[str, Any]) -> OAuthToken
         raise UpstreamError(platform, None, "token response without access_token")
     expires_at: datetime | None = None
     expires_in = data.get("expires_in")
-    if isinstance(expires_in, int | float) and expires_in > 0:
-        expires_at = datetime.now(UTC) + timedelta(seconds=float(expires_in))
+    try:
+        seconds = float(expires_in) if expires_in is not None else 0.0
+    except (TypeError, ValueError):
+        seconds = 0.0
+    if seconds > 0:
+        expires_at = datetime.now(UTC) + timedelta(seconds=seconds)
     return OAuthTokens(
         access_token=access,
         refresh_token=data.get("refresh_token") or None,

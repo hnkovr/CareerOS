@@ -53,6 +53,31 @@ _BLOCK_TAG = re.compile(r"</?(?:p|div|br|li|ul|ol|h\d|tr|table)\b[^>]*>", re.IGN
 _WS = re.compile(r"[ \t ]+")
 
 
+# Fields of GET /resumes/{id} that identify or contact the person; never persisted or echoed
+# (mirrors the LinkedIn export importer's PII policy).
+RESUME_PII_KEYS: frozenset[str] = frozenset(
+    {
+        "contact",
+        "birth_date",
+        "age",
+        "gender",
+        "first_name",
+        "last_name",
+        "middle_name",
+        "photo",
+        "citizenship",
+        "work_ticket",
+        "site",
+        "hidden_fields",
+    }
+)
+
+
+def public_resume(resume: dict[str, Any]) -> dict[str, Any]:
+    """The resume payload without personal identifiers (kept fields drive the audit)."""
+    return {k: v for k, v in resume.items() if k not in RESUME_PII_KEYS}
+
+
 def to_iso_currency(code: Any) -> str | None:
     if not isinstance(code, str) or not code.strip():
         return None
@@ -252,7 +277,7 @@ def resume_to_profile(
         skills=skills,
         rates=rates,
         preferences=preferences,
-        raw_payload=resume,
+        raw_payload=public_resume(resume),
     )
 
 

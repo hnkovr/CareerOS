@@ -195,3 +195,21 @@ async def test_request_json_error_mapping() -> None:
             )
             is None
         )
+
+
+def test_env_tokens_are_marked_pinned_and_store_tokens_are_not(tmp_path: Path) -> None:
+    from careeros.modules.platform.oauth import parse_token_response
+
+    env = env_tokens(Settings(hh_access_token="e"), Platform.hh)  # type: ignore[arg-type]
+    assert env is not None and env.pinned and env.redacted()["source"] == "env"
+    store = FileTokenStore(tmp_path / "t.json")
+    store.save(Platform.hh, OAuthTokens(access_token="f"))  # type: ignore[arg-type]
+    loaded = store.load(Platform.hh)
+    assert loaded is not None and not loaded.pinned
+    # providers that return expires_in as a string still get an expiry
+    tokens = parse_token_response(Platform.hh, {"access_token": "a", "expires_in": "3600"})
+    assert tokens.expires_at is not None
+    assert (
+        parse_token_response(Platform.hh, {"access_token": "a", "expires_in": "n/a"}).expires_at
+        is None
+    )

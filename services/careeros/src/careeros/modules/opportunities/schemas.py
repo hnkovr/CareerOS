@@ -88,6 +88,12 @@ class IngestRequest(BaseModel):
     provider: str | None = None
     received_at: datetime | None = None
     notes: str | None = None
+    external_id: str | None = Field(
+        default=None, description="the source platform's own id (kept in raw_payload)"
+    )
+    raw_payload: dict[str, Any] | None = Field(
+        default=None, description="verbatim source payload; defaults to the structured fields"
+    )
 
 
 class DimensionScore(BaseModel):

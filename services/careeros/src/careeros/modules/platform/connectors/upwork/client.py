@@ -162,6 +162,7 @@ class UpworkClient:
                     nodes.setdefault(str(node.get("id") or id(node)), node)
             except UpstreamError as exc:
                 failures.append(exc)
+                self.ctx.warnings.append(f"proposals status {status}: {exc.detail}")
                 log.warning(
                     "platform.upwork_proposals_status_failed", status=status, detail=exc.detail
                 )

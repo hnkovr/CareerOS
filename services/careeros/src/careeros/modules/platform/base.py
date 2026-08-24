@@ -81,6 +81,9 @@ class ConnectorContext:
     http: httpx.AsyncClient
     tokens: OAuthTokens | None = None
     now: datetime = field(default_factory=lambda: datetime.now(UTC))
+    # Connectors append non-fatal problems here (e.g. one of several API pages failed); the sync
+    # reports the run as ``partial`` and stores them — nothing is silently dropped.
+    warnings: list[str] = field(default_factory=list)
 
 
 # ------------------------------------------------------------------------------ contract

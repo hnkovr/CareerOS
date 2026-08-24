@@ -24,6 +24,7 @@ from careeros.modules.opportunities.service import OpportunityError, Opportunity
 from careeros.modules.platform.base import (
     BaseConnector,
     CapabilityUnavailable,
+    ConnectorContext,
     NotConnected,
     ParseError,
     PlatformError,
@@ -41,7 +42,7 @@ from careeros.modules.platform.schemas import (
     SyncResult,
 )
 from careeros.modules.platform.service import PlatformService
-from careeros.modules.platform.tokens import TokenStore
+from careeros.modules.platform.tokens import OAuthTokens, TokenStore
 from careeros.modules.profiles.service import ProfileService
 from careeros.modules.vault.deps import get_vault
 from careeros.modules.vault.enums import Platform
@@ -104,9 +105,13 @@ class PlatformSyncService:
             if req.method not in available:
                 raise CapabilityUnavailable(platform, kind, req.method, available)
             return req.method
-        if req.text and SyncMethod.paste in available:
+        if req.text:
+            if SyncMethod.paste not in available:
+                raise CapabilityUnavailable(platform, kind, SyncMethod.paste, available)
             return SyncMethod.paste
-        if req.file_path and SyncMethod.export in available:
+        if req.file_path:
+            if SyncMethod.export not in available:
+                raise CapabilityUnavailable(platform, kind, SyncMethod.export, available)
             return SyncMethod.export
         if SyncMethod.api in available and (
             self.platform.tokens(platform) is not None
@@ -152,25 +157,52 @@ class PlatformSyncService:
 
     async def run_api(
         self, connector: BaseConnector, kind: SyncKind, *, query: JobQuery | None
-    ) -> ProfileRead | list[JobPosting] | list[ApplicationObservationIn]:
+    ) -> tuple[ProfileRead | list[JobPosting] | list[ApplicationObservationIn], list[str]]:
+        """Run the API method; refresh an expired or rejected token once when refreshable."""
+        platform = connector.platform
         async with build_http(self.settings, transport=self._transport) as http:
-            ctx = self.platform.context(connector.platform, http)
+            ctx = self.platform.context(platform, http)
             public_search = kind == SyncKind.jobs and connector.jobs_without_token
             if ctx.tokens is None and not public_search:
-                raise NotConnected(connector.platform)
-            if kind == SyncKind.profile:
-                return await connector.read_profile(ctx)
-            if kind == SyncKind.jobs:
-                return await connector.search_jobs(ctx, query or JobQuery())
-            return await connector.application_statuses(ctx)
+                raise NotConnected(platform)
+            refreshed = False
+            if ctx.tokens is not None and self._refreshable(ctx.tokens) and ctx.tokens.is_expired():
+                await self.platform.refresh(platform, http=http)
+                ctx = self.platform.context(platform, http)
+                refreshed = True
+            try:
+                items = await self._call_api(connector, kind, ctx, query)
+            except NotConnected:
+                if refreshed or ctx.tokens is None or not self._refreshable(ctx.tokens):
+                    raise
+                log.info("platform.token_rejected_refreshing", platform=str(platform))
+                await self.platform.refresh(platform, http=http)
+                ctx = self.platform.context(platform, http)
+                items = await self._call_api(connector, kind, ctx, query)
+            return items, list(ctx.warnings)
+
+    @staticmethod
+    def _refreshable(tokens: OAuthTokens) -> bool:
+        return tokens.refresh_token is not None and not tokens.pinned
+
+    @staticmethod
+    async def _call_api(
+        connector: BaseConnector, kind: SyncKind, ctx: ConnectorContext, query: JobQuery | None
+    ) -> ProfileRead | list[JobPosting] | list[ApplicationObservationIn]:
+        if kind == SyncKind.profile:
+            return await connector.read_profile(ctx)
+        if kind == SyncKind.jobs:
+            return await connector.search_jobs(ctx, query or JobQuery())
+        return await connector.application_statuses(ctx)
 
     async def fetch(
         self, platform: Platform, kind: SyncKind, method: SyncMethod, req: SyncRequest
-    ) -> ProfileRead | list[JobPosting] | list[ApplicationObservationIn]:
+    ) -> tuple[ProfileRead | list[JobPosting] | list[ApplicationObservationIn], list[str]]:
         connector = self.platform.connector(platform)
         if method == SyncMethod.api:
             return await self.run_api(connector, kind, query=req.query)
-        return self.run_offline(connector, kind, method, text=req.text, file_path=req.file_path)
+        items = self.run_offline(connector, kind, method, text=req.text, file_path=req.file_path)
+        return items, []
 
     async def parse(
         self,
@@ -196,16 +228,17 @@ class PlatformSyncService:
     # ------------------------------------------------------------------ sync
     async def sync(self, platform: Platform, kind: SyncKind, req: SyncRequest) -> SyncResult:
         method = self.choose_method(platform, kind, req)
-        items = await self.fetch(platform, kind, method, req)
+        items, warnings = await self.fetch(platform, kind, method, req)
         preview = _dump(items)
         if req.dry_run:
             return SyncResult(
                 platform=platform,
                 kind=kind,
                 method=method,
-                status=SyncStatus.ok,
+                status=SyncStatus.partial if warnings else SyncStatus.ok,
                 items_seen=len(preview),
                 preview=preview,
+                warnings=warnings,
                 message="dry run — nothing persisted",
             )
 
@@ -227,7 +260,9 @@ class PlatformSyncService:
                 for posting in items:
                     assert isinstance(posting, JobPosting)
                     if posting.url:
-                        existing = await find_opportunity_id_by_url(self.session, posting.url)
+                        existing = await find_opportunity_id_by_url(
+                            self.session, posting.url, user_id=self.user_id
+                        )
                         if existing is not None:
                             duplicates.append(existing)
                             skipped += 1
@@ -249,18 +284,23 @@ class PlatformSyncService:
                 observations = [i for i in items if isinstance(i, ApplicationObservationIn)]
 
                 async def resolve(url: str) -> uuid.UUID | None:
-                    return await find_opportunity_id_by_url(self.session, url)
+                    return await find_opportunity_id_by_url(self.session, url, user_id=self.user_id)
 
                 created, updated, skipped = await self.platform.upsert_observations(
                     platform, observations, run_id=run.id, resolve_opportunity=resolve
                 )
-        except PlatformError as exc:
+        except Exception as exc:  # any failure is recorded on the run, then re-raised
+            await self.session.rollback()
             await self.platform.finish_run(
-                run, status=SyncStatus.failed, seen=len(preview), error=str(exc)
+                run,
+                status=SyncStatus.failed,
+                seen=len(preview),
+                error=f"{type(exc).__name__}: {exc}",
             )
             await self.platform.touch_connection(platform, last_sync_at=now, error=str(exc))
             raise
 
+        errors = errors + [f"warning: {w}" for w in warnings]
         status = SyncStatus.partial if errors else SyncStatus.ok
         run_out = await self.platform.finish_run(
             run,
@@ -299,6 +339,7 @@ class PlatformSyncService:
             items_skipped=skipped,
             created_ids=created_ids,
             duplicates=duplicates,
+            warnings=warnings,
             message="; ".join(errors[:5]) or None,
         )
 
@@ -327,6 +368,19 @@ class PlatformSyncService:
                                 p,
                                 kind,
                                 SyncRequest(method=SyncMethod.api, dry_run=dry_run, use_ai=use_ai),
+                            )
+                        )
+                    except (NotConnected, CapabilityUnavailable) as exc:
+                        # a sweep asks every platform: "connect first" / "needs a query" is
+                        # something for the owner to do, not a failed sync (it must not make
+                        # `careeros platform sync all` exit non-zero on a fresh install).
+                        results.append(
+                            SyncResult(
+                                platform=p,
+                                kind=kind,
+                                method=None,
+                                status=SyncStatus.skipped,
+                                message=str(exc),
                             )
                         )
                     except PlatformError as exc:

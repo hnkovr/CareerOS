@@ -187,11 +187,18 @@ class JobPosting(BaseModel):
             provider=provider,
             received_at=self.posted_at,
             notes=notes,
+            external_id=self.external_id,
+            raw_payload=self.raw_payload,
         )
 
 
 class ApplicationObservationIn(BaseModel):
-    """One application/response as observed on a platform (read-only fact)."""
+    """One application/response as observed on a platform (read-only fact).
+
+    Identity: ``external_id`` when the platform gives one, else ``content_hash()`` over
+    title/company/url — the hash deliberately excludes ``external_id`` so a paste (no id) and a
+    later API read (with id) of the same application merge into one row.
+    """
 
     platform: Platform
     external_id: str | None = None
@@ -208,7 +215,6 @@ class ApplicationObservationIn(BaseModel):
         key = "|".join(
             [
                 str(self.platform),
-                self.external_id or "",
                 self.job_title.strip().lower(),
                 (self.company or "").strip().lower(),
                 (self.job_url or "").strip(),
@@ -263,6 +269,7 @@ class ConnectionOut(BaseModel):
     status: ConnectionStatus
     auth: AuthKind
     has_tokens: bool
+    pinned: bool = Field(default=False, description="tokens come from env, not the token file")
     account_id: str | None = None
     account_label: str | None = None
     scopes: list[str] = Field(default_factory=list)
@@ -326,6 +333,7 @@ class SyncResult(BaseModel):
     created_ids: list[uuid.UUID] = Field(default_factory=list)
     duplicates: list[uuid.UUID] = Field(default_factory=list)
     preview: list[dict[str, Any]] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
     message: str | None = None
 
 

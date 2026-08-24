@@ -148,7 +148,9 @@ DTOs (all Pydantic; nulls = "not stated"; every DTO keeps `raw_payload`/`raw_tex
 * Flow: `careeros platform connect hh` → prints authorize URL → user logs in in *their* browser →
   pastes the `code` (or the redirect hits `GET /api/platform/oauth/{platform}/callback`) →
   exchange → tokens saved → `platform_connection` upserted with `whoami()` info (no secrets).
-  `careeros platform refresh <p>` / automatic refresh on 401 when a refresh token exists.
+  `careeros platform refresh <p>`; the sync layer refreshes automatically before a call when the
+  token is expired and once after a 401, provided a refresh token exists and the token is not
+  env-pinned (env-pinned tokens are reported as `pinned` and are never refreshed or deleted).
 * `platform_connection` keeps only non-secret state: status, account id/label, scopes,
   `token_expires_at`, `last_sync_at`, `last_error`.
 
@@ -160,9 +162,11 @@ DTOs (all Pydantic; nulls = "not stated"; every DTO keeps `raw_payload`/`raw_tex
 | `platform_sync_run` | `user_id`, `platform`, `kind` (profile\|jobs\|applications), `method` (api\|export\|paste), `status` (ok\|partial\|failed), `started_at`, `finished_at`, `items_seen`, `items_created`, `items_updated`, `items_skipped`, `error?`, `details jsonb` (ids created, duplicates) |
 | `application_observation` | `user_id`, `platform`, `external_id?`, `job_title`, `company?`, `job_url?`, `status_raw`, `status`, `applied_at?`, `updated_at_platform?`, `observed_at`, `opportunity_id?` (matched by url/dedup, no FK), `sync_run_id FK?`, `content_hash`, `raw_payload jsonb` |
 
-Upsert key for observations: `(user_id, platform, external_id)` when `external_id` is present,
-else `(user_id, platform, content_hash)`; a changed `status` updates the row and records the
-previous status in `raw_payload.history[]`.
+Upsert key for observations: `external_id` when present **or** `content_hash` (title/company/url,
+excluding the id) — so a paste without ids and a later API read of the same application merge into
+one row; a changed `status` updates the row and appends the previous state to the `history[]`
+column. Connectors report non-fatal problems via `ConnectorContext.warnings`, which mark the run
+`partial`; any exception during persistence is recorded on the run (`failed`) and re-raised.
 
 ## 7. Enum changes (additive)
 

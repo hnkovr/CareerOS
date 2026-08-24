@@ -165,7 +165,10 @@ async def test_read_profile_maps_newest_resume(settings: Settings) -> None:
     assert profile.preferences["area"] == "Москва"
     assert profile.preferences["work_formats"] == ["REMOTE"]
     assert profile.captured_at == NOW
-    assert profile.raw_payload == _json("resume.json")
+    from careeros.modules.platform.connectors.hh.mapping import public_resume
+
+    assert profile.raw_payload == public_resume(_json("resume.json"))
+    assert "first_name" not in (profile.raw_payload or {})
     assert profile.to_snapshot().preferences["external_id"] == RESUME_ID
 
 
@@ -613,3 +616,16 @@ def test_paste_parsers_fall_back_to_generic_shapes() -> None:
         "Data Engineer at Northwind Commerce\nApplied on Aug 12, 2026\nApplication viewed\n"
     )
     assert obs[0].status == ApplicationStatus.viewed and obs[0].company == "Northwind Commerce"
+
+
+def test_resume_raw_payload_has_no_personal_identifiers() -> None:
+    import json
+
+    from careeros.modules.platform.connectors.hh.mapping import RESUME_PII_KEYS, public_resume
+
+    fixture = Path(__file__).parent / "fixtures" / "hh" / "resume.json"
+    resume = json.loads(fixture.read_text())
+    resume["contact"] = [{"type": {"id": "cell"}, "value": {"formatted": "+7 000"}}]
+    cleaned = public_resume(resume)
+    assert not RESUME_PII_KEYS & set(cleaned)
+    assert "title" in cleaned and "skill_set" in cleaned
