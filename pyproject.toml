@@ -12,6 +12,7 @@ extend-exclude = ["migrations/versions"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC", "T20"]
 ignore = ["RUF012", "B008"]
+allowed-confusables = ["–", "—", "’", "“", "”", "≥", "≈", "·"]
 
 [tool.ruff.lint.per-file-ignores]
 "**/cli.py" = ["T20"]

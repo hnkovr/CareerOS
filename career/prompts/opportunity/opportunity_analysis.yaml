@@ -20,7 +20,7 @@ template: |
   Available CV variants: {{ cv_variants | join(", ") }}
 
   Opportunity:
-  title: {{ opportunity.title }} @ {{ opportunity.company or "unknown company" }}
+  title: {{ opportunity.title }} @ {{ opportunity.company_name or "unknown company" }}
   contract: {{ opportunity.contract_type }} / {{ opportunity.employment_type }}; remote: {{ opportunity.remote_policy }} {{ opportunity.remote_regions | join(", ") }}
   compensation: {{ opportunity.compensation or "not stated" }}
   seniority: {{ opportunity.seniority }}

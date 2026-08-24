@@ -6,6 +6,7 @@ import uuid
 from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 
+from fastapi import Request
 from sqlalchemy import DateTime, MetaData, func
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.asyncio import (
@@ -60,14 +61,17 @@ class OwnedMixin:
 
 
 _engine: AsyncEngine | None = None
+_engine_url: str | None = None
 _sessionmaker: async_sessionmaker[AsyncSession] | None = None
 
 
 def get_engine(settings: Settings | None = None) -> AsyncEngine:
-    global _engine, _sessionmaker
-    if _engine is None:
-        settings = settings or get_settings()
-        _engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+    """Process-wide engine. Rebuilt when asked for a different URL (tests, multi-env tooling)."""
+    global _engine, _engine_url, _sessionmaker
+    url = (settings or get_settings()).database_url
+    if _engine is None or url != _engine_url:
+        _engine = create_async_engine(url, pool_pre_ping=True)
+        _engine_url = url
         _sessionmaker = async_sessionmaker(_engine, expire_on_commit=False)
     return _engine
 
@@ -78,14 +82,16 @@ def get_sessionmaker(settings: Settings | None = None) -> async_sessionmaker[Asy
     return _sessionmaker
 
 
-async def get_session() -> AsyncIterator[AsyncSession]:
-    async with get_sessionmaker()() as session:
+async def get_session(request: Request) -> AsyncIterator[AsyncSession]:
+    """FastAPI dependency: sessions bound to the *app's* settings, never ambient env."""
+    async with get_sessionmaker(request.app.state.settings)() as session:
         yield session
 
 
 async def dispose_engine() -> None:
-    global _engine, _sessionmaker
+    global _engine, _engine_url, _sessionmaker
     if _engine is not None:
         await _engine.dispose()
     _engine = None
+    _engine_url = None
     _sessionmaker = None

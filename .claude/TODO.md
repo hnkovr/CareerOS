@@ -8,8 +8,8 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] P0.2 Vault: Pydantic schemas → JSON Schema; demo vault; reader/validator; git diff/commit; API + CLI
 - [x] P0.3 AI gateway core (provider port, Anthropic + OpenAI-compatible, prompt registry, structured output, runs ledger, bundles, dev packets)
 - [x] P0.4 CV engine: fact selection, AI rewriting + provenance guard, RenderCV adapter, variants, comparison
-- [ ] P0.5 Opportunities: ingest, parser, dedup, deterministic scoring, recommendation
-- [ ] P0.5b AI analysis of opportunities (uses gateway)
+- [x] P0.5 Opportunities: ingest, parser (heuristic + optional AI), dedup, deterministic scoring, recommendation, AI analysis, compare, external prompt
+
 - [ ] P0.6 Profiles: snapshots, audit engine, health score
 - [ ] P0.7 Web: dashboard, vault editor w/ diff, CV generate/compare, opportunities, prompts, snapshots/audit, ⌘K
 - [ ] P0.8 Hardening: compose smoke e2e, contract tests, README walkthrough, seed
