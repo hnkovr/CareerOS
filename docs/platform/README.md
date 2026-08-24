@@ -49,6 +49,24 @@ Paste inputs: open the page on the platform, select all, copy, save as a `.txt` 
 stdin with `--text-file -`). Each guide says exactly which page to copy. Parsers never invent
 values — anything they cannot read stays empty, and the raw text is kept on the record.
 
+## Deployment notes (read before shipping the platform layer to Fly/containers)
+
+* **Tokens are a file.** `CAREEROS_PLATFORM_TOKEN_FILE` defaults to `generated/platform/tokens.json`
+  — on an ephemeral filesystem (Fly without a volume) it is lost on every redeploy and hh.ru/Upwork
+  must be re-authorised. Options: mount a volume and point the variable at it (e.g.
+  `/data/platform/tokens.json`), pin tokens via `CAREEROS_<PLATFORM>_ACCESS_TOKEN` /
+  `_REFRESH_TOKEN` secrets, or keep platform sync local-only (the default today). Tracked in
+  [#21](https://github.com/hnkovr/CareerOS/issues/21).
+* **Redirect URI must be public.** `CAREEROS_PLATFORM_OAUTH_REDIRECT_BASE` defaults to
+  `http://localhost:8000/api/platform/oauth`; on a deployed instance set it to the public base URL
+  (`https://<host>/api/platform/oauth`) *and* register `<base>/<platform>/callback` in the hh.ru /
+  Upwork app consoles — otherwise the callback 404s after the user has already consented.
+* **Platform credentials are NOT pushed to Fly today.** `config/deploy.yml` excludes
+  `CAREEROS_HH_*`, `CAREEROS_UPWORK_*` and `CAREEROS_PLATFORM_*` from the `CAREEROS_*` env push
+  (pinned by `tests/deploy/test_deploy_config.py`, which reads the credential field names from
+  `core/config.py`), because the deployed app does not sync. Adding a new credential setting means
+  extending those excludes; moving sync to Fly means inverting the block together with the volume.
+
 ## What CareerOS will never do
 
 Log in for you, store passwords or session cookies, run a headless browser, scrape listings, or

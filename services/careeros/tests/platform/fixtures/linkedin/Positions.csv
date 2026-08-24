@@ -1,0 +1,5 @@
+Company Name,Title,Description,Location,Started On,Finished On
+Northwind Commerce,Senior Data Engineer,"Built the analytics platform on dbt + Dagster + ClickHouse.
+Cut pipeline latency from hours to minutes.","Tbilisi, Georgia",Jan 2023,
+Lumen Analytics,Lead Analytics Engineer,Led a team of four analytics engineers.,Remote,Mar 2020,Dec 2022
+Orbit Fintech,Data Engineer,,"Kyiv, Ukraine",Jun 2016,Feb 2020
