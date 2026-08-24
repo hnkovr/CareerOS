@@ -994,6 +994,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Notifications */
+        get: operations["notifications_api_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/capabilities": {
         parameters: {
             query?: never;
@@ -2615,6 +2632,42 @@ export interface components {
              * @default false
              */
             mark_read: boolean;
+        };
+        /** Notification */
+        Notification: {
+            kind: components["schemas"]["NotificationKind"];
+            /** Title */
+            title: string;
+            /** Detail */
+            detail?: string | null;
+            /** Url Path */
+            url_path: string;
+            /** At */
+            at?: string | null;
+            /**
+             * Severity
+             * @default normal
+             */
+            severity: string;
+        };
+        /**
+         * NotificationKind
+         * @enum {string}
+         */
+        NotificationKind: "follow_up_overdue" | "follow_up_due" | "interview_soon" | "high_score_opportunity" | "urgent_message" | "pending_suggestions";
+        /** NotificationsOut */
+        NotificationsOut: {
+            /** Count */
+            count: number;
+            /** High */
+            high: number;
+            /** Items */
+            items: components["schemas"]["Notification"][];
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
         };
         /** OAuthStartOut */
         OAuthStartOut: {
@@ -5417,6 +5470,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    notifications_api_notifications_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NotificationsOut"];
                 };
             };
         };

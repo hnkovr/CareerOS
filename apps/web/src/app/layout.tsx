@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CommandPalette } from "@/components/command-palette";
+import { NotificationsBell } from "@/components/notifications-bell";
 import { Nav } from "@/components/nav";
 import { Providers } from "@/components/providers";
 import "./globals.css";
@@ -21,7 +22,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 Career<span className="text-accent">OS</span>
               </Link>
               <Nav />
-              <CommandPalette />
+              <div className="flex items-center gap-2">
+                <NotificationsBell />
+                <CommandPalette />
+              </div>
             </div>
           </header>
           <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
