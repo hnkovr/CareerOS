@@ -1,0 +1,47 @@
+getmatch
+Вакансии
+Компании
+Отклики
+Мой профиль
+
+Вакансии
+Найдено 128 вакансий
+Специализация: Data Engineering
+Формат работы: любой
+Сортировка: по дате
+
+Northwind Commerce
+Senior Data Engineer
+от 300 000 ₽
+Удалённо
+Senior
+Стек: Python · dbt · ClickHouse · Airflow
+Опубликовано 2 дня назад
+Откликнуться
+
+Lumen Analytics
+Analytics Engineer
+250 000 – 350 000 ₽
+Гибрид · Москва
+Middle
+Стек: SQL · dbt · Dagster
+Опубликовано 12 августа 2026
+Откликнуться
+
+Orbit Fintech
+Lead Data Platform Engineer
+$4 000 – $6 000
+Удалённо
+Lead
+Python · Kubernetes · Kafka · PostgreSQL
+Опубликовано вчера
+Откликнуться
+
+Northwind Commerce
+Data Engineer (ClickHouse)
+до 5 000 €
+Офис · Санкт-Петербург
+Junior · Полная занятость
+Стек: ClickHouse · SQL
+Опубликовано 20.08.2026
+Отклик отправлен
