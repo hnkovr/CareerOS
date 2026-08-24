@@ -23,6 +23,15 @@ from careeros.modules.ai.schemas import (
     ProviderInfo,
 )
 from careeros.modules.ai.service import AIService
+from careeros.modules.ai.suggestions import (
+    IllegalTransition,
+    SuggestionNotFound,
+    SuggestionOut,
+    SuggestionUpdate,
+    get_suggestion,
+    list_suggestions,
+    transition,
+)
 
 router = APIRouter(prefix="/ai", tags=["ai"])
 
@@ -99,3 +108,44 @@ async def dev_packet(
         return await _service(request, user, session).dev_packet(req)
     except PromptRenderError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+
+
+@router.get("/suggestions", response_model=list[SuggestionOut])
+async def suggestions(
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+    state: str | None = None,
+    target_type: str | None = None,
+    limit: int = 100,
+) -> list[SuggestionOut]:
+    _ = request, user
+    return await list_suggestions(session, state=state, target_type=target_type, limit=limit)
+
+
+@router.get("/suggestions/{suggestion_id}", response_model=SuggestionOut)
+async def suggestion(
+    suggestion_id: uuid.UUID, request: Request, user: CurrentUserDep, session: SessionDep
+) -> SuggestionOut:
+    _ = request, user
+    try:
+        return await get_suggestion(session, suggestion_id)
+    except SuggestionNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "suggestion not found") from exc
+
+
+@router.patch("/suggestions/{suggestion_id}", response_model=SuggestionOut)
+async def update_suggestion(
+    suggestion_id: uuid.UUID,
+    req: SuggestionUpdate,
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+) -> SuggestionOut:
+    _ = request, user
+    try:
+        return await transition(session, suggestion_id, req.state, note=req.note)
+    except SuggestionNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "suggestion not found") from exc
+    except IllegalTransition as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc

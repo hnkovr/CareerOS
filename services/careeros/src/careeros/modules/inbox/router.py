@@ -6,12 +6,14 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from careeros.core.auth import CurrentUser, CurrentUserDep
 from careeros.core.db import get_session
 from careeros.modules.ai.deps import build_ai_service
 from careeros.modules.ai.provider import AIError
+from careeros.modules.ai.suggestions import IllegalTransition, SuggestionNotFound, SuggestionOut
 from careeros.modules.inbox.enums import MessageClass
 from careeros.modules.inbox.schemas import (
     EmailIn,
@@ -118,3 +120,23 @@ async def suggest_reply(
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE, f"reply draft failed: {exc}"
         ) from exc
+
+
+class ReplySentIn(BaseModel):
+    suggestion_id: uuid.UUID
+
+
+@router.post("/messages/{message_id}/reply-sent", response_model=SuggestionOut)
+async def reply_sent(
+    message_id: uuid.UUID,
+    req: ReplySentIn,
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+) -> SuggestionOut:
+    try:
+        return await _svc(request, user, session).reply_sent(message_id, req.suggestion_id)
+    except (MessageNotFound, SuggestionNotFound) as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, str(exc)) from exc
+    except IllegalTransition as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc

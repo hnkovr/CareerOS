@@ -21,6 +21,7 @@ export function CommandPalette() {
       { label: "Add opportunity (paste JD)", hint: "ingest", run: () => router.push("/opportunities?new=1") },
       { label: "Go to CV", run: () => router.push("/cv") },
       { label: "Generate CV", hint: "variants", run: () => router.push("/cv?generate=1") },
+      { label: "Review AI suggestions", hint: "approve / reject", run: () => router.push("/suggestions") },
       { label: "Go to Profiles", run: () => router.push("/profiles") },
       { label: "Add profile snapshot", run: () => router.push("/profiles?new=1") },
       { label: "API docs (OpenAPI)", hint: "backend", run: () => window.open("/api/../docs", "_blank") },

@@ -18,13 +18,24 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] P1.1 Pipeline: applications Kanban (employment+freelance stages), timeline events, interviews, follow-ups, contacts/companies CRUD, web UI (board, detail, contacts, dashboard card)
 - [x] P1.2 Inbox core: threads/messages, raw-paste parsing, rule classification + optional AI refine, contact/opportunity/application linking, opportunity extraction, reply suggestions (Suggestion rows, never sent), /inbox UI + dashboard card
 - [ ] P1.3 Gmail adapter: OAuth flow, incremental history sync (needs user's Google Cloud app credentials)
-- [ ] P1.4 Reply drafts: Suggestion → approval → Gmail draft (send only on explicit action)
+- [x] P1.4 Suggestion approval flow: suggested→reviewed→approved→executed/rejected with legal transitions; reply-sent closes into the application timeline; /suggestions UI + dashboard card (Gmail draft creation itself lands with P1.3)
 - [x] P1.5a unified search: FTS (GIN) + optional pgvector semantic over facts/opportunities/messages/CVs/contacts, /search UI
 - [ ] P1.5b notifications; PWA service worker
 
-- [ ] P0.9 Telegram bot: `modules/bot` (aiogram 3, webhook at `/tg/webhook`, owner-gated, ACK-then-background
-      + `update_id` dedup), Fly deploy. Spec: `docs/superpowers/specs/2026-08-25-careeros-telegram-bot-design.md`.
-      Deploy path, ops scripts, hook, `/careeros-bot` skill and `@careeros_hnkovr_bot` are DONE; the module is not.
+- [ ] P0.9 Telegram bot ([GH #1–#9](https://github.com/hnkovr/CareerOS/issues), [Linear: CareerOS](https://linear.app/my-1st/project/careeros-2039a962e2cf))
+  - Spec: `docs/superpowers/specs/2026-08-25-careeros-telegram-bot-design.md` · [ADR 011](../docs/adr/011-telegram-bot-surface.md)
+  - DONE: deploy path (`fly.toml`, `config/deploy.yml`), ops scripts, SessionStart guard,
+    `/careeros-bot` skill, `@careeros_hnkovr_bot` + webhook secret, 47 tests in `tests/deploy/`
+  - TODO: [#1](https://github.com/hnkovr/CareerOS/issues/1) webhook + 3 gates ·
+    [#2](https://github.com/hnkovr/CareerOS/issues/2) ownership claim ·
+    [#3](https://github.com/hnkovr/CareerOS/issues/3) capture ·
+    [#4](https://github.com/hnkovr/CareerOS/issues/4) triage ·
+    [#5](https://github.com/hnkovr/CareerOS/issues/5) career cmds ·
+    [#6](https://github.com/hnkovr/CareerOS/issues/6) ops cmds ·
+    [#7](https://github.com/hnkovr/CareerOS/issues/7) notifications ·
+    [#8](https://github.com/hnkovr/CareerOS/issues/8) db scheme ·
+    [#9](https://github.com/hnkovr/CareerOS/issues/9) first deploy
+  - BLOCKED on you: `CAREEROS_TG_OWNER_CHAT_ID` — message @careeros_hnkovr_bot once
 
 ## Parked
 - `packages/ui` extraction (when Tauri lands)

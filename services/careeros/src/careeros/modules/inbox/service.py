@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import uuid
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
 from rapidfuzz import fuzz
 from sqlalchemy import func, select
@@ -39,6 +40,9 @@ from careeros.modules.pipeline.enums import EventKind
 from careeros.modules.pipeline.schemas import EventIn
 from careeros.modules.pipeline.service import PipelineService
 from careeros.modules.vault.service import Vault
+
+if TYPE_CHECKING:
+    from careeros.modules.ai.suggestions import SuggestionOut
 
 log = get_logger(__name__)
 
@@ -392,6 +396,29 @@ class InboxService:
             notes=run.data.notes,
             ai_run_id=run.run_id,
         )
+
+    async def reply_sent(self, message_id: uuid.UUID, suggestion_id: uuid.UUID) -> SuggestionOut:
+        """The human confirms they sent the (approved) reply: suggestion → executed, timeline
+        event + follow-up on the linked application, thread marked read."""
+        from careeros.modules.ai.suggestions import transition
+
+        message = await self.session.get(Message, message_id)
+        if message is None:
+            raise MessageNotFound(str(message_id))
+        result: SuggestionOut = await transition(
+            self.session, suggestion_id, "executed", note=f"reply sent for message {message_id}"
+        )
+        message.read_at = message.read_at or datetime.now(UTC)
+        await self.session.commit()
+        if message.application_id is not None:
+            from careeros.modules.pipeline.enums import EventKind as _EK
+            from careeros.modules.pipeline.schemas import EventIn as _EIn
+
+            await PipelineService(self.session, self.user_id).add_event(
+                message.application_id,
+                _EIn(kind=_EK.message_sent, title=f"Replied: {message.subject or '(no subject)'}"),
+            )
+        return result
 
     async def stats(self) -> InboxStats:
         rows = (

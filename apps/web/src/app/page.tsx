@@ -32,6 +32,11 @@ export default function DashboardPage() {
     queryFn: async () =>
       unwrap(await api.GET("/api/pipeline/follow-ups", { params: { query: { within_days: 7 } } })),
   });
+  const pendingSuggestions = useQuery({
+    queryKey: ["suggestions", "pending"],
+    queryFn: async () =>
+      unwrap(await api.GET("/api/ai/suggestions", { params: { query: { state: "suggested", limit: 5 } } })),
+  });
   const runs = useQuery({
     queryKey: ["ai-runs", "recent"],
     queryFn: async () => unwrap(await api.GET("/api/ai/runs", { params: { query: { limit: 5 } } })),
@@ -216,6 +221,25 @@ export default function DashboardPage() {
                   {truncate(f.application.opportunity_title, 40)}
                 </Link>
                 <Badge tone={f.overdue ? "bad" : "warn"}>{f.overdue ? "overdue" : timeAgo(f.due_at).replace(" ago", "")}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card title="AI Suggestions" action={<Link className="btn" href="/suggestions">Review</Link>}>
+        {pendingSuggestions.isPending ? (
+          <Spinner />
+        ) : (pendingSuggestions.data ?? []).length === 0 ? (
+          <Empty>Nothing awaiting approval.</Empty>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {(pendingSuggestions.data ?? []).map((s) => (
+              <li key={s.id} className="flex items-center justify-between gap-2">
+                <Link href="/suggestions" className="truncate hover:text-accent">
+                  {truncate(s.title, 42)}
+                </Link>
+                <Badge tone="accent">{s.target_type}</Badge>
               </li>
             ))}
           </ul>
