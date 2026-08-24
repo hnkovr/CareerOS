@@ -1,0 +1,108 @@
+{
+  "data": {
+    "vendorProposals": {
+      "totalCount": 7,
+      "edges": [
+        {
+          "node": {
+            "id": "prop-accepted-1",
+            "status": {"status": "Accepted"},
+            "viewedByClient": false,
+            "auditDetails": {"createdDateTime": "2026-08-18T10:00:00Z", "modifiedDateTime": "2026-08-18T10:00:00Z"},
+            "marketplaceJobPosting": {
+              "id": "1830001234567890123",
+              "content": {"title": "Senior Data Engineer for e-commerce analytics platform"},
+              "clientCompanyPublic": {"id": "c-1", "name": "Northwind Commerce"}
+            },
+            "terms": {"chargeRate": {"displayValue": "$85.00"}}
+          }
+        },
+        {
+          "node": {
+            "id": "prop-accepted-2",
+            "status": {"status": "Accepted"},
+            "viewedByClient": true,
+            "auditDetails": {"createdDateTime": "2026-08-15T08:00:00Z", "modifiedDateTime": "2026-08-16T12:30:00Z"},
+            "marketplaceJobPosting": {
+              "id": "1830009876543210987",
+              "content": {"title": "Build a customer 360 dashboard in Metabase"},
+              "clientCompanyPublic": {"id": "c-2", "name": "Lumen Analytics"}
+            },
+            "terms": {"chargeRate": {"displayValue": "$2,500.00"}}
+          }
+        },
+        {
+          "node": {
+            "id": "prop-activated-1",
+            "status": {"status": "Activated"},
+            "viewedByClient": true,
+            "auditDetails": {"createdDateTime": "2026-08-12T09:00:00Z", "modifiedDateTime": "2026-08-14T09:00:00Z"},
+            "marketplaceJobPosting": {
+              "id": "1830005555555555555",
+              "content": {"title": "dbt models for a fintech data warehouse"},
+              "clientCompanyPublic": {"id": "c-3", "name": "Orbit Fintech"}
+            },
+            "terms": {"chargeRate": {"displayValue": "$90.00"}}
+          }
+        },
+        {
+          "node": {
+            "id": "prop-offered-1",
+            "status": {"status": "Offered"},
+            "viewedByClient": true,
+            "auditDetails": {"createdDateTime": "2026-08-05T09:00:00Z", "modifiedDateTime": "2026-08-20T09:00:00Z"},
+            "marketplaceJobPosting": {
+              "id": "1830006666666666666",
+              "content": {"title": "Data pipeline modernization"},
+              "clientCompanyPublic": {"id": "c-3", "name": "Orbit Fintech"}
+            },
+            "terms": {"chargeRate": {"displayValue": "$95.00"}}
+          }
+        },
+        {
+          "node": {
+            "id": "prop-declined-1",
+            "status": {"status": "Declined"},
+            "viewedByClient": true,
+            "auditDetails": {"createdDateTime": "2026-07-30T09:00:00Z", "modifiedDateTime": "2026-08-02T09:00:00Z"},
+            "marketplaceJobPosting": {
+              "id": "1830007777777777777",
+              "content": {"title": "Analytics Engineer (contract)"},
+              "clientCompanyPublic": null
+            },
+            "terms": null
+          }
+        },
+        {
+          "node": {
+            "id": "prop-withdrawn-1",
+            "status": {"status": "Withdrawn"},
+            "viewedByClient": false,
+            "auditDetails": {"createdDateTime": "2026-07-25T09:00:00Z", "modifiedDateTime": "2026-07-26T09:00:00Z"},
+            "marketplaceJobPosting": {
+              "id": "1830008888888888888",
+              "content": {"title": "Airflow to Dagster migration"},
+              "clientCompanyPublic": {"id": "c-4", "name": "Lumen Analytics"}
+            },
+            "terms": {"chargeRate": {"displayValue": "$80.00"}}
+          }
+        },
+        {
+          "node": {
+            "id": "prop-archived-1",
+            "status": {"status": "Archived"},
+            "viewedByClient": false,
+            "auditDetails": {"createdDateTime": "2026-07-01T09:00:00Z", "modifiedDateTime": null},
+            "marketplaceJobPosting": {
+              "id": "1830009999999999999",
+              "content": {"title": "ClickHouse performance tuning"},
+              "clientCompanyPublic": {"id": "c-1", "name": "Northwind Commerce"}
+            },
+            "terms": {"chargeRate": {"displayValue": "$100.00"}}
+          }
+        }
+      ],
+      "pageInfo": {"hasNextPage": false, "endCursor": null}
+    }
+  }
+}

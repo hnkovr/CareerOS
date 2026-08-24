@@ -1,0 +1,17 @@
+My proposals
+Offers
+Data pipeline modernization
+Orbit Fintech · Offer received Aug 20, 2026
+Active proposals
+Senior Data Engineer for e-commerce analytics platform (dbt + ClickHouse)
+Initiated Aug 12, 2026
+Submitted proposals
+Build a customer 360 dashboard in Metabase
+Initiated Aug 18, 2026 · Viewed by client
+dbt models for a fintech data warehouse · Initiated Aug 15, 2026
+Referrals
+Archived proposals
+Analytics Engineer (contract)
+Initiated Jul 30, 2026 · Declined by client
+Airflow to Dagster migration for a data platform team
+Initiated Jul 25, 2026 · Withdrawn

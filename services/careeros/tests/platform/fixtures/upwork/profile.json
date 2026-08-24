@@ -1,0 +1,47 @@
+{
+  "data": {
+    "user": {
+      "id": "1494512345678901234",
+      "nid": "danakovalenko",
+      "name": "Dana Kovalenko",
+      "ciphertext": "~01ab2cd3ef4567890a",
+      "freelancerProfile": {
+        "fullName": "Dana Kovalenko",
+        "personalData": {
+          "title": "Senior Data Engineer | dbt · Dagster · ClickHouse",
+          "description": "I build analytics platforms for e-commerce and fintech teams.\nTwelve years in data.",
+          "profileUrl": null,
+          "chargeRate": {"rawValue": "85.00", "currency": "USD", "displayValue": "$85.00"}
+        },
+        "skills": {
+          "edges": [
+            {"node": {"prettyName": "Python", "preferredLabel": "Python"}},
+            {"node": {"prettyName": "SQL", "preferredLabel": "SQL"}},
+            {"node": {"prettyName": "dbt", "preferredLabel": "dbt"}},
+            {"node": {"prettyName": "Dagster", "preferredLabel": "Dagster"}},
+            {"node": {"prettyName": "ClickHouse", "preferredLabel": "ClickHouse"}}
+          ]
+        },
+        "availability": {
+          "name": "Available now",
+          "capacity": "fullTime",
+          "availabilityDateTime": null
+        },
+        "project": [
+          {
+            "id": "p-1",
+            "title": "Northwind analytics platform",
+            "description": "dbt + Dagster + ClickHouse stack for an online retailer.",
+            "projectUrl": "https://example.com/portfolio/northwind"
+          },
+          {
+            "id": "p-2",
+            "title": "Lumen customer 360",
+            "description": null,
+            "projectUrl": null
+          }
+        ]
+      }
+    }
+  }
+}

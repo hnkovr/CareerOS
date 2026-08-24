@@ -1,0 +1,33 @@
+Dana K.
+Tbilisi, Georgia – 3:42 pm local time
+Top Rated Plus
+100% Job Success
+Senior Data Engineer | dbt · Dagster · ClickHouse
+$85.00/hr
+I build analytics platforms for e-commerce and fintech teams: warehouse design, dbt models, Dagster orchestration and ClickHouse tuning.
+Twelve years in data, five of them leading small analytics teams.
+Available now
+More than 30 hrs/week
+Open to contract to hire
+Work history
+Data pipeline for Orbit Fintech
+Rating is 5 out of 5.
+Aug 2025 - Dec 2025
+"Dana rebuilt our ingestion layer in six weeks."
+Portfolio
+Northwind analytics platform
+Lumen customer 360
+See more (4)
+Skills
+Python
+SQL
+dbt
+Dagster
+ClickHouse
+Employment history
+Senior Data Engineer | Northwind Commerce
+January 2023 - Present
+Lead Analytics Engineer | Lumen Analytics
+March 2020 - December 2022
+Education
+Tbilisi State University

@@ -1,0 +1,11 @@
+{
+  "data": {
+    "user": {
+      "id": "1494512345678901234",
+      "nid": "danakovalenko",
+      "rid": 987654321,
+      "name": "Dana Kovalenko",
+      "email": "dana.kovalenko@example.com"
+    }
+  }
+}

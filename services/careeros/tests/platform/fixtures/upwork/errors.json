@@ -1,0 +1,10 @@
+{
+  "errors": [
+    {
+      "message": "Cannot query field \"vendorProposals\" on type \"Query\".",
+      "locations": [{"line": 2, "column": 3}],
+      "extensions": {"classification": "ValidationError"}
+    }
+  ],
+  "data": null
+}

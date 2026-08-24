@@ -1,0 +1,35 @@
+Posted 2 hours ago
+Senior Data Engineer for e-commerce analytics platform (dbt + ClickHouse)
+Hourly: $60.00-$90.00 - Expert - Est. time: More than 6 months, 30+ hrs/week
+We are an online retailer with 40M monthly visits. We need a senior engineer to rebuild our analytics stack on dbt, Dagster and ClickHouse and to mentor two analysts.
+Python
+dbt
+ClickHouse
+Dagster
+Payment verified
+$50K+ spent
+United States
+Proposals: 5 to 10
+
+Posted yesterday
+Build a customer 360 dashboard in Metabase
+Fixed-price - Intermediate - Est. budget: $2,500
+Small analytics consultancy needs a customer 360 dashboard for a fintech client. Data lives in Postgres; models should be built in dbt.
+SQL
+Metabase
+dbt
+Payment unverified
+Georgia
+Proposals: Less than 5
+
+Posted 3 days ago
+Airflow to Dagster migration for a data platform team
+Hourly - Expert - Est. time: 1 to 3 months, Less than 30 hrs/week
+Migrate 40 Airflow DAGs to Dagster assets, keep the dbt integration and document the runbooks.
+Dagster
+Apache Airflow
+dbt
+Payment verified
+$10K+ spent
+Germany
+Proposals: 10 to 15

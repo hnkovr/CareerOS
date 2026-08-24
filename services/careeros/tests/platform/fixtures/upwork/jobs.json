@@ -1,0 +1,54 @@
+{
+  "data": {
+    "marketplaceJobPostingsSearch": {
+      "totalCount": 2,
+      "edges": [
+        {
+          "node": {
+            "id": "1830001234567890123",
+            "title": "Senior Data Engineer for e-commerce analytics platform",
+            "description": "Northwind Commerce is rebuilding its analytics stack on dbt, Dagster and ClickHouse. We need a senior engineer to own the warehouse and mentor two analysts.",
+            "ciphertext": "~021830001234567890",
+            "createdDateTime": "2026-08-24T09:30:00.000Z",
+            "publishedDateTime": "2026-08-24T09:35:00.000Z",
+            "type": "HOURLY",
+            "hourlyBudgetType": "MANUAL",
+            "hourlyBudgetMin": 60.0,
+            "hourlyBudgetMax": 90.0,
+            "amount": {"rawValue": "0.0", "currency": "USD", "displayValue": "$0.00"},
+            "skills": [
+              {"name": "python", "prettyName": "Python"},
+              {"name": "dbt", "prettyName": "dbt"},
+              {"name": "clickhouse", "prettyName": "ClickHouse"}
+            ],
+            "client": {"totalHires": 12, "totalFeedback": 9, "location": {"country": "United States"}},
+            "totalApplicants": 7,
+            "durationLabel": "More than 6 months"
+          }
+        },
+        {
+          "node": {
+            "id": "1830009876543210987",
+            "title": "Build a customer 360 dashboard in Metabase",
+            "description": "Lumen Analytics needs a customer 360 dashboard for a fintech client. Data lives in Postgres; models should be built in dbt.",
+            "ciphertext": "021830009876543210",
+            "createdDateTime": "2026-08-10T15:00:00.000Z",
+            "publishedDateTime": null,
+            "type": "FIXED",
+            "hourlyBudgetType": null,
+            "hourlyBudgetMin": null,
+            "hourlyBudgetMax": null,
+            "amount": {"rawValue": "2500.0", "currency": "USD", "displayValue": "$2,500.00"},
+            "skills": [
+              {"name": "sql", "prettyName": "SQL"},
+              {"name": "metabase", "prettyName": "Metabase"}
+            ],
+            "client": {"totalHires": 0, "totalFeedback": 0, "location": {"country": "Georgia"}},
+            "totalApplicants": 3,
+            "durationLabel": "1 to 3 months"
+          }
+        }
+      ]
+    }
+  }
+}
