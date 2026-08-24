@@ -908,6 +908,247 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search */
+        get: operations["search_api_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/search/reindex": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reindex */
+        post: operations["reindex_api_search_reindex_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capabilities */
+        get: operations["capabilities_api_platform_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/connections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Connections */
+        get: operations["connections_api_platform_connections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/{platform}/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Connect */
+        post: operations["connect_api_platform__platform__connect_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/oauth/{platform}/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Oauth Callback */
+        get: operations["oauth_callback_api_platform_oauth__platform__callback_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/{platform}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh */
+        post: operations["refresh_api_platform__platform__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/{platform}/connection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disconnect */
+        delete: operations["disconnect_api_platform__platform__connection_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/{platform}/doctor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Doctor */
+        get: operations["doctor_api_platform__platform__doctor_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/{platform}/parse/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Parse
+         * @description Dry parse of pasted text or an export file — nothing is persisted.
+         */
+        post: operations["parse_api_platform__platform__parse__kind__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/{platform}/sync/{kind}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync */
+        post: operations["sync_api_platform__platform__sync__kind__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/sync-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Sync All */
+        post: operations["sync_all_api_platform_sync_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/sync-runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Sync Runs */
+        get: operations["sync_runs_api_platform_sync_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Applications */
+        get: operations["applications_api_platform_applications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1073,6 +1314,51 @@ export interface components {
             /** Interviews */
             interviews?: components["schemas"]["InterviewOut"][];
         };
+        /** ApplicationObservationOut */
+        ApplicationObservationOut: {
+            platform: components["schemas"]["Platform"];
+            /** External Id */
+            external_id?: string | null;
+            /** Job Title */
+            job_title: string;
+            /** Company */
+            company?: string | null;
+            /** Job Url */
+            job_url?: string | null;
+            /**
+             * Status Raw
+             * @default
+             */
+            status_raw: string;
+            /** @default unknown */
+            status: components["schemas"]["ApplicationStatus"];
+            /** Applied At */
+            applied_at?: string | null;
+            /** Updated At Platform */
+            updated_at_platform?: string | null;
+            /** Raw Payload */
+            raw_payload?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Observed At
+             * Format: date-time
+             */
+            observed_at: string;
+            /** Opportunity Id */
+            opportunity_id?: string | null;
+            /** Sync Run Id */
+            sync_run_id?: string | null;
+            /** History */
+            history?: {
+                [key: string]: unknown;
+            }[];
+        };
         /** ApplicationOut */
         ApplicationOut: {
             /**
@@ -1116,6 +1402,12 @@ export interface components {
              */
             updated_at: string;
         };
+        /**
+         * ApplicationStatus
+         * @description Normalized application state observed on a platform (raw wording is kept alongside).
+         * @enum {string}
+         */
+        ApplicationStatus: "applied" | "viewed" | "invited" | "interview" | "offer" | "rejected" | "withdrawn" | "unknown";
         /** ApplicationUpdate */
         ApplicationUpdate: {
             stage?: components["schemas"]["Stage"] | null;
@@ -1133,6 +1425,12 @@ export interface components {
             /** Notes */
             notes?: string | null;
         };
+        /**
+         * ApplyLevel
+         * @description `apply` never rises above manual assistance (ADR-005).
+         * @enum {string}
+         */
+        ApplyLevel: "none" | "manual_assist";
         /**
          * AuditCategory
          * @enum {string}
@@ -1187,6 +1485,11 @@ export interface components {
             /** Provider */
             provider?: string | null;
         };
+        /**
+         * AuthKind
+         * @enum {string}
+         */
+        AuthKind: "none" | "oauth2" | "api_key";
         /** BoardColumn */
         BoardColumn: {
             stage: components["schemas"]["Stage"];
@@ -1433,6 +1736,56 @@ export interface components {
          */
         CVSection: "summary" | "experience" | "projects" | "skills" | "education" | "certifications" | "publications" | "languages" | "offers" | "testimonials";
         /**
+         * Capabilities
+         * @description Static declaration of what a connector can do and through which methods (ADR-004).
+         *
+         *     ``profile`` / ``jobs`` / ``applications`` list the implemented methods, best first. The
+         *     ADR-004 level names (``read_profile`` …) are derived so the matrix stays honest by construction.
+         */
+        Capabilities: {
+            platform: components["schemas"]["Platform"];
+            /** Profile */
+            profile?: components["schemas"]["SyncMethod"][];
+            /** Jobs */
+            jobs?: components["schemas"]["SyncMethod"][];
+            /** Applications */
+            applications?: components["schemas"]["SyncMethod"][];
+            /** @default none */
+            write_profile: components["schemas"]["CapabilityLevel"];
+            /** @default none */
+            read_messages: components["schemas"]["CapabilityLevel"];
+            /** @default none */
+            apply: components["schemas"]["ApplyLevel"];
+            /**
+             * Official Api
+             * @default false
+             */
+            official_api: boolean;
+            /**
+             * Email Fallback
+             * @default false
+             */
+            email_fallback: boolean;
+            /** @default none */
+            auth: components["schemas"]["AuthKind"];
+            /**
+             * Notes
+             * @default
+             */
+            notes: string;
+            readonly read_profile: components["schemas"]["CapabilityLevel"];
+            readonly read_opportunities: components["schemas"]["CapabilityLevel"];
+            readonly read_applications: components["schemas"]["CapabilityLevel"];
+            readonly export_import: components["schemas"]["CapabilityLevel"];
+            /** Manual Capture */
+            readonly manual_capture: boolean;
+        };
+        /**
+         * CapabilityLevel
+         * @enum {string}
+         */
+        CapabilityLevel: "none" | "manual" | "export" | "api";
+        /**
          * CaptureMethod
          * @enum {string}
          */
@@ -1588,6 +1941,32 @@ export interface components {
          * @enum {string}
          */
         CompensationPeriod: "year" | "month" | "hour" | "day" | "project";
+        /** ConnectionOut */
+        ConnectionOut: {
+            platform: components["schemas"]["Platform"];
+            status: components["schemas"]["ConnectionStatus"];
+            auth: components["schemas"]["AuthKind"];
+            /** Has Tokens */
+            has_tokens: boolean;
+            /** Account Id */
+            account_id?: string | null;
+            /** Account Label */
+            account_label?: string | null;
+            /** Scopes */
+            scopes?: string[];
+            /** Token Expires At */
+            token_expires_at?: string | null;
+            /** Last Sync At */
+            last_sync_at?: string | null;
+            /** Last Error */
+            last_error?: string | null;
+            capabilities: components["schemas"]["Capabilities"];
+        };
+        /**
+         * ConnectionStatus
+         * @enum {string}
+         */
+        ConnectionStatus: "disconnected" | "connected" | "needs_reauth" | "error";
         /** ContactIn */
         ContactIn: {
             /** Name */
@@ -1729,6 +2108,25 @@ export interface components {
          * @enum {string}
          */
         Direction: "inbound" | "outbound";
+        /**
+         * DocKind
+         * @enum {string}
+         */
+        DocKind: "fact" | "opportunity" | "message" | "cv_artifact" | "contact";
+        /** DoctorCheck */
+        DoctorCheck: {
+            /** Name */
+            name: string;
+            /** Ok */
+            ok: boolean;
+            /**
+             * Detail
+             * @default
+             */
+            detail: string;
+            /** Fix */
+            fix?: string | null;
+        };
         /** EducationEntryDoc */
         EducationEntryDoc: {
             /** Education Id */
@@ -2057,6 +2455,33 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** JobQuery */
+        JobQuery: {
+            /** Text */
+            text?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Remote */
+            remote?: boolean | null;
+            /** Salary Min */
+            salary_min?: number | null;
+            /** Currency */
+            currency?: string | null;
+            /** Posted Since */
+            posted_since?: string | null;
+            /**
+             * Limit
+             * @default 30
+             */
+            limit: number;
+            /**
+             * Extra
+             * @description platform-specific knobs (hh area, upwork category …)
+             */
+            extra?: {
+                [key: string]: unknown;
+            };
+        };
         /**
          * MailboxProvider
          * @enum {string}
@@ -2138,6 +2563,16 @@ export interface components {
              * @default false
              */
             mark_read: boolean;
+        };
+        /** OAuthStartOut */
+        OAuthStartOut: {
+            platform: components["schemas"]["Platform"];
+            /** Authorize Url */
+            authorize_url: string;
+            /** State */
+            state: string;
+            /** Redirect Uri */
+            redirect_uri: string;
         };
         /** OfferDoc */
         OfferDoc: {
@@ -2335,6 +2770,18 @@ export interface components {
          * @enum {string}
          */
         OpportunityStatus: "new" | "watching" | "applied" | "ignored" | "archived";
+        /** ParseResult */
+        ParseResult: {
+            platform: components["schemas"]["Platform"];
+            kind: components["schemas"]["SyncKind"];
+            method: components["schemas"]["SyncMethod"];
+            /** Items */
+            items: {
+                [key: string]: unknown;
+            }[];
+            /** Count */
+            count: number;
+        };
         /**
          * PipelineKind
          * @enum {string}
@@ -2442,6 +2889,33 @@ export interface components {
             /** Email */
             email?: string | null;
         };
+        /** ReindexOut */
+        ReindexOut: {
+            /** Indexed */
+            indexed: {
+                [key: string]: number;
+            };
+            /** Embedded */
+            embedded: number;
+            /** Embeddings Model */
+            embeddings_model: string | null;
+            /**
+             * Finished At
+             * Format: date-time
+             */
+            finished_at: string;
+        };
+        /** ReindexRequest */
+        ReindexRequest: {
+            /**
+             * Embed
+             * @description also compute embeddings (needs a configured provider)
+             * @default false
+             */
+            embed: boolean;
+            /** Provider */
+            provider?: string | null;
+        };
         /**
          * RemotePolicy
          * @enum {string}
@@ -2483,6 +2957,36 @@ export interface components {
              * @description why this recommendation
              */
             reasons?: string[];
+        };
+        /** SearchHit */
+        SearchHit: {
+            kind: components["schemas"]["DocKind"];
+            /** Ref Id */
+            ref_id: string;
+            /** Title */
+            title: string;
+            /** Snippet */
+            snippet: string;
+            /** Score */
+            score: number;
+            /**
+             * Matched By
+             * @description fts | semantic | both
+             */
+            matched_by: string;
+            /** Url Path */
+            url_path?: string | null;
+        };
+        /** SearchOut */
+        SearchOut: {
+            /** Query */
+            query: string;
+            /** Hits */
+            hits: components["schemas"]["SearchHit"][];
+            /** Semantic Used */
+            semantic_used: boolean;
+            /** Indexed Documents */
+            indexed_documents: number;
         };
         /**
          * Seniority
@@ -2646,6 +3150,121 @@ export interface components {
             /** Instructions */
             instructions?: string | null;
         };
+        /**
+         * SyncKind
+         * @enum {string}
+         */
+        SyncKind: "profile" | "jobs" | "applications";
+        /**
+         * SyncMethod
+         * @enum {string}
+         */
+        SyncMethod: "api" | "export" | "paste";
+        /** SyncRequest */
+        SyncRequest: {
+            /** @description default: best available */
+            method?: components["schemas"]["SyncMethod"] | null;
+            /**
+             * Text
+             * @description pasted page text (paste method)
+             */
+            text?: string | null;
+            /**
+             * File Path
+             * @description export file/dir/zip (export method)
+             */
+            file_path?: string | null;
+            query?: components["schemas"]["JobQuery"] | null;
+            /**
+             * Use Ai
+             * @default false
+             */
+            use_ai: boolean;
+            /** Provider */
+            provider?: string | null;
+            /**
+             * Dry Run
+             * @description parse/fetch only; persist nothing
+             * @default false
+             */
+            dry_run: boolean;
+        };
+        /** SyncResult */
+        SyncResult: {
+            platform: components["schemas"]["Platform"];
+            kind: components["schemas"]["SyncKind"];
+            method: components["schemas"]["SyncMethod"] | null;
+            status: components["schemas"]["SyncStatus"];
+            run?: components["schemas"]["SyncRunOut"] | null;
+            /**
+             * Items Seen
+             * @default 0
+             */
+            items_seen: number;
+            /**
+             * Items Created
+             * @default 0
+             */
+            items_created: number;
+            /**
+             * Items Updated
+             * @default 0
+             */
+            items_updated: number;
+            /**
+             * Items Skipped
+             * @default 0
+             */
+            items_skipped: number;
+            /** Created Ids */
+            created_ids?: string[];
+            /** Duplicates */
+            duplicates?: string[];
+            /** Preview */
+            preview?: {
+                [key: string]: unknown;
+            }[];
+            /** Message */
+            message?: string | null;
+        };
+        /** SyncRunOut */
+        SyncRunOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            platform: components["schemas"]["Platform"];
+            kind: components["schemas"]["SyncKind"];
+            method: components["schemas"]["SyncMethod"];
+            status: components["schemas"]["SyncStatus"];
+            /**
+             * Started At
+             * Format: date-time
+             */
+            started_at: string;
+            /** Finished At */
+            finished_at: string | null;
+            /** Items Seen */
+            items_seen: number;
+            /** Items Created */
+            items_created: number;
+            /** Items Updated */
+            items_updated: number;
+            /** Items Skipped */
+            items_skipped: number;
+            /** Error */
+            error?: string | null;
+            /** Details */
+            details?: {
+                [key: string]: unknown;
+            };
+        };
+        /**
+         * SyncStatus
+         * @enum {string}
+         */
+        SyncStatus: "ok" | "partial" | "failed" | "skipped";
         /** TestimonialDoc */
         TestimonialDoc: {
             /** Id */
@@ -4491,6 +5110,440 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReplySuggestionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_api_search_get: {
+        parameters: {
+            query: {
+                q: string;
+                kind?: components["schemas"]["DocKind"][] | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SearchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reindex_api_search_reindex_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReindexRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReindexOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    capabilities_api_platform_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Capabilities"][];
+                };
+            };
+        };
+    };
+    connections_api_platform_connections_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"][];
+                };
+            };
+        };
+    };
+    connect_api_platform__platform__connect_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: components["schemas"]["Platform"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OAuthStartOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    oauth_callback_api_platform_oauth__platform__callback_get: {
+        parameters: {
+            query: {
+                code: string;
+                state: string;
+            };
+            header?: never;
+            path: {
+                platform: components["schemas"]["Platform"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_api_platform__platform__refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: components["schemas"]["Platform"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disconnect_api_platform__platform__connection_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: components["schemas"]["Platform"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ConnectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    doctor_api_platform__platform__doctor_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: components["schemas"]["Platform"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DoctorCheck"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    parse_api_platform__platform__parse__kind__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: components["schemas"]["Platform"];
+                kind: components["schemas"]["SyncKind"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ParseResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_api_platform__platform__sync__kind__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: components["schemas"]["Platform"];
+                kind: components["schemas"]["SyncKind"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SyncRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_all_api_platform_sync_all_post: {
+        parameters: {
+            query?: {
+                platform?: components["schemas"]["Platform"] | null;
+                dry_run?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncResult"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sync_runs_api_platform_sync_runs_get: {
+        parameters: {
+            query?: {
+                platform?: components["schemas"]["Platform"] | null;
+                kind?: components["schemas"]["SyncKind"] | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SyncRunOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    applications_api_platform_applications_get: {
+        parameters: {
+            query?: {
+                platform?: components["schemas"]["Platform"] | null;
+                status_filter?: components["schemas"]["ApplicationStatus"] | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApplicationObservationOut"][];
                 };
             };
             /** @description Validation Error */

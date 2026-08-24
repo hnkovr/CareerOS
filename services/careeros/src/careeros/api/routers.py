@@ -12,6 +12,7 @@ from careeros.modules.opportunities.router import router as opportunities_router
 from careeros.modules.pipeline.router import router as pipeline_router
 from careeros.modules.platform.router import router as platform_router
 from careeros.modules.profiles.router import router as profiles_router
+from careeros.modules.search.router import router as search_router
 from careeros.modules.vault.router import router as vault_router
 
 ROUTERS: list[APIRouter] = [
@@ -23,5 +24,6 @@ ROUTERS: list[APIRouter] = [
     pipeline_router,
     contacts_router,
     inbox_router,
+    search_router,
     platform_router,
 ]

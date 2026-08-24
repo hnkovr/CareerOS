@@ -19,7 +19,8 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] P1.2 Inbox core: threads/messages, raw-paste parsing, rule classification + optional AI refine, contact/opportunity/application linking, opportunity extraction, reply suggestions (Suggestion rows, never sent), /inbox UI + dashboard card
 - [ ] P1.3 Gmail adapter: OAuth flow, incremental history sync (needs user's Google Cloud app credentials)
 - [ ] P1.4 Reply drafts: Suggestion → approval → Gmail draft (send only on explicit action)
-- [ ] P1.5 pgvector semantic search; notifications; PWA service worker
+- [x] P1.5a unified search: FTS (GIN) + optional pgvector semantic over facts/opportunities/messages/CVs/contacts, /search UI
+- [ ] P1.5b notifications; PWA service worker
 
 - [ ] P0.9 Telegram bot: `modules/bot` (aiogram 3, webhook at `/tg/webhook`, owner-gated, ACK-then-background
       + `update_id` dedup), Fly deploy. Spec: `docs/superpowers/specs/2026-08-25-careeros-telegram-bot-design.md`.

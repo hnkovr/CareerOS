@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, Contact, FileText, Inbox, KanbanSquare, LayoutDashboard, Library, UserCircle } from "lucide-react";
+import { Briefcase, Contact, FileText, Inbox, KanbanSquare, LayoutDashboard, Library, Search, UserCircle } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -13,6 +13,7 @@ const items = [
   { href: "/cv", label: "CV", icon: FileText },
   { href: "/profiles", label: "Profiles", icon: UserCircle },
   { href: "/contacts", label: "Contacts", icon: Contact },
+  { href: "/search", label: "Search", icon: Search },
 ];
 
 export function Nav() {

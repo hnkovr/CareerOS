@@ -56,6 +56,9 @@ class Settings(BaseSettings):
     ai_inputs_retention_days: int = 90
     # model → (usd per 1M input tokens, usd per 1M output tokens); unknown models record cost=null
     ai_pricing: dict[str, tuple[float, float]] = Field(default_factory=dict)
+    # embeddings for semantic search; None → FTS-only
+    ai_embeddings_provider: str | None = None
+    ai_embeddings_model: str = "text-embedding-3-small"
 
     # --- platform connectors (ADR-011): OAuth client credentials + optional env-pinned tokens ---
     platform_token_file: Path = Path("generated/platform/tokens.json")

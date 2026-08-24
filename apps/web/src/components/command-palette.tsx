@@ -15,6 +15,7 @@ export function CommandPalette() {
   const commands = useMemo<CommandItem[]>(
     () => [
       { label: "Go to Dashboard", run: () => router.push("/") },
+      { label: "Search everything", hint: "FTS + semantic", run: () => router.push("/search") },
       { label: "Go to Vault", run: () => router.push("/vault") },
       { label: "Go to Opportunities", run: () => router.push("/opportunities") },
       { label: "Add opportunity (paste JD)", hint: "ingest", run: () => router.push("/opportunities?new=1") },

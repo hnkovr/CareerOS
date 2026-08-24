@@ -19,9 +19,13 @@ Updated: 2026-08-24
 Backend: 68 tests, ruff/pyright/import-linter clean. Web: tsc/eslint clean, vitest 5, prod build OK,
 e2e smoke (built web + real API + proxy) verified.
 
-## Next (P1 — Inbox & Pipeline)
-Gmail OAuth + incremental sync, classification, email→opportunity extraction, application Kanban,
-contacts, follow-ups, notifications, pgvector search. See `docs/architecture/04-roadmap.md`.
+## P1 progress
+- P1.1 pipeline (Kanban, timeline, interviews, follow-ups, contacts) — `dffd335`
+- P1.2 inbox (paste capture, rule+AI classification, linking, extraction, reply suggestions) — `cb5495e`
+- P1.5a unified search (FTS + optional pgvector semantic, /search UI) — this commit
+- parallel worktree: platform connectors (hh/upwork OAuth, sync runs) + Telegram bot surface (ADR-011)
+- remaining: P1.3 Gmail adapter (needs user's Google OAuth app; can reuse platform token store),
+  P1.4 suggestion approval flow, P1.5b notifications + PWA
 
 ## Known quirks
 - Demo vault lives inside the monorepo, so its `vault status` reports the monorepo git state
