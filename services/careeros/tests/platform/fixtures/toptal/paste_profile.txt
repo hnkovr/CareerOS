@@ -1,0 +1,59 @@
+https://www.toptal.com/resume/dana-kovalenko
+Toptal
+Hire Talent
+Apply as a Freelancer
+
+Dana Kovalenko
+Senior Data Platform Engineer
+Based in Tbilisi, Georgia
+Toptal Member Since March 15, 2023
+Availability: Full-time
+$90/hr
+
+Bio
+Dana builds analytics platforms for e-commerce and fintech teams: warehouse design, dbt
+modelling and orchestration with Dagster. Twelve years in data engineering, the last five
+leading small platform teams that ship reliable, observable pipelines.
+
+Expertise
+Python, SQL, dbt, Dagster, ClickHouse, Snowflake, Kafka, AWS, Terraform, Data Modeling
+
+Work Experience
+Senior Data Platform Engineer
+Northwind Commerce
+2023 - PRESENT
+- Rebuilt the analytics warehouse on ClickHouse; p95 dashboard latency went from 40 s to 2 s.
+- Introduced dbt and Dagster: 300+ models with freshness SLAs met on 99% of days.
+Technologies: Python, dbt, Dagster, ClickHouse, Kafka
+
+Lead Analytics Engineer
+Lumen Analytics
+Jan 2020 - Mar 2023
+- Led four analytics engineers; owned the semantic layer for 40 client dashboards.
+- Cut Snowflake spend by 35% through incremental models and warehouse right-sizing.
+Technologies: dbt, Snowflake, Looker, Airflow
+
+Data Engineer
+Orbit Fintech
+Jun 2016 - Dec 2019
+- Built ingestion for payment events (Kafka to Snowflake) handling 50M events per day.
+Technologies: Python, Kafka, Snowflake, Airflow
+
+Project Highlights
+Realtime Fraud Signals Pipeline
+Kafka to Flink to ClickHouse pipeline that flags anomalous payments within seconds.
+https://example.com/dana/fraud-signals
+Warehouse Cost Observability
+dbt and Dagster metadata turned into cost dashboards; found the 35% Snowflake saving.
+
+Education
+Master's Degree in Computer Science
+Kyiv Polytechnic Institute
+2010 - 2016
+
+Languages
+English: Fluent
+Ukrainian: Native
+
+Hire Dana
+Share this profile

@@ -1,0 +1,35 @@
+Jobs
+Recommended for you
+3 open jobs match your skills
+
+Senior Data Platform Engineer
+Northwind Commerce · E-commerce
+Engagement: Full-time
+Remote — US hours
+Duration: 6 months
+Rate: $70 - $90/hr
+Posted 2 days ago
+Skills: Python, dbt, Snowflake, Dagster
+Apply
+
+Analytics Warehouse Migration Lead
+Lumen Analytics · Marketing Analytics
+Engagement: Full-time
+On-site, Berlin
+Duration: 3 months
+Budget: $20,000
+Posted Aug 12, 2026
+Skills: dbt, BigQuery, Looker
+Apply
+
+Fractional Data Engineer
+Orbit Fintech · Fintech
+Engagement: Part-time (20 hrs/week)
+Remote
+Duration: Ongoing
+Rate: $85/hr
+Posted yesterday
+Skills: Python, Kafka, ClickHouse
+Apply
+
+Showing 3 of 3 jobs
