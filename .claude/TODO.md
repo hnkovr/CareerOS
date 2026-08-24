@@ -10,7 +10,7 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] P0.4 CV engine: fact selection, AI rewriting + provenance guard, RenderCV adapter, variants, comparison
 - [x] P0.5 Opportunities: ingest, parser (heuristic + optional AI), dedup, deterministic scoring, recommendation, AI analysis, compare, external prompt
 
-- [ ] P0.6 Profiles: snapshots, audit engine, health score
+- [x] P0.6 Profiles: snapshots (paste/structured capture), deterministic audit engine + optional AI findings, health scores, platform health endpoint
 - [ ] P0.7 Web: dashboard, vault editor w/ diff, CV generate/compare, opportunities, prompts, snapshots/audit, ⌘K
 - [ ] P0.8 Hardening: compose smoke e2e, contract tests, README walkthrough, seed
 
