@@ -61,6 +61,11 @@ export default function OpportunityDetailPage() {
       setCopied(false);
     },
   });
+  const addToPipeline = useMutation({
+    mutationFn: async () =>
+      unwrap(await api.POST("/api/pipeline/applications", { body: { opportunity_id: id } })),
+    onSuccess: (a) => router.push(`/pipeline/${a.id}`),
+  });
   const generateCv = useMutation({
     mutationFn: async (variantId: string) =>
       unwrap(await api.POST("/api/cv/generate", { body: { variant_id: variantId, opportunity_id: id, use_ai: true } })),
@@ -99,12 +104,17 @@ export default function OpportunityDetailPage() {
           <button className="btn" onClick={() => rescore.mutate()} disabled={rescore.isPending}>
             Rescore
           </button>
+          <button className="btn" onClick={() => addToPipeline.mutate()} disabled={addToPipeline.isPending}>
+            Add to pipeline
+          </button>
           <button className="btn btn-primary" onClick={() => analyze.mutate()} disabled={analyze.isPending}>
             {analyze.isPending ? "Analyzing…" : "Analyze with AI"}
           </button>
         </div>
       </div>
-      {(analyze.isError || setStatus.isError) && <ErrorBox error={analyze.error ?? setStatus.error} />}
+      {(analyze.isError || setStatus.isError || addToPipeline.isError) && (
+        <ErrorBox error={analyze.error ?? setStatus.error ?? addToPipeline.error} />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Card title="Transparent score" className="lg:row-span-2">

@@ -1,0 +1,20 @@
+# CareerOS — project overlay for the deploy-app driver.
+# Read by ~/.ai/skills/_scripts/deploy/deploy-app.sh; overlays the platform profile
+# at ~/.ai/templates/profiles/<platform>.yml. Contains NO secret values, ever.
+
+name: careeros
+region: ams
+
+# Allow-list, deliberately. Without `include`, the driver pushes every variable it
+# finds in config/.env.* minus a small built-in exclude list — which on this machine
+# would ship unrelated credentials to the platform. Only CAREEROS_* may leave.
+env_push:
+  include:
+    - "CAREEROS_*"
+  exclude:
+    # Local-only: these point at the dev docker-compose, never at the deployed stack.
+    - CAREEROS_TEST_DATABASE_URL
+    - CAREEROS_REDIS_URL
+    # Injected by the platform itself (`fly mpg attach --variable-name`), so pushing
+    # a local value would overwrite the real one with a localhost DSN.
+    - CAREEROS_DATABASE_URL

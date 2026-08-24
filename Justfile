@@ -104,3 +104,53 @@ build:
 
 logs *ARGS:
     docker compose logs -f {{ARGS}}
+
+# ---------- telegram bot ----------
+
+deploy_jf := "$HOME/.ai/skills/_scripts/deploy/Justfile"
+
+# run API locally with the bot enabled (tasks inline, no redis needed)
+bot-run:
+    CAREEROS_TASK_RUNNER=inline CAREEROS_TG_ENABLED=true uv run careeros-api
+
+# ask Telegram who owns the webhook (the app's own /status only knows its startup claim)
+bot-webhook-info:
+    scripts/prj-tools/tg-bot.sh info
+
+# claim the webhook; refuses a foreign owner unless: just bot-webhook-set -- --force
+bot-webhook-set *ARGS:
+    scripts/prj-tools/tg-bot.sh set {{ARGS}}
+
+bot-webhook-delete:
+    scripts/prj-tools/tg-bot.sh delete
+
+# token present + belongs to the right bot + webhook state + secret present
+bot-token-check:
+    scripts/prj-tools/tg-bot.sh check
+
+# mint or repair the bot token (opens BotFather, verifies with getMe)
+bot-token-ensure:
+    $HOME/.ai/skills/_scripts/integrations/telegram/ensure-tg-bot.sh \
+      --var $(yq -r '.careeros.tg_bot.deploy.token_secret' $HOME/.ai/skills/_settings/careeros.yml) \
+      --bot $(yq -r '.careeros.tg_bot.handle' $HOME/.ai/skills/_settings/careeros.yml)
+
+# ---------- deploy: fly ----------
+
+# preflight: CLI installed? authed? config present?
+deploy-check:
+    just -f {{deploy_jf}} check fly
+
+# print every command the deploy would run, execute none
+deploy-dry:
+    just -f {{deploy_jf}} deploy-dry fly
+
+# ship it (preflight must pass); then claim the webhook
+deploy-fly:
+    just -f {{deploy_jf}} deploy fly
+    just bot-webhook-set
+
+fly-logs:
+    just -f {{deploy_jf}} logs fly
+
+fly-status:
+    flyctl status

@@ -23,6 +23,11 @@ export default function DashboardPage() {
     queryKey: ["cv-artifacts", "recent"],
     queryFn: async () => unwrap(await api.GET("/api/cv/artifacts", { params: { query: { limit: 5 } } })),
   });
+  const followUps = useQuery({
+    queryKey: ["pipeline-follow-ups"],
+    queryFn: async () =>
+      unwrap(await api.GET("/api/pipeline/follow-ups", { params: { query: { within_days: 7 } } })),
+  });
   const runs = useQuery({
     queryKey: ["ai-runs", "recent"],
     queryFn: async () => unwrap(await api.GET("/api/ai/runs", { params: { query: { limit: 5 } } })),
@@ -158,6 +163,25 @@ export default function DashboardPage() {
                   {a.ai_used && <Badge tone="violet">AI</Badge>}
                   {timeAgo(a.created_at)}
                 </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+
+      <Card title="Follow-ups" action={<Link className="btn" href="/pipeline">Pipeline</Link>}>
+        {followUps.isPending ? (
+          <Spinner />
+        ) : (followUps.data ?? []).length === 0 ? (
+          <Empty>Nothing due this week.</Empty>
+        ) : (
+          <ul className="space-y-2 text-sm">
+            {(followUps.data ?? []).map((f) => (
+              <li key={f.application.id} className="flex items-center justify-between gap-2">
+                <Link href={`/pipeline/${f.application.id}`} className="truncate hover:text-accent">
+                  {truncate(f.application.opportunity_title, 40)}
+                </Link>
+                <Badge tone={f.overdue ? "bad" : "warn"}>{f.overdue ? "overdue" : timeAgo(f.due_at).replace(" ago", "")}</Badge>
               </li>
             ))}
           </ul>

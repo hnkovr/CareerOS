@@ -1,0 +1,60 @@
+# CareerOS on Fly.io — single machine, webhook-driven Telegram bot + HTTP API.
+# Pattern: ~/.ai/templates/patterns/fly.toml · Profile: ~/.ai/templates/profiles/fly.yml
+# Deploy:  just deploy-fly   (driver: ~/.ai/skills/_scripts/deploy/deploy-app.sh)
+#
+# Secrets are NEVER written here. They are pushed as `flyctl secrets` by the deploy
+# driver from config/.env.* filtered through config/deploy.yml:env_push.
+
+app = "careeros"
+primary_region = "ams"
+
+[build]
+  dockerfile = "deploy/docker/Dockerfile.careeros"
+
+# Runs before the new version takes traffic; a non-zero exit aborts the deploy.
+# Migrations belong here, not in the entrypoint, which would race across restarts.
+[deploy]
+  release_command = "alembic -c services/careeros/alembic.ini upgrade head"
+
+# Non-secret configuration only.
+[env]
+  CAREEROS_ENV = "prod"
+  CAREEROS_LOG_JSON = "true"
+  CAREEROS_API_PORT = "8000"
+  CAREEROS_TG_WEBHOOK_PATH = "/tg/webhook"
+  # No Redis add-on on Fly: tasks run in-process. Revisit when P1 adds Gmail sync.
+  CAREEROS_TASK_RUNNER = "inline"
+  # Eligibility key: a process with this unset never talks to Telegram, so a local
+  # run can never steal production's updates.
+  CAREEROS_TG_PUBLIC_URL = "https://careeros.fly.dev"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  # "off", NOT "suspend"/"stop": the webhook ACKs 200 immediately and finishes the
+  # AI work in the background, so an auto-stop would kill a handler mid-flight. A
+  # stopped machine is still woken by the next POST (~9s), which is why this bot
+  # takes updates by webhook rather than polling — but Fly must not stop it for us.
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  # MUST stay 1 max: two machines are two webhook claimants that would fight.
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+[[http_service.checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "15s"
+  method = "GET"
+  path = "/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+
+# No [mounts]: the vault is cloned read-only at boot (CAREEROS_VAULT_GIT_URL) and
+# nothing else is written to disk. Add a volume only when vault writes land (P1).

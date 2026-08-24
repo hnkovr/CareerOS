@@ -25,6 +25,7 @@ for _mod in (
     "careeros.modules.cv.models",
     "careeros.modules.profiles.models",
     "careeros.modules.ai.models",
+    "careeros.modules.pipeline.models",
 ):
     with contextlib.suppress(ModuleNotFoundError):
         importlib.import_module(_mod)

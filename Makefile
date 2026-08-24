@@ -2,7 +2,7 @@
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 
-.PHONY: help env dev up down test lint fmt typecheck validate-career generate-cv seed migrate openapi clean
+.PHONY: help env dev up down test lint fmt typecheck validate-career generate-cv seed migrate openapi clean bot-check bot-webhook deploy deploy-dry
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -45,6 +45,18 @@ migrate: ## Apply alembic migrations
 
 openapi: ## Export OpenAPI + regenerate TS client/types
 	@just openapi
+
+bot-check: ## Telegram bot: token valid? who owns the webhook?
+	@just bot-token-check
+
+bot-webhook: ## Claim the Telegram webhook for this deployment
+	@just bot-webhook-set
+
+deploy-dry: ## Print every command the Fly deploy would run, execute none
+	@just deploy-dry
+
+deploy: ## Deploy to Fly, then claim the webhook
+	@just deploy-fly
 
 clean: ## Remove build artifacts and caches
 	rm -rf .venv node_modules apps/web/.next .pytest_cache .ruff_cache generated/*

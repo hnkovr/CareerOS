@@ -116,8 +116,11 @@ App `careeros`, region `ams`, kind `paas`, driven by the existing `deploy-app` d
 
 - **One machine, `--ha=false`.** Two machines are two webhook claimants; the second would
   fight the first. The profile already defaults to this for exactly this reason.
-- `auto_stop_machines` / `auto_start_machines` with `min_machines_running = 0` — the webhook
-  POST wakes a stopped machine in ~9s, which is why webhook beats long-polling on Fly's trial.
+- `auto_start_machines = true`, `min_machines_running = 0` — the webhook POST wakes a stopped
+  machine in ~9s, which is why webhook beats long-polling on Fly's trial. But
+  **`auto_stop_machines = "off"`**, not `"suspend"`: this handler ACKs first and keeps working,
+  and an auto-stop would kill it mid-flight. (Rule carried by the `fly-ops` agent, learned on
+  wordsman.)
 - `release_command` runs `alembic upgrade head` before the new version takes traffic.
 - Image: the existing `deploy/docker/Dockerfile.careeros`.
 - **Postgres**: `fly mpg create` then
@@ -205,4 +208,5 @@ Unit and contract, no network:
 | MPG URL scheme rejected by asyncpg | normalizer in `core/db.py`, unit-tested |
 | Token belongs to the wrong bot | every path ends in `getMe`; username mismatch is hard failure |
 | Fly trial machine sleeps | webhook delivery wakes it; no poller to keep alive |
+| Auto-stop kills a background handler | `auto_stop_machines = "off"`; retries covered by `update_id` dedup |
 | Secret sprawl to the platform | `env_push.include: ["CAREEROS_*"]` allow-list |
