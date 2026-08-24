@@ -1,4 +1,4 @@
-# 011 — Platform connectors: one submodule per platform, OAuth tokens allowed, sync placement
+# 013 — Platform connectors: one submodule per platform, OAuth tokens allowed, sync placement
 
 * Status: accepted
 * Date: 2026-08-25

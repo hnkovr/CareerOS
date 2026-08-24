@@ -1,0 +1,64 @@
+# config/platform.yml — ops scalars for the platform connectors, consumed by the skill
+# /careeros-platform-sync and the agent .claude/agents/careeros-platform-ops.md.
+# Behaviour SoT is the code (services/careeros/src/careeros/modules/platform) and docs/platform;
+# this file only names inputs, secrets and commands — never tokens.
+platform:
+  adr: docs/adr/013-platform-connectors.md
+  guide: docs/platform/README.md
+  spec: docs/superpowers/specs/2026-08-25-platform-connectors-design.md
+  cli: "uv run careeros platform"
+  api_prefix: /api/platform
+  token_file_var: CAREEROS_PLATFORM_TOKEN_FILE     # git-ignored, mode 0600; never printed
+  order: [capabilities, connections, doctor, dry-run, apply, status]
+  just:
+    capabilities: platform-capabilities
+    connections: platform-connections
+    connect: platform-connect          # PLATFORM
+    doctor: platform-doctor            # PLATFORM
+    sync: platform-sync                # PLATFORM="all"
+    sync_dry: platform-sync-dry
+    profile: platform-profile          # PLATFORM *ARGS  (-dry sibling)
+    jobs: platform-jobs                # PLATFORM *ARGS  (-dry sibling)
+    applications: platform-applications
+    status: platform-status
+    test: test-platform
+  methods: [api, export, paste]        # precedence, best first
+  platforms:
+    hh:
+      auth: oauth2
+      secrets: [CAREEROS_HH_CLIENT_ID, CAREEROS_HH_CLIENT_SECRET]
+      app_url: https://dev.hh.ru
+      inputs: {profile: [api, paste], jobs: [api, paste], applications: [api, paste]}
+      guide: docs/platform/hh.md
+    upwork:
+      auth: oauth2
+      secrets: [CAREEROS_UPWORK_CLIENT_ID, CAREEROS_UPWORK_CLIENT_SECRET]
+      app_url: https://www.upwork.com/developer/keys
+      inputs: {profile: [api, paste], jobs: [api, paste], applications: [api, paste]}
+      caveat: "GraphQL API needs an approved API key; paste works meanwhile; doctor checks the live schema"
+      guide: docs/platform/upwork.md
+    linkedin:
+      auth: none
+      export: "Settings & Privacy → Data privacy → Get a copy of your data (archive arrives by email)"
+      inputs: {profile: [export, paste], jobs: [export, paste], applications: [export, paste]}
+      guide: docs/platform/linkedin.md
+    wellfound:
+      auth: none
+      pages: {profile: "your profile page", jobs: "Jobs list", applications: "Applications tab"}
+      inputs: {profile: [paste], jobs: [paste], applications: [paste]}
+      guide: docs/platform/wellfound.md
+    indeed:
+      auth: none
+      pages: {profile: "Indeed Profile / Resume", jobs: "search results", applications: "My jobs → Applied"}
+      inputs: {profile: [paste], jobs: [paste], applications: [paste]}
+      guide: docs/platform/indeed.md
+    getmatch:
+      auth: none
+      pages: {profile: "Мой профиль", jobs: "Вакансии", applications: "Отклики"}
+      inputs: {profile: [paste], jobs: [paste], applications: [paste]}
+      guide: docs/platform/getmatch.md
+    toptal:
+      auth: none
+      pages: {profile: "public talent profile", jobs: "talent portal → Jobs", applications: "My Applications"}
+      inputs: {profile: [paste], jobs: [paste], applications: [paste]}
+      guide: docs/platform/toptal.md

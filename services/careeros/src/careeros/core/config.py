@@ -60,7 +60,7 @@ class Settings(BaseSettings):
     ai_embeddings_provider: str | None = None
     ai_embeddings_model: str = "text-embedding-3-small"
 
-    # --- platform connectors (ADR-011): OAuth client credentials + optional env-pinned tokens ---
+    # --- platform connectors (ADR-013): OAuth client credentials + optional env-pinned tokens ---
     platform_token_file: Path = Path("generated/platform/tokens.json")
     platform_oauth_redirect_base: str = "http://localhost:8000/api/platform/oauth"
     platform_http_timeout_s: float = 20.0

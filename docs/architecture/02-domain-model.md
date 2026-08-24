@@ -61,7 +61,7 @@ Common columns: `id uuid`, `user_id uuid FK`, `created_at`, `updated_at`; soft-d
 | `company` | `name`, `domain?`, `size?`, `industry?`, `hq_location?`, `remote_friendly?`, `notes`, `links[]` |
 | `contact` | `name`, `company_id FK?`, `role?`, `email?`, `linkedin_url?`, `relationship` (recruiter\|hiring_manager\|client\|peer\|other), `last_contact_at`, `next_action?`, `notes` |
 
-### Platform context ([ADR-011](../adr/011-platform-connectors.md))
+### Platform context ([ADR-013](../adr/013-platform-connectors.md))
 | Table | Key fields |
 |---|---|
 | `platform_connection` | `platform` (unique per user), `status` (disconnected\|connected\|needs_reauth\|error), `auth_kind`, `account_id?`, `account_label?`, `scopes[]`, `token_expires_at?`, `last_sync_at?`, `last_error?`, `meta jsonb` — **no secrets** (tokens live in the 0600 token file) |

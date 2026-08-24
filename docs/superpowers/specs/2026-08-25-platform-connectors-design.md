@@ -10,7 +10,7 @@ Related: [ADR-004](../../adr/004-platform-adapter-model.md) (adapter model),
 [ADR-005](../../adr/005-no-autonomous-platform-scraping.md) (no scraping / no credential storage),
 [capabilities matrix](../../architecture/03-integration-capabilities-matrix.md),
 [roadmap P2](../../architecture/04-roadmap.md). Decisions specific to this slice are recorded in
-[ADR-011](../../adr/011-platform-connectors.md).
+[ADR-013](../../adr/013-platform-connectors.md).
 
 ## 1. Goals / non-goals
 
@@ -139,7 +139,7 @@ DTOs (all Pydantic; nulls = "not stated"; every DTO keeps `raw_payload`/`raw_tex
 ## 5. Auth & tokens
 
 * OAuth2 access/refresh tokens are **permitted** (user-granted, scoped, revocable — not passwords
-  or session cookies; ADR-011 records this reading of ADR-005). Stored in
+  or session cookies; ADR-013 records this reading of ADR-005). Stored in
   `settings.platform_token_file` (default `generated/platform/tokens.json`, git-ignored, chmod 600),
   overridable per platform by env (`CAREEROS_HH_ACCESS_TOKEN`, `CAREEROS_UPWORK_ACCESS_TOKEN`, …)
   for container deployments. Never logged (structlog redaction already masks `*_token`).

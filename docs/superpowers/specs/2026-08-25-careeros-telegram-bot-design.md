@@ -194,7 +194,7 @@ Unit and contract, no network:
 
 ## H. Documentation
 
-- ADR 011 — Telegram bot as the P0 mobile surface: webhook over polling, owner-gated,
+- ADR 012 — Telegram bot as the P0 mobile surface: webhook over polling, owner-gated,
   read-only vault, no auto-send.
 - `docs/developer-guide/telegram-bot.md` — run locally, claim/release webhook, deploy runbook.
 - `README.md`, `.claude/TODO.md`, `.claude/CLAUDE-curr-status.md` updated.

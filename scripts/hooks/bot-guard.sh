@@ -25,12 +25,12 @@ git rev-parse --show-toplevel >/dev/null 2>&1 || exit 0
 command -v yq >/dev/null 2>&1 || { emit "yq missing — cannot read $SETTINGS"; exit 0; }
 command -v jq >/dev/null 2>&1 || { emit "jq missing — skipping webhook check"; exit 0; }
 
-get() { yq -r "$1" "$SETTINGS" 2>/dev/null; }
-API_BASE=$(get '.careeros.api.telegram_bot_api')
-TOKEN_VAR=$(get '.careeros.tg_bot.deploy.token_secret')
-PUBLIC_URL=$(get '.careeros.tg_bot.deploy.fly.url')
-WEBHOOK_PATH=$(get '.careeros.tg_bot.deploy.webhook_path')
-HANDLE=$(get '.careeros.tg_bot.handle')
+# One yq process, not five: this runs on every session start, so interpreter
+# startup is the dominant cost.
+raw=$(yq -r '[.careeros.api.telegram_bot_api, .careeros.tg_bot.deploy.token_secret,
+              .careeros.tg_bot.deploy.fly.url, .careeros.tg_bot.deploy.webhook_path,
+              .careeros.tg_bot.handle] | @tsv' "$SETTINGS" 2>/dev/null)
+IFS=$'\t' read -r API_BASE TOKEN_VAR PUBLIC_URL WEBHOOK_PATH HANDLE <<<"$raw"
 
 for pair in "API_BASE:$API_BASE" "TOKEN_VAR:$TOKEN_VAR" "PUBLIC_URL:$PUBLIC_URL" "WEBHOOK_PATH:$WEBHOOK_PATH"; do
   v="${pair#*:}"

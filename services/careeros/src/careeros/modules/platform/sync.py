@@ -1,6 +1,6 @@
 """PlatformSyncService: connector → domain services (profiles, opportunities) or observations.
 
-This is the only place where the platform layer calls domain services (ADR-011). Connectors stay
+This is the only place where the platform layer calls domain services (ADR-013). Connectors stay
 pure; this service chooses the method (api > export > paste), runs it, persists, records the run.
 """
 

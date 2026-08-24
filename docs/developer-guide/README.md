@@ -30,11 +30,11 @@ unreachable. Tests that call a real AI provider are marked `@pytest.mark.ai` and
 ## Telegram bot
 
 Phone-first capture and triage surface, deployed on Fly. Setup, webhook ownership rules and
-diagnosis: [`telegram-bot.md`](telegram-bot.md). Decision: [ADR 011](../adr/011-telegram-bot-surface.md).
+diagnosis: [`telegram-bot.md`](telegram-bot.md). Decision: [ADR 012](../adr/012-telegram-bot-surface.md).
 
 ## Platform connectors
 
-`careeros.modules.platform` ([ADR-011](../adr/011-platform-connectors.md), user guide: [docs/platform](../platform/README.md)).
+`careeros.modules.platform` ([ADR-013](../adr/013-platform-connectors.md), user guide: [docs/platform](../platform/README.md)).
 To add a connector: create `modules/platform/connectors/<name>/connector.py` with
 `class Connector(BaseConnector)` declaring `platform` and `capabilities` (only the methods you
 implement: `read_profile` / `import_profile_export` / `parse_profile_text`, `search_jobs` /

@@ -24,19 +24,28 @@ command -v yq   >/dev/null || die "yq is required"
 command -v curl >/dev/null || die "curl is required"
 
 # Fail-loud settings read: a missing key is a bug, never a silent default.
-setting() {
-  local path="$1" val
-  val=$(yq -r "$path" "$SETTINGS")
-  [[ -n "$val" && "$val" != "null" ]] || die "${path#.} not set in $SETTINGS"
-  printf '%s' "$val"
+# One yq process for all six values — six was ~300ms of pure interpreter startup,
+# paid on every invocation including the SessionStart hook.
+_SETTING_KEYS=(
+  '.careeros.api.telegram_bot_api'
+  '.careeros.tg_bot.deploy.token_secret'
+  '.careeros.tg_bot.deploy.webhook_secret'
+  '.careeros.tg_bot.deploy.webhook_path'
+  '.careeros.tg_bot.deploy.fly.url'
+  '.careeros.tg_bot.handle'
+)
+read_settings() {
+  local raw
+  raw=$(yq -r "[$(IFS=,; echo "${_SETTING_KEYS[*]}")] | @tsv" "$SETTINGS") \
+    || die "cannot parse $SETTINGS"
+  IFS=$'\t' read -r API_BASE TOKEN_VAR SECRET_VAR WEBHOOK_PATH PUBLIC_URL EXPECT_HANDLE <<<"$raw"
+  local i=0
+  for val in "$API_BASE" "$TOKEN_VAR" "$SECRET_VAR" "$WEBHOOK_PATH" "$PUBLIC_URL" "$EXPECT_HANDLE"; do
+    [[ -n "$val" && "$val" != "null" ]] || die "${_SETTING_KEYS[$i]#.} not set in $SETTINGS"
+    i=$((i+1))
+  done
 }
-
-API_BASE=$(setting '.careeros.api.telegram_bot_api')
-TOKEN_VAR=$(setting '.careeros.tg_bot.deploy.token_secret')
-SECRET_VAR=$(setting '.careeros.tg_bot.deploy.webhook_secret')
-WEBHOOK_PATH=$(setting '.careeros.tg_bot.deploy.webhook_path')
-PUBLIC_URL=$(setting '.careeros.tg_bot.deploy.fly.url')
-EXPECT_HANDLE=$(setting '.careeros.tg_bot.handle')
+read_settings
 
 TARGET_URL="${PUBLIC_URL}${WEBHOOK_PATH}"
 

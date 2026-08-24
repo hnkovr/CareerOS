@@ -1,7 +1,7 @@
 # Platform connectors — user guide
 
 CareerOS reads three things from each job platform, always **read-only** and always through the
-best *legitimate* method the platform offers ([ADR-011](../adr/011-platform-connectors.md)):
+best *legitimate* method the platform offers ([ADR-013](../adr/013-platform-connectors.md)):
 
 | Capability | What lands in CareerOS |
 |---|---|

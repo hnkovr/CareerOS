@@ -1,6 +1,6 @@
 # Integration Capabilities Matrix
 
-Status: accepted for P0 (2026-08-20); **implemented 2026-08-25** as `careeros.modules.platform` ([ADR-011](../adr/011-platform-connectors.md)) — the live matrix is served by `GET /api/platform/capabilities` / `careeros platform capabilities`, per-platform guides live in [docs/platform](../platform/README.md). **Verify each "official API" cell at integration time** —
+Status: accepted for P0 (2026-08-20); **implemented 2026-08-25** as `careeros.modules.platform` ([ADR-013](../adr/013-platform-connectors.md)) — the live matrix is served by `GET /api/platform/capabilities` / `careeros platform capabilities`, per-platform guides live in [docs/platform](../platform/README.md). **Verify each "official API" cell at integration time** —
 platform programs change; this table records the working assumption used for planning, not a
 guarantee. Rule of precedence ([ADR-004](../adr/004-platform-adapter-model.md), [ADR-005](../adr/005-no-autonomous-platform-scraping.md)):
 
@@ -25,7 +25,7 @@ Legend: ✅ planned/available · ⚠️ restricted/conditional · ❌ not availa
 | **JSON Resume / RenderCV / LinkedIn export / PDF-DOCX** | ✅ file import → suggestions → human confirms facts | — | — | — | — | ✅ | file formats | — | ✅ | P0: RenderCV/JSON Resume/YAML · P1: LinkedIn export, PDF/DOCX (AI-assisted) |
 | **Browser extension / iOS Share** | 👤 capture current page/profile/message | ❌ | 👤 | 👤 | ❌ | — | — | — | ✅ | P2 |
 
-**Application statuses** (read-only) are a fourth column in practice: hh.ru `negotiations` (API), Upwork proposals (API, conditional), LinkedIn `Job Applications.csv` (export), and the "Applied" pages of Wellfound / Indeed / getmatch / Toptal (paste). They land in `application_observation` rows with a normalized status and history ([ADR-011](../adr/011-platform-connectors.md)).
+**Application statuses** (read-only) are a fourth column in practice: hh.ru `negotiations` (API), Upwork proposals (API, conditional), LinkedIn `Job Applications.csv` (export), and the "Applied" pages of Wellfound / Indeed / getmatch / Toptal (paste). They land in `application_observation` rows with a normalized status and history ([ADR-013](../adr/013-platform-connectors.md)).
 
 ## Adapter contract
 
@@ -34,13 +34,16 @@ Every connector implements `BaseConnector` (`modules/platform/base.py`) and decl
 ```python
 class Capabilities(BaseModel):
     platform: Platform
-    profile: list[SyncMethod]        # api | export | paste — best first
+    profile: list[SyncMethod]  # api | export | paste — best first
     jobs: list[SyncMethod]
     applications: list[SyncMethod]
     write_profile: CapabilityLevel = none
     read_messages: CapabilityLevel = none
-    apply: ApplyLevel = none          # never above manual_assist
-    official_api: bool; email_fallback: bool; auth: AuthKind; notes: str
+    apply: ApplyLevel = none  # never above manual_assist
+    official_api: bool
+    email_fallback: bool
+    auth: AuthKind
+    notes: str
     # derived: read_profile, read_opportunities, read_applications, export_import, manual_capture
 ```
 

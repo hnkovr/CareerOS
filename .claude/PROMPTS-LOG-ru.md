@@ -2,4 +2,4 @@
 
 | Дата | Кратко | Результат |
 |---|---|---|
-| 2026-08-25 | Коннекторы платформ: сабмодули для чтения своего профиля, поиска вакансий и проверки статусов откликов для Upwork, Wellfound, LinkedIn, Indeed, getmatch, Toptal, hh.ru (скрипты/скиллы/саб-агенты, параллельные агенты); в процессе: тесты (и отладка), документация, GHI, проект в Linear. | Ядро `modules/platform` (контракт, реестр, токены/OAuth, синк, API, CLI, just) + 7 коннекторов параллельными саб-агентами; ADR-011; docs/platform; агенты `careeros-platform-{ops,connector-dev}`; GitHub #10–#21; Linear MY-26…MY-37 (проект CareerOS). |
+| 2026-08-25 | Коннекторы платформ: сабмодули для чтения своего профиля, поиска вакансий и проверки статусов откликов для Upwork, Wellfound, LinkedIn, Indeed, getmatch, Toptal, hh.ru (скрипты/скиллы/саб-агенты, параллельные агенты); в процессе: тесты (и отладка), документация, GHI, проект в Linear. | Ядро `modules/platform` (контракт, реестр, токены/OAuth, синк, API, CLI, just) + 7 коннекторов параллельными саб-агентами; ADR-013; docs/platform; агенты `careeros-platform-{ops,connector-dev}`; GitHub #10–#21; Linear MY-26…MY-37 (проект CareerOS). |

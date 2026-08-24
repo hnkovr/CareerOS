@@ -1,4 +1,4 @@
-"""Enumerations of the platform integration layer (ADR-004 / ADR-011)."""
+"""Enumerations of the platform integration layer (ADR-004 / ADR-013)."""
 
 from __future__ import annotations
 

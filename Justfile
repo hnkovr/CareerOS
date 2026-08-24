@@ -68,7 +68,7 @@ generate-cv VARIANT="general-core" *ARGS:
 export-schemas:
     uv run careeros vault export-schemas
 
-# ---------- platform connectors (ADR-011) ----------
+# ---------- platform connectors (ADR-013) ----------
 
 # shared helper: every platform recipe goes through the CLI
 _platform *ARGS:

@@ -23,7 +23,7 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] P1.5b computed notification center (/api/notifications + header bell) + PWA manifest/icon; web push deferred until HTTPS deploy
 
 - [ ] P0.9 Telegram bot ([GH #1–#9](https://github.com/hnkovr/CareerOS/issues), [Linear: CareerOS](https://linear.app/my-1st/project/careeros-2039a962e2cf))
-  - Spec: `docs/superpowers/specs/2026-08-25-careeros-telegram-bot-design.md` · [ADR 011](../docs/adr/012-telegram-bot-surface.md)
+  - Spec: `docs/superpowers/specs/2026-08-25-careeros-telegram-bot-design.md` · [ADR 012](../docs/adr/012-telegram-bot-surface.md)
   - DONE: deploy path (`fly.toml`, `config/deploy.yml`), ops scripts, SessionStart guard,
     `/careeros-bot` skill, `@careeros_hnkovr_bot` + webhook secret, 47 tests in `tests/deploy/`
   - TODO: [#1](https://github.com/hnkovr/CareerOS/issues/1) webhook + 3 gates ·

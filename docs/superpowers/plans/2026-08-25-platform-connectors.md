@@ -316,13 +316,13 @@ Common rules for every connector task:
 - Paste parsers: public talent profile ("Name / Title / Location / Bio / Expertise / Work Experience: Title, Company, dates / Portfolio"), portal job list ("Title / Client · Industry / Engagement: Full-time · Remote · Duration / Rate / Posted"), applications ("Applied jobs: Title · Client · Applied <date> · Stage: Applied / Interviewing / Matched / Declined").
 - Tests: three fixtures; "Matched"→offer, "Declined"→rejected.
 
-### Task 12: Docs, ADR-011, capabilities matrix, agents, skill, session files
+### Task 12: Docs, ADR-013, capabilities matrix, agents, skill, session files
 
 **Files:**
-- Create: `docs/adr/011-platform-connectors.md`; `docs/platform/README.md`; `.claude/agents/careeros-platform-ops.md`; `.claude/agents/careeros-platform-connector-dev.md`
+- Create: `docs/adr/013-platform-connectors.md`; `docs/platform/README.md`; `.claude/agents/careeros-platform-ops.md`; `.claude/agents/careeros-platform-connector-dev.md`
 - Modify: `docs/adr/README.md` (row 011), `docs/architecture/03-integration-capabilities-matrix.md` (rows hh/indeed/getmatch + updated cells for existing rows + note that the matrix is now served from `GET /api/platform/capabilities`), `docs/architecture/01-architecture-proposal.md` (Platform row + context map note), `docs/architecture/04-roadmap.md` (P2 item done early), `docs/developer-guide/README.md` (connector how-to), `README.md` (command row), `.claude/CLAUDE.md` (layout line: platform module exists), `.claude/TODO.md`, `.claude/CLAUDE-curr-status.md`, `.claude/PROMPTS-LOG.md` (+ `-ru.md`)
 - Skill: run `/create-skill careeros-platform-sync` (policy); fallback `/create-skill-candidate-for-curr-prj`.
-- [ ] Steps: write docs; verify every relative link resolves (`grep -o '](\.\./[^)]*)'` and test `-f`); commit `docs(platform): ADR-011, capabilities matrix, connector guide, agents`.
+- [ ] Steps: write docs; verify every relative link resolves (`grep -o '](\.\./[^)]*)'` and test `-f`); commit `docs(platform): ADR-013, capabilities matrix, connector guide, agents`.
 
 ### Task 13: Integration gates, review, final commit
 
