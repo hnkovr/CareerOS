@@ -1,0 +1,59 @@
+Dana Kovalenko
+Senior Data Engineer
+Tbilisi, Georgia
+dana.kovalenko@example.com
++995 555 010 203
+Willing to relocate to: Warsaw, Poland - Berlin, Germany
+
+Summary
+Senior data engineer with twelve years of building analytics platforms for e-commerce and fintech.
+I own the path from raw events to governed marts: ingestion, dbt modelling, orchestration and BI.
+Comfortable leading small platform teams and writing the ADRs that keep them aligned.
+
+Work experience
+
+Senior Data Engineer
+Northwind Commerce - Remote
+January 2023 to Present
+Own the Dagster + dbt platform that serves 40 analysts across three business units.
+Cut ClickHouse storage cost by 35% by redesigning partitioning and TTL policies.
+
+Lead Analytics Engineer
+Lumen Analytics - Warsaw, Poland
+March 2020 to December 2022
+Led a team of four analytics engineers; introduced dbt tests and CI for every mart.
+Migrated nightly batch jobs from cron to Dagster with full lineage.
+
+Data Engineer
+Orbit Fintech - Tbilisi, Georgia
+June 2016 to February 2020
+Built the first streaming ingestion (Kafka to ClickHouse) for transaction analytics.
+
+Education
+Master's degree in Computer Science
+Orbit Institute of Technology - Tbilisi, Georgia
+September 2010 to June 2015
+
+Skills
+Python (10+ years)
+SQL (12 years)
+dbt (5 years)
+Dagster (3 years)
+ClickHouse (4 years)
+Apache Airflow (6 years)
+Kafka, Docker, Terraform (Less than 1 year)
+Data modelling
+
+Certifications and licenses
+Analytics Engineering Certificate
+May 2024 to Present
+
+Assessments
+Data analysis: Expert
+June 2025
+Working with MySQL: Proficient
+April 2025
+
+Links
+https://github.com/dana-kovalenko
+https://www.linkedin.com/in/dana-kovalenko

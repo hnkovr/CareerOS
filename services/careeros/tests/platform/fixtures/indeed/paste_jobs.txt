@@ -1,0 +1,55 @@
+data engineer jobs in Remote
+Sort by: relevance - date
+1,284 jobs
+
+Senior Data Engineer
+Northwind Commerce
+4.1
+Remote
+$120,000 - $150,000 a year
+Full-time
+Easily apply
+Hiring multiple candidates
+Own the Dagster + dbt platform for our analytics teams; ClickHouse experience required.
+Posted 3 days ago
+
+Analytics Engineer (Contract)
+Lumen Analytics
+Warsaw, Poland
+$60 - $80 an hour
+Part-time
+Easily apply
+Build and maintain dbt marts for product analytics; SQL and Python required.
+Just posted
+
+Data Platform Engineer
+Orbit Fintech
+Tbilisi
+From $90,000 a year
+Full-time
+Responsive employer
+Kafka, ClickHouse and Kubernetes on a fintech transaction platform.
+Active 2 days ago
+
+Staff Data Engineer
+Northwind Commerce
+Hybrid work in Warsaw, Poland
+Up to €95,000 a year
+Full-time
+Urgently hiring
+Typically responds within 1 day
+Lead the migration of the batch warehouse to a streaming lakehouse.
+Posted 30+ days ago
+View all Northwind Commerce jobs in Warsaw - Warsaw jobs
+Salary Search: Staff Data Engineer salaries in Warsaw
+
+Get new jobs for this search by email
+Email address
+Activate
+By creating a job alert, you agree to our Terms.
+
+Previous
+1
+2
+3
+Next
