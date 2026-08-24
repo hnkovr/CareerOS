@@ -1,0 +1,44 @@
+Wellfound
+Jobs
+Companies
+Messages
+Dana Kovalenko
+Senior Data Engineer · Tbilisi, Georgia
+Ready to interview
+Edit profile
+Share
+
+Skills
+Python
+SQL
+dbt
+Dagster
+ClickHouse
+Airflow · Kafka · Terraform
+
+About
+I build analytics platforms for e-commerce and fintech teams: lakehouse design,
+dbt modelling, orchestration with Dagster, and ClickHouse at scale.
+Twelve years in data, four of them leading platform teams.
+
+Education
+Kyiv Polytechnic Institute
+MSc, Computer Science
+2008 – 2013
+
+Work experience
+Senior Data Engineer at Northwind Commerce
+Jan 2023 – Present
+Built the lakehouse (dbt + ClickHouse) that replaced three legacy warehouses; cut nightly
+batch from 6h to 40 min.
+Lead Analytics Engineer at Lumen Analytics
+Mar 2020 – Dec 2022
+Owned the metrics layer for 40+ dashboards; introduced dbt tests and CI.
+Data Engineer at Orbit Fintech
+Jun 2016 – Feb 2020
+
+What I'm looking for
+Open to remote
+Looking for: Full-time, Contract
+Desired salary: $120k+
+Preferred locations: Remote, Tbilisi, Warsaw
