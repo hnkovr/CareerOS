@@ -16,10 +16,13 @@ from careeros.modules.ai.schemas import BundleOut
 from careeros.modules.opportunities.enums import OpportunityStatus
 from careeros.modules.opportunities.schemas import (
     AnalyzeRequest,
+    AssistRequest,
     CompareOut,
     CompareRequest,
     ExternalPromptRequest,
     IngestRequest,
+    InterviewPrepOut,
+    NegotiationOut,
     OpportunityDetail,
     OpportunityOut,
     StatusUpdate,
@@ -144,8 +147,56 @@ async def compare(
     req: CompareRequest, request: Request, user: CurrentUserDep, session: SessionDep
 ) -> CompareOut:
     try:
-        return await _svc(request, user, session).compare(req.ids)
+        return await _svc(request, user, session).compare(
+            req.ids, use_ai=req.use_ai, provider=req.provider
+        )
     except OpportunityNotFound as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"opportunity {exc} not found") from exc
     except OpportunityError as exc:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
+    except AIError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, f"AI ranking failed: {exc}"
+        ) from exc
+
+
+@router.post("/{opportunity_id}/interview-prep", response_model=InterviewPrepOut)
+async def interview_prep(
+    opportunity_id: uuid.UUID,
+    req: AssistRequest,
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+) -> InterviewPrepOut:
+    """Evidence map (what the vault proves for this posting) + AI prep plan citing fact ids."""
+    try:
+        return await _svc(request, user, session).interview_prep(
+            opportunity_id, use_ai=req.use_ai, provider=req.provider
+        )
+    except OpportunityNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "opportunity not found") from exc
+    except AIError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, f"AI interview prep failed: {exc}"
+        ) from exc
+
+
+@router.post("/{opportunity_id}/negotiation", response_model=NegotiationOut)
+async def negotiation(
+    opportunity_id: uuid.UUID,
+    req: AssistRequest,
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+) -> NegotiationOut:
+    """Compensation position vs targets and the observed stream + AI script (frame numbers only)."""
+    try:
+        return await _svc(request, user, session).negotiation(
+            opportunity_id, use_ai=req.use_ai, provider=req.provider
+        )
+    except OpportunityNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "opportunity not found") from exc
+    except AIError as exc:
+        raise HTTPException(
+            status.HTTP_503_SERVICE_UNAVAILABLE, f"AI negotiation plan failed: {exc}"
+        ) from exc

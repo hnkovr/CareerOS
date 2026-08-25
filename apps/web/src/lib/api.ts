@@ -22,6 +22,9 @@ export type AuditOut = Schemas["AuditOut"];
 export type FindingOut = Schemas["FindingOut"];
 export type PlatformHealth = Schemas["PlatformHealth"];
 export type BundleOut = Schemas["BundleOut"];
+export type InterviewPrepOut = Schemas["InterviewPrepOut"];
+export type NegotiationOut = Schemas["NegotiationOut"];
+export type CompareOut = Schemas["CompareOut"];
 export type AIRunOut = Schemas["AIRunOut"];
 export type ProviderInfo = Schemas["ProviderInfo"];
 

@@ -1,0 +1,36 @@
+id: negotiation_plan
+version: 1
+area: negotiation
+purpose: Turn the deterministic compensation frame (offer vs targets vs observed stream) into a negotiation stance and script.
+inputs: [positioning, profile, opportunity, frame, analysis]
+output_schema: NegotiationPlanOutput
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-26
+system: |
+  You are a compensation negotiation coach for a senior data engineer. Work ONLY from the frame:
+  the offer, the owner's floor / target / anchor, the observed band and the leverage facts (each
+  with a fact id). You may state a number only if it appears in allowed_numbers, or in a leverage
+  fact you cite by id in derived_from. Never invent figures, competing offers, employers or dates.
+  If the offer is unknown, the stance is gather_info and the script asks for the range. Be direct.
+template: |
+  Candidate: {{ positioning.headline }} ({{ profile.location.city }}, {{ profile.location.country }})
+  Opportunity: {{ opportunity.title }} @ {{ opportunity.company_name or "unknown company" }}
+  contract: {{ opportunity.contract_type }} / {{ opportunity.employment_type }}; remote: {{ opportunity.remote_policy }}
+
+  Offer: {{ frame.offered_raw or "not stated" }} → normalised ({{ frame.basis }}, {{ frame.currency }}): min {{ frame.offered_min }}, max {{ frame.offered_max }}
+  Owner targets ({{ frame.basis }}, {{ frame.currency }}): floor {{ frame.floor }}, target {{ frame.target }}, anchor {{ frame.anchor }}
+  Position: {{ frame.position }}{% if frame.gap_to_target_pct is not none %} (gap to target {{ frame.gap_to_target_pct }}%){% endif %}
+  Observed stream ({{ frame.observed.n }} comparable postings): p25 {{ frame.observed.p25 }}, median {{ frame.observed.median }}, p75 {{ frame.observed.p75 }}
+  Unknowns: {{ frame.unknowns | join("; ") or "none" }}
+  Notes: {{ frame.notes | join("; ") or "none" }}
+  Allowed numbers: {{ frame.allowed_numbers | join(", ") or "none" }}
+
+  Leverage facts (cite by id):
+  {% for l in frame.leverage %}
+  [{{ l.fact_id }}] {{ l.title }} — {{ l.technologies | join(", ") }}{% if l.metrics %}; {{ l.metrics | join(" | ") }}{% endif %}
+  {% endfor %}
+  {% if analysis and analysis.compensation_assessment %}Earlier analysis: {{ analysis.compensation_assessment }}{% endif %}
+
+  Return JSON: {"stance": "accept|counter|gather_info|walk_away", "rationale": "...",
+  "counter_ask": "... or null", "leverage": [{"point": "...", "derived_from": ["fact-id"]}],
+  "concessions": [...], "script": ["what to say, in order"], "questions": [...], "risks": [...]}

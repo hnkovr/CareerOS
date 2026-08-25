@@ -7,6 +7,7 @@ import { Suspense, useState } from "react";
 import { api, unwrap } from "@/lib/api";
 import { recommendationLabel, timeAgo, truncate } from "@/lib/format";
 import { Badge, Card, Empty, ErrorBox, ScoreRing, Spinner } from "@/components/ui";
+import { ComparePanel } from "./compare-panel";
 
 const SOURCES = ["manual", "linkedin", "wellfound", "upwork", "toptal", "hh", "indeed", "getmatch", "recruiter", "email", "direct", "website", "url"] as const;
 
@@ -78,6 +79,10 @@ function OpportunitiesPageInner() {
   const router = useRouter();
   const [showNew, setShowNew] = useState(searchParams.get("new") === "1");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [selected, setSelected] = useState<string[]>([]);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const toggle = (id: string) =>
+    setSelected((cur) => (cur.includes(id) ? cur.filter((x) => x !== id) : cur.length >= 5 ? cur : [...cur, id]));
 
   const opportunities = useQuery({
     queryKey: ["opportunities", statusFilter],
@@ -102,6 +107,14 @@ function OpportunitiesPageInner() {
               </option>
             ))}
           </select>
+          <button
+            className="btn"
+            onClick={() => setCompareOpen((v) => !v)}
+            disabled={selected.length < 2 && !compareOpen}
+            title="Tick 2–5 rows to compare them side by side"
+          >
+            Compare{selected.length > 0 ? ` (${selected.length})` : ""}
+          </button>
           <button className="btn btn-primary" onClick={() => setShowNew((v) => !v)}>
             {showNew ? "Close" : "Add opportunity"}
           </button>
@@ -114,6 +127,8 @@ function OpportunitiesPageInner() {
         </Card>
       )}
 
+      {compareOpen && <ComparePanel ids={selected} onClose={() => setCompareOpen(false)} />}
+
       <Card>
         {opportunities.isPending ? (
           <Spinner />
@@ -125,6 +140,7 @@ function OpportunitiesPageInner() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-ink-dim">
+                <th className="w-6 pb-2" title="select for comparison" />
                 <th className="pb-2">Role</th>
                 <th className="pb-2">Company</th>
                 <th className="pb-2">Remote</th>
@@ -136,6 +152,15 @@ function OpportunitiesPageInner() {
             <tbody>
               {(opportunities.data ?? []).map((o) => (
                 <tr key={o.id} className="border-t border-line/60">
+                  <td className="py-2 pr-2">
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(o.id)}
+                      disabled={!selected.includes(o.id) && selected.length >= 5}
+                      onChange={() => toggle(o.id)}
+                      aria-label={`compare ${o.title}`}
+                    />
+                  </td>
                   <td className="max-w-64 py-2 pr-2">
                     <Link href={`/opportunities/${o.id}`} className="hover:text-accent">
                       {truncate(o.title, 52)}

@@ -73,6 +73,30 @@ implementation. Connectors may not import the DB or any service module (import-l
 Shared paste heuristics live in `platform/parsers.py`; HTTP goes through `platform/http.py`.
 The `careeros-platform-connector-dev` sub-agent (`.claude/agents/`) encodes this checklist.
 
+## AI assistants (P3)
+
+`modules/opportunities/assistants.py` follows the CV engine's shape: a **deterministic frame**
+first, AI second, a **guard** last.
+
+- `interview_frame` — story materials (achievements / projects / experience citing the posting's
+  technologies, each with its fact id), matched / claimed-only / missing tech, weak score
+  dimensions, the questions the posting leaves open. `guard_interview` drops any AI story or answer
+  that cites an unknown fact id, states a number absent from its cited facts or names an uncited
+  employer.
+- `negotiation_frame` — offer normalised to annual/hourly, the owner's floor / target
+  (`scoring/model.yaml#compensation`), the observed band (p25 / median / p75 of the *other*
+  postings on the same basis and currency), position, anchor = max(target, p75).
+  `guard_negotiation` keeps a line only if every number in it is in `frame.allowed_numbers` or in
+  a fact it cites by id.
+- `ranking_problem` — `POST /opportunities/compare` with `use_ai` asks for a ranking over the
+  deterministic rows (§31); anything that is not a permutation of the compared ids is dropped
+  (`ranking_note`), never repaired. `ranked` always stays the score order.
+
+Endpoints: `POST /opportunities/{id}/interview-prep`, `POST /opportunities/{id}/negotiation`
+(`{"use_ai": false}` returns the frame and needs no provider). AI results are also stored as
+`Suggestion` rows (`interview_prep`, `negotiation_plan`) so they enter the approval flow.
+Prompts: `career/prompts/{interview,negotiation}/`, `career/prompts/opportunity/opportunity_compare.yaml`.
+
 ## Web app
 
 `apps/web` (Next.js 15, App Router, Tailwind 4, TanStack Query). All data access goes through the

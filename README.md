@@ -12,7 +12,10 @@ Not a resume builder. Not a job tracker. See [docs/product/00-product-brief.md](
 
 ## Status
 
-P0 "Career Core" in progress — see [`.claude/TODO.md`](.claude/TODO.md) and the
+P0 Career Core and P1 Inbox & Pipeline are complete (Gmail sync waits for OAuth credentials);
+P2 platform connectors, drift detection and update checklists, and the first P3 slices (daily
+brief, market/skills-gap/funnel insights, interview & negotiation assistants, AI-ranked
+comparison) have landed — see [`.claude/TODO.md`](.claude/TODO.md) and the
 [roadmap](docs/architecture/04-roadmap.md).
 
 ## Quick start

@@ -566,6 +566,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/opportunities/{opportunity_id}/interview-prep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Interview Prep
+         * @description Evidence map (what the vault proves for this posting) + AI prep plan citing fact ids.
+         */
+        post: operations["interview_prep_api_opportunities__opportunity_id__interview_prep_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/opportunities/{opportunity_id}/negotiation": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Negotiation
+         * @description Compensation position vs targets and the observed stream + AI script (frame numbers only).
+         */
+        post: operations["negotiation_api_opportunities__opportunity_id__negotiation_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profiles/health": {
         parameters: {
             query?: never;
@@ -1640,6 +1680,16 @@ export interface components {
          * @enum {string}
          */
         ApplyLevel: "none" | "manual_assist";
+        /** AssistRequest */
+        AssistRequest: {
+            /**
+             * Use Ai
+             * @default true
+             */
+            use_ai: boolean;
+            /** Provider */
+            provider?: string | null;
+        };
         /**
          * AuditCategory
          * @enum {string}
@@ -2210,6 +2260,20 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** CompBand */
+        CompBand: {
+            /**
+             * N
+             * @default 0
+             */
+            n: number;
+            /** P25 */
+            p25?: number | null;
+            /** Median */
+            median?: number | null;
+            /** P75 */
+            p75?: number | null;
+        };
         /** CompanyOut */
         CompanyOut: {
             /**
@@ -2230,10 +2294,26 @@ export interface components {
         CompareOut: {
             /** Rows */
             rows: components["schemas"]["CompareRow"][];
-            /** Ranked */
+            /**
+             * Ranked
+             * @description deterministic: by overall score, best first
+             */
             ranked: string[];
             /** Dimension Names */
             dimension_names: string[];
+            /**
+             * Ranking
+             * @description AI interpretation; None when not requested or rejected
+             */
+            ranking?: components["schemas"]["RankedItem"][] | null;
+            /** Recommendation */
+            recommendation?: string | null;
+            /** Tradeoffs */
+            tradeoffs?: string[];
+            /** Ranking Note */
+            ranking_note?: string | null;
+            /** Ai Run Id */
+            ai_run_id?: string | null;
         };
         /** CompareRow */
         CompareRow: {
@@ -2643,6 +2723,17 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** ExpectedQuestion */
+        ExpectedQuestion: {
+            /** Question */
+            question: string;
+            /** Why */
+            why: string;
+            /** Answer Outline */
+            answer_outline: string;
+            /** Derived From */
+            derived_from?: string[];
+        };
         /** ExperienceEntryDoc */
         ExperienceEntryDoc: {
             /** Experience Id */
@@ -2869,6 +2960,43 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** InterviewFrame */
+        InterviewFrame: {
+            /**
+             * Track
+             * @enum {string}
+             */
+            track: "employment" | "freelance";
+            /** Stages */
+            stages: string[];
+            /**
+             * Matched
+             * @description opportunity technologies backed by vault evidence
+             */
+            matched: string[];
+            /**
+             * Claimed Only
+             * @description in skills, but no achievement/project cites them
+             */
+            claimed_only: string[];
+            /**
+             * Missing
+             * @description required by the opportunity, absent from the vault
+             */
+            missing: string[];
+            /** Materials */
+            materials: components["schemas"]["StoryMaterial"][];
+            /**
+             * Weak Dimensions
+             * @description score dimensions below 50 — expect probing
+             */
+            weak_dimensions: string[];
+            /**
+             * Questions To Ask
+             * @description deterministic: what the posting leaves open
+             */
+            questions_to_ask: string[];
+        };
         /** InterviewIn */
         InterviewIn: {
             /** @default other */
@@ -2906,6 +3034,44 @@ export interface components {
          * @enum {string}
          */
         InterviewOutcome: "pending" | "passed" | "failed" | "canceled";
+        /** InterviewPrepOut */
+        InterviewPrepOut: {
+            /**
+             * Opportunity Id
+             * Format: uuid
+             */
+            opportunity_id: string;
+            frame: components["schemas"]["InterviewFrame"];
+            plan?: components["schemas"]["InterviewPrepOutput"] | null;
+            /** Provenance Rejected */
+            provenance_rejected?: string[];
+            /** Ai Run Id */
+            ai_run_id?: string | null;
+            /** Suggestion Id */
+            suggestion_id?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Model */
+            model?: string | null;
+        };
+        /** InterviewPrepOutput */
+        InterviewPrepOutput: {
+            /** Focus Areas */
+            focus_areas?: string[];
+            /** Expected Questions */
+            expected_questions?: components["schemas"]["ExpectedQuestion"][];
+            /** Stories */
+            stories?: components["schemas"]["Story"][];
+            /** Gaps To Prepare */
+            gaps_to_prepare?: string[];
+            /** Questions To Ask */
+            questions_to_ask?: string[];
+            /**
+             * Plan
+             * @description ordered preparation steps
+             */
+            plan?: string[];
+        };
         /** InterviewUpdate */
         InterviewUpdate: {
             /** Scheduled At */
@@ -2951,6 +3117,24 @@ export interface components {
             extra?: {
                 [key: string]: unknown;
             };
+        };
+        /** LeverageFact */
+        LeverageFact: {
+            /** Fact Id */
+            fact_id: string;
+            /** Title */
+            title: string;
+            /** Technologies */
+            technologies?: string[];
+            /** Metrics */
+            metrics?: string[];
+        };
+        /** LeveragePoint */
+        LeveragePoint: {
+            /** Point */
+            point: string;
+            /** Derived From */
+            derived_from?: string[];
         };
         /**
          * MailboxProvider
@@ -3078,6 +3262,97 @@ export interface components {
              * @default false
              */
             mark_read: boolean;
+        };
+        /** NegotiationFrame */
+        NegotiationFrame: {
+            /**
+             * Basis
+             * @enum {string}
+             */
+            basis: "annual" | "hourly";
+            /** Currency */
+            currency: string;
+            /** Offered Min */
+            offered_min?: number | null;
+            /** Offered Max */
+            offered_max?: number | null;
+            /** Offered Raw */
+            offered_raw?: string | null;
+            /** Offered Currency */
+            offered_currency?: string | null;
+            /** Target */
+            target?: number | null;
+            /** Floor */
+            floor?: number | null;
+            /**
+             * Anchor
+             * @description max(target, observed p75), rounded
+             */
+            anchor?: number | null;
+            observed: components["schemas"]["CompBand"];
+            /**
+             * Position
+             * @enum {string}
+             */
+            position: "unknown" | "below_floor" | "below_target" | "at_target" | "above_target";
+            /** Gap To Target Pct */
+            gap_to_target_pct?: number | null;
+            /** Leverage */
+            leverage?: components["schemas"]["LeverageFact"][];
+            /** Unknowns */
+            unknowns?: string[];
+            /** Notes */
+            notes?: string[];
+            /**
+             * Allowed Numbers
+             * @description numbers a plan may state without citing facts
+             */
+            allowed_numbers: string[];
+        };
+        /** NegotiationOut */
+        NegotiationOut: {
+            /**
+             * Opportunity Id
+             * Format: uuid
+             */
+            opportunity_id: string;
+            frame: components["schemas"]["NegotiationFrame"];
+            plan?: components["schemas"]["NegotiationPlanOutput"] | null;
+            /** Provenance Rejected */
+            provenance_rejected?: string[];
+            /** Ai Run Id */
+            ai_run_id?: string | null;
+            /** Suggestion Id */
+            suggestion_id?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Model */
+            model?: string | null;
+        };
+        /** NegotiationPlanOutput */
+        NegotiationPlanOutput: {
+            /**
+             * Stance
+             * @enum {string}
+             */
+            stance: "accept" | "counter" | "gather_info" | "walk_away";
+            /** Rationale */
+            rationale: string;
+            /** Counter Ask */
+            counter_ask?: string | null;
+            /** Leverage */
+            leverage?: components["schemas"]["LeveragePoint"][];
+            /** Concessions */
+            concessions?: string[];
+            /**
+             * Script
+             * @description what to say, in order
+             */
+            script?: string[];
+            /** Questions */
+            questions?: string[];
+            /** Risks */
+            risks?: string[];
         };
         /** Notification */
         Notification: {
@@ -3444,6 +3719,15 @@ export interface components {
             /** Summary */
             summary: string | null;
         };
+        /** RankedItem */
+        RankedItem: {
+            /** Opportunity Id */
+            opportunity_id: string;
+            /** Rank */
+            rank: number;
+            /** Rationale */
+            rationale: string;
+        };
         /**
          * Recommendation
          * @enum {string}
@@ -3766,6 +4050,45 @@ export interface components {
         StatusUpdate: {
             status: components["schemas"]["OpportunityStatus"];
         };
+        /** Story */
+        Story: {
+            /** Title */
+            title: string;
+            /** Situation */
+            situation: string;
+            /** Action */
+            action: string;
+            /** Result */
+            result: string;
+            /** Derived From */
+            derived_from: string[];
+        };
+        /**
+         * StoryMaterial
+         * @description A verified vault item the candidate can build an interview story on.
+         */
+        StoryMaterial: {
+            /** Fact Id */
+            fact_id: string;
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "achievement" | "project" | "experience";
+            /** Title */
+            title: string;
+            /** Company */
+            company?: string | null;
+            /**
+             * Technologies
+             * @description matched opportunity techs
+             */
+            technologies?: string[];
+            /** Facts */
+            facts?: string[];
+            /** Metrics */
+            metrics?: string[];
+        };
         /** SuggestReplyRequest */
         SuggestReplyRequest: {
             /** Provider */
@@ -4067,6 +4390,14 @@ export interface components {
         careeros__modules__opportunities__schemas__CompareRequest: {
             /** Ids */
             ids: string[];
+            /**
+             * Use Ai
+             * @description add an AI-ranked recommendation (§31)
+             * @default false
+             */
+            use_ai: boolean;
+            /** Provider */
+            provider?: string | null;
         };
     };
     responses: never;
@@ -5090,6 +5421,76 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompareOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    interview_prep_api_opportunities__opportunity_id__interview_prep_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InterviewPrepOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    negotiation_api_opportunities__opportunity_id__negotiation_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AssistRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NegotiationOut"];
                 };
             };
             /** @description Validation Error */

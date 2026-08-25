@@ -62,6 +62,11 @@ def _numbers(text: str) -> list[str]:
     return [n.replace(",", "").replace(" ", "").lower() for n in _NUMBER_RE.findall(text)]
 
 
+def numbers_in(text: str) -> list[str]:
+    """Normalised numeric tokens in ``text`` (what the guard compares against source facts)."""
+    return _numbers(text)
+
+
 def check_bullet(
     text: str,
     derived_from: list[str],

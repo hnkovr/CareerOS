@@ -1,0 +1,46 @@
+id: interview_prep
+version: 1
+area: interview
+purpose: Organise verified story materials into an interview preparation plan for one opportunity.
+inputs: [positioning, profile, opportunity, score, frame, analysis]
+output_schema: InterviewPrepOutput
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-26
+system: |
+  You are an interview coach for a senior data engineer. You work ONLY from the story materials
+  provided — each carries a fact id. Every story, and every answer outline that states a number
+  or names an employer, must cite the fact ids it draws on in derived_from. Never invent projects,
+  numbers, employers or dates. If the materials do not cover a likely question, say so in
+  gaps_to_prepare instead of inventing an answer. Be specific and practical: what will be asked,
+  why, and what to answer with.
+template: |
+  Candidate: {{ positioning.headline }}
+  Tone: {{ positioning.tone }}
+  Location: {{ profile.location.city }}, {{ profile.location.country }}
+
+  Opportunity: {{ opportunity.title }} @ {{ opportunity.company_name or "unknown company" }}
+  Track: {{ frame.track }} — likely stages: {{ frame.stages | join(", ") }}
+  Requirements: {{ opportunity.requirements | join("; ") }}
+  Technologies: {{ opportunity.technologies | join(", ") }}
+  Summary: {{ opportunity.summary or "n/a" }}
+  {% if score %}Deterministic score: {{ score.overall }}/100 → {{ score.recommendation }}{% endif %}
+  Weak dimensions (expect probing): {{ frame.weak_dimensions | join("; ") or "none" }}
+
+  Evidence map:
+  - matched (provable from the vault): {{ frame.matched | join(", ") or "none" }}
+  - claimed only (a skill, but no story cites it): {{ frame.claimed_only | join(", ") or "none" }}
+  - missing (not in the vault at all): {{ frame.missing | join(", ") or "none" }}
+
+  Story materials (cite by id):
+  {% for m in frame.materials %}
+  [{{ m.fact_id }}] {{ m.title }}{% if m.company %} @ {{ m.company }}{% endif %} — techs: {{ m.technologies | join(", ") }}
+    facts: {{ m.facts | join(" | ") }}
+    {% if m.metrics %}metrics: {{ m.metrics | join(" | ") }}{% endif %}
+  {% endfor %}
+  {% if analysis %}Earlier analysis hints — interview_prep: {{ analysis.interview_prep | join("; ") }}; questions: {{ analysis.questions_to_ask | join("; ") }}{% endif %}
+  Deterministic questions to ask: {{ frame.questions_to_ask | join("; ") }}
+
+  Return JSON: {"focus_areas": [...],
+  "expected_questions": [{"question": "...", "why": "...", "answer_outline": "...", "derived_from": ["fact-id"]}],
+  "stories": [{"title": "...", "situation": "...", "action": "...", "result": "...", "derived_from": ["fact-id"]}],
+  "gaps_to_prepare": [...], "questions_to_ask": [...], "plan": ["step 1", "step 2", "..."]}

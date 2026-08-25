@@ -187,8 +187,24 @@ class AnalyzeRequest(BaseModel):
     provider: str | None = None
 
 
+class RankedItem(BaseModel):
+    opportunity_id: str
+    rank: int = Field(ge=1)
+    rationale: str
+
+
+class CompareRankingOutput(BaseModel):
+    """AI ranking over the deterministic comparison rows (never recomputes the scores)."""
+
+    ranking: list[RankedItem]
+    recommendation: str
+    tradeoffs: list[str] = Field(default_factory=list)
+
+
 class CompareRequest(BaseModel):
     ids: list[uuid.UUID] = Field(min_length=2, max_length=5)
+    use_ai: bool = Field(default=False, description="add an AI-ranked recommendation (§31)")
+    provider: str | None = None
 
 
 class CompareRow(BaseModel):
@@ -204,8 +220,15 @@ class CompareRow(BaseModel):
 
 class CompareOut(BaseModel):
     rows: list[CompareRow]
-    ranked: list[uuid.UUID]
+    ranked: list[uuid.UUID] = Field(description="deterministic: by overall score, best first")
     dimension_names: list[str]
+    ranking: list[RankedItem] | None = Field(
+        default=None, description="AI interpretation; None when not requested or rejected"
+    )
+    recommendation: str | None = None
+    tradeoffs: list[str] = Field(default_factory=list)
+    ranking_note: str | None = None
+    ai_run_id: uuid.UUID | None = None
 
 
 class ExternalPromptRequest(BaseModel):
@@ -214,3 +237,129 @@ class ExternalPromptRequest(BaseModel):
 
 def extraction_to_dict(ex: OpportunityExtraction) -> dict[str, Any]:
     return ex.model_dump(mode="json")
+
+
+# ----------------------------------------------------------------------------- P3 assistants
+
+
+class AssistRequest(BaseModel):
+    use_ai: bool = True
+    provider: str | None = None
+
+
+class StoryMaterial(BaseModel):
+    """A verified vault item the candidate can build an interview story on."""
+
+    fact_id: str
+    kind: Literal["achievement", "project", "experience"]
+    title: str
+    company: str | None = None
+    technologies: list[str] = Field(default_factory=list, description="matched opportunity techs")
+    facts: list[str] = Field(default_factory=list)
+    metrics: list[str] = Field(default_factory=list)
+
+
+class InterviewFrame(BaseModel):
+    track: Literal["employment", "freelance"]
+    stages: list[str]
+    matched: list[str] = Field(description="opportunity technologies backed by vault evidence")
+    claimed_only: list[str] = Field(description="in skills, but no achievement/project cites them")
+    missing: list[str] = Field(description="required by the opportunity, absent from the vault")
+    materials: list[StoryMaterial]
+    weak_dimensions: list[str] = Field(description="score dimensions below 50 — expect probing")
+    questions_to_ask: list[str] = Field(description="deterministic: what the posting leaves open")
+
+
+class ExpectedQuestion(BaseModel):
+    question: str
+    why: str
+    answer_outline: str
+    derived_from: list[str] = Field(default_factory=list)
+
+
+class Story(BaseModel):
+    title: str
+    situation: str
+    action: str
+    result: str
+    derived_from: list[str] = Field(min_length=1)
+
+
+class InterviewPrepOutput(BaseModel):
+    focus_areas: list[str] = Field(default_factory=list)
+    expected_questions: list[ExpectedQuestion] = Field(default_factory=list)
+    stories: list[Story] = Field(default_factory=list)
+    gaps_to_prepare: list[str] = Field(default_factory=list)
+    questions_to_ask: list[str] = Field(default_factory=list)
+    plan: list[str] = Field(default_factory=list, description="ordered preparation steps")
+
+
+class InterviewPrepOut(BaseModel):
+    opportunity_id: uuid.UUID
+    frame: InterviewFrame
+    plan: InterviewPrepOutput | None = None
+    provenance_rejected: list[str] = Field(default_factory=list)
+    ai_run_id: uuid.UUID | None = None
+    suggestion_id: uuid.UUID | None = None
+    provider: str | None = None
+    model: str | None = None
+
+
+class CompBand(BaseModel):
+    n: int = 0
+    p25: float | None = None
+    median: float | None = None
+    p75: float | None = None
+
+
+class LeverageFact(BaseModel):
+    fact_id: str
+    title: str
+    technologies: list[str] = Field(default_factory=list)
+    metrics: list[str] = Field(default_factory=list)
+
+
+class NegotiationFrame(BaseModel):
+    basis: Literal["annual", "hourly"]
+    currency: str
+    offered_min: float | None = None
+    offered_max: float | None = None
+    offered_raw: str | None = None
+    offered_currency: str | None = None
+    target: float | None = None
+    floor: float | None = None
+    anchor: float | None = Field(default=None, description="max(target, observed p75), rounded")
+    observed: CompBand
+    position: Literal["unknown", "below_floor", "below_target", "at_target", "above_target"]
+    gap_to_target_pct: float | None = None
+    leverage: list[LeverageFact] = Field(default_factory=list)
+    unknowns: list[str] = Field(default_factory=list)
+    notes: list[str] = Field(default_factory=list)
+    allowed_numbers: list[str] = Field(description="numbers a plan may state without citing facts")
+
+
+class LeveragePoint(BaseModel):
+    point: str
+    derived_from: list[str] = Field(default_factory=list)
+
+
+class NegotiationPlanOutput(BaseModel):
+    stance: Literal["accept", "counter", "gather_info", "walk_away"]
+    rationale: str
+    counter_ask: str | None = None
+    leverage: list[LeveragePoint] = Field(default_factory=list)
+    concessions: list[str] = Field(default_factory=list)
+    script: list[str] = Field(default_factory=list, description="what to say, in order")
+    questions: list[str] = Field(default_factory=list)
+    risks: list[str] = Field(default_factory=list)
+
+
+class NegotiationOut(BaseModel):
+    opportunity_id: uuid.UUID
+    frame: NegotiationFrame
+    plan: NegotiationPlanOutput | None = None
+    provenance_rejected: list[str] = Field(default_factory=list)
+    ai_run_id: uuid.UUID | None = None
+    suggestion_id: uuid.UUID | None = None
+    provider: str | None = None
+    model: str | None = None

@@ -42,6 +42,9 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] P3.x Daily brief: /api/insights/brief — deterministic stats + ranked actions (overdue follow-ups, interviews, urgent replies, best new opportunity, drift, pending suggestions); optional AI narrative (daily_brief prompt); dashboard "Today" card
 - [x] P3.x Insights: market intelligence over the observed stream (tech demand/combos, remote/contract/seniority/source mix, compensation p25/median/p75, windowed), skills-gap engine (evidenced/claimed/known/missing/worth-learning + portfolio planner with ROI), funnel analytics (response/interview/offer rates, median days to reply); /insights page
 - [x] P2.x Update checklists per platform: latest audit's open findings + open drift → ordered actions with copy-ready headline/about (AI suggestion when present, else vault text trimmed to channel limits); /api/profiles/checklist/{platform}; profiles page panel
+- [x] P3.x Interview & negotiation intelligence + §31 comparison ranking: deterministic frames (evidence map with fact ids; offer vs floor/target vs observed p25/median/p75) → AI plan/script → provenance guards (stories must cite facts; negotiation lines may only use frame numbers or cited facts; a ranking must be a permutation of the compared ids); saved as Suggestions; opportunity page cards + tick-to-compare mode on the list
+- [ ] P3 assistants via tool-calling (§55): needs tool-use in the `AIProvider` port (Anthropic + OpenAI-compatible) and a typed tool registry over the domain services — ADR first; awaiting go-ahead
+- [ ] §53 workflows with WAIT_FOR_APPROVAL on top of the Suggestion state machine (multi-step: analyze → select CV → draft reply → approve → create application)
 - [ ] tech debt: insights/notifications.py reads other modules' ORM models directly (invariant 7) — move to service-level helpers like new_opportunity_stats/active_application_count
 
 ## P2 — Platform connectors ([GH #10](https://github.com/hnkovr/CareerOS/issues/10), [Linear MY-26](https://linear.app/my-1st/issue/MY-26), [ADR 013](../docs/adr/013-platform-connectors.md))
@@ -62,6 +65,7 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
   drift silently; `make contracts` runs the same script locally
 - [x] CI builds the web image too (`Dockerfile.web`), so the P0.8 docker item is verified there
 - [x] `make all` survives being offline: tg-bot.sh exit 4 = unreachable (was conflated with 2)
+- [x] migrations create the pgvector extension themselves — CI's bare Postgres had none, only the compose init script did (f23b677); CI green since 6ed6325
 - [ ] CI still repeats the lint commands inline instead of calling `just lint` (needs `just` on
   the runner); they match today — keep them in step when either changes
 

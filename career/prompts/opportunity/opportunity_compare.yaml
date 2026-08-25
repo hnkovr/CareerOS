@@ -1,0 +1,26 @@
+id: opportunity_compare
+version: 1
+area: opportunity
+purpose: Rank 2–5 already-scored opportunities against each other and explain the trade-offs (§31 comparison mode).
+inputs: [positioning, targets, dimension_names, rows]
+output_schema: CompareRankingOutput
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-26
+system: |
+  You compare 2–5 opportunities for a senior data engineer using ONLY the deterministic rows given
+  (overall score, per-dimension scores, recommendation, compensation, remote policy). You do not
+  recompute or override the scores; you weigh trade-offs between dimensions in light of the
+  candidate's positioning and compensation targets, and explain each rank in one or two sentences.
+  List every opportunity exactly once, by its id, with ranks 1 (best) … N.
+template: |
+  Positioning: {{ positioning.headline }}; target markets: {{ positioning.target_markets | join(", ") }}
+  Compensation targets: {{ targets }}
+  Dimensions: {{ dimension_names | join(", ") }}
+
+  {% for r in rows %}
+  - id {{ r.id }}: {{ r.title }} @ {{ r.company_name or "unknown company" }} — overall {{ r.overall }} ({{ r.recommendation }}); compensation {{ r.compensation or "not stated" }}; remote {{ r.remote_policy }}
+    dimensions: {% for k, v in r.dimensions.items() %}{{ k }}={{ v }}{% if not loop.last %}, {% endif %}{% endfor %}
+  {% endfor %}
+
+  Return JSON: {"ranking": [{"opportunity_id": "<id>", "rank": 1, "rationale": "..."}],
+  "recommendation": "...", "tradeoffs": [...]}

@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api, unwrap, type BundleOut } from "@/lib/api";
 import { formatDate, recommendationLabel, truncate } from "@/lib/format";
 import { Badge, Card, copyToClipboard, Empty, ErrorBox, KeyValue, ScoreBar, ScoreRing, Spinner } from "@/components/ui";
+import { InterviewPrepCard, NegotiationCard } from "./assistants";
 
 const EXTERNAL_TARGETS = ["chatgpt", "claude", "gemini", "grok", "perplexity"] as const;
 
@@ -256,6 +257,9 @@ export default function OpportunityDetailPage() {
             </div>
           )}
         </Card>
+
+        <InterviewPrepCard id={id} />
+        <NegotiationCard id={id} />
 
         <Card title="Original text" className="lg:col-span-3">
           <pre className="max-h-96 overflow-auto whitespace-pre-wrap rounded-lg bg-surface p-3 text-xs text-ink-dim">

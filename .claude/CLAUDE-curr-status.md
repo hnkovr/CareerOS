@@ -1,6 +1,6 @@
 # Current status
 
-Updated: 2026-08-24
+Updated: 2026-08-26
 
 ## P0 "Career Core": complete (pending final hardening commit)
 
@@ -69,8 +69,11 @@ Two blockers found and fixed while wiring it up:
 ## P2/P3 progress (lane careeros-d1, 2026-08-26)
 - `0f7383e` P2 drift detection (platform↔platform, platform↔vault; persisted, resolvable) + P3 daily brief (`/api/insights/brief`, dashboard 'Today')
 - `58d5370` P3 insights: market intelligence, skills-gap + portfolio planner, funnel analytics (`/insights`)
-- next commit: per-platform update checklists (`/api/profiles/checklist/{platform}`)
-- still blocked on user: P1.3 Gmail (Google OAuth app credentials)
+- `33b8eef` P2 per-platform update checklists (`/api/profiles/checklist/{platform}`, copy-ready headline/about)
+- `f23b677` fix handed over by the platform lane: the search_documents migration now creates the pgvector extension (CI's bare Postgres had none) — CI fully green at 6ed6325 (contracts, python, web, docker)
+- P3 interview prep + negotiation intelligence + §31 AI-ranked comparison (`modules/opportunities/assistants.py`): deterministic frame → AI → provenance guard; Suggestion rows; opportunity page cards + list compare mode
+- lane gates: 148 backend tests (excl. platform/deploy lanes), pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
+- still blocked on user: P1.3 Gmail (Google OAuth app credentials); next candidates: §55 tool-calling assistants (ADR + go-ahead), §53 WAIT_FOR_APPROVAL workflows, notifications.py invariant-7 tech debt
 
 ## Known quirks
 - Concurrent sessions sharing `careeros_test` make db-marked tests flaky; this lane runs its

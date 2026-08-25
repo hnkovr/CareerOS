@@ -17,6 +17,13 @@ from careeros.modules.ai.provider import AIError
 from careeros.modules.ai.schemas import BundleOut, BundleRequest
 from careeros.modules.ai.service import AIService
 from careeros.modules.cv.keywords import tech_vocabulary
+from careeros.modules.opportunities.assistants import (
+    guard_interview,
+    guard_negotiation,
+    interview_frame,
+    negotiation_frame,
+    ranking_problem,
+)
 from careeros.modules.opportunities.dedup import FUZZY_THRESHOLD, dedup_key, similarity
 from careeros.modules.opportunities.enums import OpportunityStatus, Recommendation, Source
 from careeros.modules.opportunities.models import (
@@ -29,9 +36,14 @@ from careeros.modules.opportunities.parser import merge_extractions, parse_text
 from careeros.modules.opportunities.schemas import (
     AnalysisOut,
     CompareOut,
+    CompareRankingOutput,
     CompareRow,
     Compensation,
     IngestRequest,
+    InterviewPrepOut,
+    InterviewPrepOutput,
+    NegotiationOut,
+    NegotiationPlanOutput,
     OpportunityAnalysisOutput,
     OpportunityDetail,
     OpportunityExtraction,
@@ -375,7 +387,9 @@ class OpportunityService:
         await self.session.commit()
         return await self.get(opportunity_id)
 
-    async def compare(self, ids: list[uuid.UUID]) -> CompareOut:
+    async def compare(
+        self, ids: list[uuid.UUID], *, use_ai: bool = False, provider: str | None = None
+    ) -> CompareOut:
         rows = []
         for oid in ids:
             row = await self._row(oid)
@@ -398,7 +412,136 @@ class OpportunityService:
             for row, score in rows
         ]
         ranked = [r.id for r in sorted(out_rows, key=lambda r: -r.overall)]
-        return CompareOut(rows=out_rows, ranked=ranked, dimension_names=dim_names)
+        out = CompareOut(rows=out_rows, ranked=ranked, dimension_names=dim_names)
+        if not use_ai:
+            return out
+        # §31 comparison mode: AI weighs the deterministic rows — it never re-scores them, and a
+        # ranking that is not a permutation of the compared ids is dropped, not "fixed".
+        data = self.vault.require()
+        positioning = data.by_id(data.positioning)[data.meta.default_positioning]
+        comp = data.scoring.compensation if data.scoring else None
+        run = await self.ai.structured(
+            "opportunity_compare",
+            {
+                "positioning": positioning.model_dump(mode="json"),
+                "targets": comp.model_dump(mode="json") if comp else "not configured",
+                "dimension_names": dim_names,
+                "rows": [r.model_dump(mode="json") for r in out_rows],
+            },
+            CompareRankingOutput,
+            provider=provider,
+            entity_type="opportunity_compare",
+        )
+        problem = ranking_problem(run.data, ids)
+        if problem:
+            log.warning("opportunities.compare.ranking_rejected", problem=problem)
+            return out.model_copy(
+                update={"ranking_note": f"AI ranking rejected: {problem}", "ai_run_id": run.run_id}
+            )
+        return out.model_copy(
+            update={
+                "ranking": sorted(run.data.ranking, key=lambda r: r.rank),
+                "recommendation": run.data.recommendation,
+                "tradeoffs": run.data.tradeoffs,
+                "ai_run_id": run.run_id,
+            }
+        )
+
+    # ------------------------------------------------------------------ P3 assistants
+    async def interview_prep(
+        self, opportunity_id: uuid.UUID, *, use_ai: bool = True, provider: str | None = None
+    ) -> InterviewPrepOut:
+        """Deterministic evidence map + (optionally) an AI prep plan; stories cite vault ids."""
+        detail = await self.get(opportunity_id)
+        data = self.vault.require()
+        frame = interview_frame(data, detail, detail.score)
+        out = InterviewPrepOut(opportunity_id=detail.id, frame=frame)
+        if not use_ai:
+            return out
+        positioning = data.by_id(data.positioning)[data.meta.default_positioning]
+        run = await self.ai.structured(
+            "interview_prep",
+            {
+                "positioning": positioning.model_dump(mode="json"),
+                "profile": data.profile.model_dump(mode="json"),
+                "opportunity": _brief(detail),
+                "score": detail.score.model_dump(mode="json") if detail.score else None,
+                "frame": frame.model_dump(mode="json"),
+                "analysis": detail.analysis.model_dump(mode="json") if detail.analysis else None,
+            },
+            InterviewPrepOutput,
+            provider=provider,
+            entity_type="opportunity",
+            entity_id=str(detail.id),
+        )
+        plan, rejected = guard_interview(run.data, data)
+        suggestion_id = await self.ai.record_suggestion(
+            target_type="interview_prep",
+            target_ref=str(detail.id),
+            title=f"Interview prep: {detail.title}",
+            payload={"plan": plan.model_dump(mode="json"), "provenance_rejected": rejected},
+            ai_run_id=run.run_id,
+        )
+        return out.model_copy(
+            update={
+                "plan": plan,
+                "provenance_rejected": rejected,
+                "ai_run_id": run.run_id,
+                "suggestion_id": suggestion_id,
+                "provider": run.response.provider,
+                "model": run.response.model,
+            }
+        )
+
+    async def negotiation(
+        self, opportunity_id: uuid.UUID, *, use_ai: bool = True, provider: str | None = None
+    ) -> NegotiationOut:
+        """Compensation position (offer vs targets vs observed stream) + optional AI script;
+        every number in it comes from the frame or a cited fact."""
+        detail = await self.get(opportunity_id)
+        data = self.vault.require()
+        stream = await opportunity_stream(self.session)
+        frame = negotiation_frame(data, detail, stream)
+        out = NegotiationOut(opportunity_id=detail.id, frame=frame)
+        if not use_ai:
+            return out
+        positioning = data.by_id(data.positioning)[data.meta.default_positioning]
+        run = await self.ai.structured(
+            "negotiation_plan",
+            {
+                "positioning": positioning.model_dump(mode="json"),
+                "profile": data.profile.model_dump(mode="json"),
+                "opportunity": _brief(detail),
+                "frame": frame.model_dump(mode="json"),
+                "analysis": detail.analysis.model_dump(mode="json") if detail.analysis else None,
+            },
+            NegotiationPlanOutput,
+            provider=provider,
+            entity_type="opportunity",
+            entity_id=str(detail.id),
+        )
+        plan, rejected = guard_negotiation(run.data, frame, data)
+        suggestion_id = await self.ai.record_suggestion(
+            target_type="negotiation_plan",
+            target_ref=str(detail.id),
+            title=f"Negotiation plan: {detail.title}",
+            payload={
+                "frame": frame.model_dump(mode="json"),
+                "plan": plan.model_dump(mode="json"),
+                "provenance_rejected": rejected,
+            },
+            ai_run_id=run.run_id,
+        )
+        return out.model_copy(
+            update={
+                "plan": plan,
+                "provenance_rejected": rejected,
+                "ai_run_id": run.run_id,
+                "suggestion_id": suggestion_id,
+                "provider": run.response.provider,
+                "model": run.response.model,
+            }
+        )
 
     # ------------------------------------------------------------------ internals
     async def _row(self, opportunity_id: uuid.UUID) -> Opportunity:
@@ -508,6 +651,18 @@ class OpportunityService:
             score=score,
             analysis=analysis,
         )
+
+
+_BRIEF_FIELDS = {
+    "id", "title", "company_name", "contract_type", "employment_type", "remote_policy",
+    "remote_regions", "timezone_range", "seniority", "compensation", "requirements", "preferred",
+    "technologies", "responsibilities", "summary", "red_flags", "deadline",
+}  # fmt: skip
+
+
+def _brief(opp: OpportunityOut) -> dict[str, Any]:
+    """The prompt-facing view of an opportunity: parsed fields only, never the raw paste."""
+    return opp.model_dump(mode="json", include=_BRIEF_FIELDS)
 
 
 async def new_opportunity_stats(session: AsyncSession) -> tuple[int, dict[str, Any] | None]:
