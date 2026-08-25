@@ -7,11 +7,17 @@ flows (GH #3-#5, #7) attach to it without changing the router.
 
 from __future__ import annotations
 
+from typing import Any
+
 import structlog
 
+from careeros.core.auth import SINGLE_USER_ID
 from careeros.core.config import Settings
+from careeros.modules.bot.capture import looks_like_job_description
 from careeros.modules.bot.client import TelegramClient
-from careeros.modules.bot.formatting import escape_md
+from careeros.modules.bot.formatting import escape_md, score_card
+from careeros.modules.bot.keyboards import triage_keyboard
+from careeros.modules.opportunities.enums import Source
 
 log = structlog.get_logger(__name__)
 
@@ -25,9 +31,17 @@ HELP = (
 
 
 class BotService:
-    def __init__(self, settings: Settings, client: TelegramClient) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        client: TelegramClient,
+        sessionmaker: Any | None = None,
+    ) -> None:
         self._settings = settings
         self._client = client
+        # The handler runs in a background task, after the response has been sent
+        # and the request's session closed, so capture must open its own.
+        self._sessionmaker = sessionmaker
 
     async def handle(self, payload: dict) -> None:
         """Process one already-gated update. Never raises into the request path."""
@@ -56,13 +70,50 @@ class BotService:
             await self._client.send_message(
                 chat_id, escape_md(self._status()), parse_mode="MarkdownV2"
             )
+        elif looks_like_job_description(text):
+            await self._capture(chat_id, text)
         else:
-            # Capture (GH #3) lands here: non-command text is a job description.
             await self._client.send_message(
                 chat_id,
-                escape_md("Capture is not implemented yet (GH #3). Try /help."),
+                escape_md("Forward me a job description, or try /help."),
                 parse_mode="MarkdownV2",
             )
+
+    async def _capture(self, chat_id: int, text: str) -> None:
+        """Ingest a forwarded job description and reply with its triage card."""
+        if self._sessionmaker is None:
+            await self._client.send_message(
+                chat_id,
+                escape_md("Capture is unavailable: no database configured."),
+                parse_mode="MarkdownV2",
+            )
+            return
+
+        from careeros.modules.ai.deps import build_ai_service
+        from careeros.modules.opportunities.schemas import IngestRequest
+        from careeros.modules.opportunities.service import OpportunityService
+        from careeros.modules.vault.deps import get_vault
+
+        async with self._sessionmaker() as session:
+            service = OpportunityService(
+                self._settings,
+                get_vault(self._settings),
+                build_ai_service(self._settings, session=session, user_id=SINGLE_USER_ID),
+                session=session,
+                user_id=SINGLE_USER_ID,
+            )
+            url = text.strip() if text.strip().startswith("http") else None
+            detail = await service.ingest(
+                IngestRequest(text=None if url else text, url=url, source=Source.manual)
+            )
+            await session.commit()
+
+        await self._client.send_message(
+            chat_id,
+            score_card(detail),
+            parse_mode="MarkdownV2",
+            reply_markup=triage_keyboard(str(detail.id)),
+        )
 
     def _status(self) -> str:
         s = self._settings

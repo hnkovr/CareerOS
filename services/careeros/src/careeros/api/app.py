@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from careeros import __version__
 from careeros.core.config import Settings, get_settings
-from careeros.core.db import dispose_engine
+from careeros.core.db import dispose_engine, get_sessionmaker
 from careeros.core.logging import configure_logging, get_logger
 from careeros.core.tasks import TaskRunner, build_runner
 
@@ -38,7 +38,7 @@ async def _start_bot(app: FastAPI, settings: Settings) -> None:
         return
     try:
         client = TelegramClient(settings)
-        app.state.bot_service = BotService(settings, client)
+        app.state.bot_service = BotService(settings, client, get_sessionmaker(settings))
         app.state.bot_claim = await claim_webhook(settings, client)
         log.info("bot.start", claim=str(app.state.bot_claim))
     except Exception:

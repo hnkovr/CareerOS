@@ -6,8 +6,13 @@ deduped and scored, and triage it inline. Owner-gated, single user, no external 
 Design: [`docs/superpowers/specs/2026-08-25-careeros-telegram-bot-design.md`](../superpowers/specs/2026-08-25-careeros-telegram-bot-design.md) ·
 Decision: [ADR 012](../adr/012-telegram-bot-surface.md)
 
-**Status:** deploy path, ops tooling and bot identity are in place. `modules/bot` itself is not
-implemented yet — see `.claude/TODO.md` (P0.9).
+**Status:** the webhook surface, its three gates, the ownership claim and capture are implemented
+([#1](https://github.com/hnkovr/CareerOS/issues/1), [#2](https://github.com/hnkovr/CareerOS/issues/2),
+[#3](https://github.com/hnkovr/CareerOS/issues/3), [#8](https://github.com/hnkovr/CareerOS/issues/8)).
+Still open: triage callbacks ([#4](https://github.com/hnkovr/CareerOS/issues/4)), career commands
+([#5](https://github.com/hnkovr/CareerOS/issues/5)), notifications
+([#7](https://github.com/hnkovr/CareerOS/issues/7)) and the first deploy
+([#9](https://github.com/hnkovr/CareerOS/issues/9)).
 
 ## The one rule
 
@@ -31,6 +36,7 @@ made at that process's startup; `just bot-webhook-info` asks Telegram.
 | Release it | `just bot-webhook-delete` |
 | Mint or repair the token | `just bot-token-ensure` |
 | Run locally | `just bot-run` |
+| Webhook ops from the app | `careeros bot webhook-info \| webhook-set \| webhook-delete \| check` |
 | Dry-run the deploy | `just deploy-dry` |
 | Deploy | `just deploy-fly` |
 | Logs / status | `just fly-logs` · `just fly-status` |
