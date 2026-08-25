@@ -15,9 +15,14 @@ class SearchDocument(UUIDPrimaryKeyMixin, OwnedMixin, TimestampMixin, Base):
     __tablename__ = "search_document"
     __table_args__ = (
         UniqueConstraint("user_id", "kind", "ref_id", name="uq_search_document_ref"),
+        # Expression matches Postgres's normalised storage form byte-for-byte so that
+        # `alembic check` / autogenerate compare equal instead of flagging a phantom diff.
         Index(
             "ix_search_document_tsv",
-            text("to_tsvector('english', coalesce(title, '') || ' ' || text)"),
+            text(
+                "to_tsvector('english'::regconfig, "
+                "(COALESCE(title, ''::character varying)::text || ' '::text) || text)"
+            ),
             postgresql_using="gin",
         ),
     )
