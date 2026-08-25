@@ -36,6 +36,7 @@ e2e smoke (built web + real API + proxy) verified.
 - tooling: skill `/careeros-platform-sync`, agents `.claude/agents/careeros-platform-{ops,connector-dev}.md`, `config/platform.yml`
 - tracking: GitHub [#10](https://github.com/hnkovr/CareerOS/issues/10) epic (connectors #12–#18 closed; #19 docs, #20 web page, #21 follow-ups open) · Linear MY-26…MY-37
 - deploy: local-only for now — platform credentials are excluded from the Fly env push; see `docs/platform/README.md#deployment-notes`
+- pushed 2026-08-26: origin/main = `6ed6325`, CI green (ci.yml `hashFiles` fix `f650878`, pgvector extension `f23b677`, SSoT-test skip `6ed6325`)
 
 ## Build pipeline — `make all` (2026-08-25)
 `make all` is now the whole local pipeline in dependency order and exits 0:

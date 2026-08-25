@@ -46,3 +46,8 @@ Lane: platform connectors (own profile · job search · application statuses). T
 
 ## Gates at snapshot
 `uv run pytest` (all lanes) green · `just lint` clean (ruff, format, pyright, import-linter, env templates, web lint) · `tests/deploy` 49 green · web `typecheck`/`lint` clean.
+
+## Update 2026-08-26 — pushed, CI green
+- `main` pushed to https://github.com/hnkovr/CareerOS (origin/main = `6ed6325`); first green CI run since the remote existed: https://github.com/hnkovr/CareerOS/actions/runs/32903529610 (contracts · python · web · docker).
+- CI fixes on the way there: `f650878` ci.yml — job-level `hashFiles()` guard made GitHub reject the workflow (0 s failures on every push); `f23b677` (search lane) — `CREATE EXTENSION IF NOT EXISTS vector` before the `search_document` VECTOR column; `6ed6325` — deploy tests that read the workstation SSoT `~/.ai/skills/_settings/careeros.yml` skip when it is absent.
+- Owner decision now closed: push done. Still open: OAuth apps (hh.ru, Upwork), LinkedIn archive, Todoist postpone-overdue apply, stale branch `feat/platform-connectors` on origin (fully merged into main — safe to delete when convenient).
