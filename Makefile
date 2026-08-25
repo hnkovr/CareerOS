@@ -18,7 +18,7 @@ WEB_URL  ?= http://localhost:3000
 step = @printf '\n\033[1;34m▸ %s\033[0m\n' "$(1)"
 
 .PHONY: help env infra dev up down build test lint fmt typecheck check all run \
-        validate-career generate-cv migrate seed openapi platform-sync \
+        validate-career generate-cv migrate seed openapi contracts platform-sync \
         bot-check bot-webhook deploy deploy-dry clean distclean
 
 help: ## Show this help
@@ -91,15 +91,23 @@ openapi: ## Export OpenAPI + regenerate TS client/types
 	$(call step,openapi — export schema + regenerate TS types)
 	@just openapi
 
+contracts: ## Fail if the committed vault schemas / TS API types drifted from the code
+	$(call step,contracts — generated schemas + API types match the code)
+	@just contracts-check
+
 # ---------------------------------------------------------------- platforms + bot
 
 platform-sync: ## Sync profile/jobs/applications from connected platforms: make platform-sync PLATFORM=hh
 	$(call step,platform-sync — $(PLATFORM))
 	@just platform-sync $(PLATFORM)
 
+# exit 4 = Telegram unreachable: says nothing about the token, so it must not fail a
+# local pipeline. A rejected token / wrong bot / foreign webhook owner still does.
 bot-check: ## Telegram bot: token valid? who owns the webhook?
 	$(call step,bot-check — telegram token + webhook owner)
-	@just bot-token-check
+	@rc=0; just bot-token-check || rc=$$?; \
+	 if [ $$rc -eq 4 ]; then echo "  · Telegram unreachable — bot check skipped (offline)"; \
+	 elif [ $$rc -ne 0 ]; then exit $$rc; fi
 
 bot-webhook: ## Claim the Telegram webhook for this deployment
 	@just bot-webhook-set

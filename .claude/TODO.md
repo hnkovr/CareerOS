@@ -50,7 +50,13 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
   `make run` opens the web app instead of Finder; `clean` no longer deletes `generated/platform`
   (OAuth tokens); `distclean` drops `.venv`/`node_modules`
 - [ ] `just build` — docker image build still unverified (carried over from P0.8); `make build` runs it
-- [ ] wire `make check` into CI (`.github/workflows`) so the gate is one command in both places
+- [x] contract freshness in CI: `scripts/contracts-check.sh` + `contracts` job — the old check
+  diffed `packages/schemas` but only ever regenerated `career/schemas`, so TS API types could
+  drift silently; `make contracts` runs the same script locally
+- [x] CI builds the web image too (`Dockerfile.web`), so the P0.8 docker item is verified there
+- [x] `make all` survives being offline: tg-bot.sh exit 4 = unreachable (was conflated with 2)
+- [ ] CI still repeats the lint commands inline instead of calling `just lint` (needs `just` on
+  the runner); they match today — keep them in step when either changes
 
 ## Parked
 - `packages/ui` extraction (when Tauri lands)

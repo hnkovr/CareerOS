@@ -12,6 +12,17 @@ Run: `make dev` (API with reload on :8000 + worker). Tests: `make test`. Quality
 local pipeline in dependency order — env → infra → openapi → fmt → lint → test → migrate →
 seed → validate-career → generate-cv → platform-sync → bot-check. `make help` lists every target.
 
+**Generated contracts.** Two generators feed two committed trees: `career/schemas` from
+`careeros vault export-schemas` (python) and `packages/schemas` from `openapi-typescript`
+(node, off the exported OpenAPI). `scripts/contracts-check.sh` — `make contracts` locally, the
+`contracts` CI job — regenerates both and fails if the tree moved. It needs *both* toolchains and
+refuses to run with only one, because checking the half that happens to be installed would report
+"fresh" while the other half drifts.
+
+**`make all` offline.** `bot-check` talks to Telegram. Exit 4 means unreachable, which says
+nothing about the token, so `make all` warns and carries on; a rejected token (2), the wrong bot
+(2) or a foreign webhook owner (3) still fail the pipeline.
+
 **Vault default:** the CLI and API read `CAREEROS_VAULT_PATH` when that directory carries a
 `vault.yaml`; otherwise they fall back to the bundled demo vault (`career/examples/demo`) and
 open it **read-only** — `apply_change()` raises `VaultReadOnly` (HTTP 403) so demo facts can

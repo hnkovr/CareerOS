@@ -40,10 +40,14 @@ def test_token_rejected_by_telegram_is_reported_as_such(env):
 
 
 def test_unreachable_telegram_is_not_reported_as_a_bad_token(env):
-    """A timeout must not send the human back to BotFather for a fine credential."""
+    """A timeout must not send the human back to BotFather for a fine credential.
+
+    Being offline says nothing about the token, so it gets its own exit code (4) — that is
+    what lets `make all` carry on offline while still failing on a token Telegram rejected (2).
+    """
     env.unreachable()
     r = env.run(TG_BOT, "check")
-    assert r.returncode == 2
+    assert r.returncode == 4  # not 2 — see test_token_rejected_by_telegram_is_reported_as_such
     assert "cannot reach" in r.stderr.lower()
 
 

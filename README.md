@@ -58,6 +58,7 @@ produces prompt bundles for external chats.
 | `make validate-career` | validate the vault |
 | `make generate-cv VARIANT=remote-us` | generate a CV variant |
 | `make seed` · `make migrate` · `make openapi` | db + contracts |
+| `make contracts` | fail if the committed vault schemas / TS API types drifted from the code |
 | `make platform-sync PLATFORM=hh` · `just platform-*` | platform connectors: own profile, job search, application statuses ([docs/platform](docs/platform/README.md)) |
 | `make clean` / `make distclean` | drop build artifacts / also drop `.venv` + `node_modules` |
 

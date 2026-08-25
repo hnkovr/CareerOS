@@ -52,6 +52,19 @@ Two blockers found and fixed while wiring it up:
   no `vault.yaml`, and opens it **read-only** (`VaultReadOnly` → HTTP 403) so demo facts can never
   be committed as the owner's. `VaultStatus.read_only` exposes it.
 
+### Round 2 — gaps the green pipeline was hiding
+- **contract drift**: CI diffed `packages/schemas` in a step that only regenerated `career/schemas`,
+  so the generated TS API types could drift from the FastAPI models unnoticed.
+  `scripts/contracts-check.sh` (one implementation, used by `make contracts` and the new `contracts`
+  CI job) regenerates both and fails on any diff; it requires both toolchains rather than passing on
+  the half it can see. Negative-tested: adding a field to a response model makes it exit 1.
+- **offline**: `make all` died at `bot-check` with no network. `tg-bot.sh` now exits **4** for
+  "cannot reach Telegram" (was conflated with 2 = Telegram rejected the token); `make bot-check`
+  tolerates 4 only — a revoked token, wrong bot (2) or foreign webhook owner (3) still fail.
+- **silent half-gate**: `just lint/test/fmt/typecheck` skipped the web steps without `node_modules`
+  and said nothing; they now print why, so a half-run gate cannot read as a green gate.
+- CI additionally builds `deploy/docker/Dockerfile.web` (P0.8 docker item now verified in CI).
+
 ## Known quirks
 - Concurrent sessions sharing `careeros_test` make db-marked tests flaky; this lane runs its
   gates against `careeros_test_d1` (see developer guide); the platform lane uses `careeros_test_d2`.

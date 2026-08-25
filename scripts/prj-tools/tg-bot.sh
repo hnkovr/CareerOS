@@ -9,7 +9,10 @@
 # resolved through find-secret.sh and is never printed, logged, or passed in argv.
 #
 # Usage: tg-bot.sh <info|set|delete|check> [--force]
-# Exit:  0 ok · 1 usage/config · 2 telegram rejected · 3 refused (foreign owner)
+# Exit:  0 ok · 1 usage/config · 2 telegram rejected (bad token / wrong bot) ·
+#        3 refused (foreign webhook owner) · 4 telegram unreachable (offline)
+# 4 is split out from 2 on purpose: being offline says nothing about the token, so a
+# local pipeline (`make all`) can tolerate 4 while still failing on 1/2/3.
 set -euo pipefail
 
 SETTINGS="$HOME/.ai/skills/_settings/careeros.yml"
@@ -65,7 +68,7 @@ api() {
 
 assert_right_bot() {
   local resp username
-  resp=$(api getMe) || die "cannot reach Telegram" 2
+  resp=$(api getMe) || die "cannot reach Telegram (offline?)" 4
   [[ $(jq -r '.ok' <<<"$resp") == "true" ]] || die "Telegram rejected $TOKEN_VAR: $(jq -r '.description' <<<"$resp")" 2
   username="@$(jq -r '.result.username' <<<"$resp")"
   [[ "$username" == "$EXPECT_HANDLE" ]] \
@@ -74,7 +77,7 @@ assert_right_bot() {
 }
 
 current_webhook_url() {
-  local resp; resp=$(api getWebhookInfo) || die "cannot reach Telegram" 2
+  local resp; resp=$(api getWebhookInfo) || die "cannot reach Telegram (offline?)" 4
   jq -r '.result.url // ""' <<<"$resp"
 }
 

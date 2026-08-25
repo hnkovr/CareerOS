@@ -28,9 +28,14 @@ infra-down:
 
 # ---------- quality ----------
 
+# true when the web workspace is installed; every web step says so when it is not,
+# so a skipped half of the gate can never read as a green gate
+_web_ready := "[ -f apps/web/package.json ] && [ -d node_modules ]"
+_no_web := "echo '  · web steps skipped — run `npm install` to include them' >&2"
+
 test *ARGS:
     uv run pytest {{ARGS}}
-    if [ -f apps/web/package.json ] && [ -d node_modules ]; then npm run -w apps/web test --if-present; fi
+    if {{_web_ready}}; then npm run -w apps/web test --if-present; else {{_no_web}}; fi
 
 test-py *ARGS:
     uv run pytest {{ARGS}}
@@ -41,16 +46,16 @@ lint:
     just typecheck
     uv run lint-imports
     python3 scripts/env-render.py --check
-    if [ -f apps/web/package.json ] && [ -d node_modules ]; then npm run -w apps/web lint; fi
+    if {{_web_ready}}; then npm run -w apps/web lint; else {{_no_web}}; fi
 
 fmt:
     uv run ruff check --fix .
     uv run ruff format .
-    if [ -f apps/web/package.json ] && [ -d node_modules ]; then npm run -w apps/web format --if-present; fi
+    if {{_web_ready}}; then npm run -w apps/web format --if-present; else {{_no_web}}; fi
 
 typecheck:
     uv run pyright
-    if [ -f apps/web/package.json ] && [ -d node_modules ]; then npm run -w apps/web typecheck --if-present; fi
+    if {{_web_ready}}; then npm run -w apps/web typecheck --if-present; else {{_no_web}}; fi
 
 # ---------- vault / cv ----------
 
@@ -143,7 +148,11 @@ db-reset:
 # export the OpenAPI schema once, then regenerate the TS types from it
 openapi:
     uv run careeros export-openapi
-    if [ -d node_modules ]; then npm run generate:types; fi
+    if [ -d node_modules ]; then npm run generate:types; else {{_no_web}}; fi
+
+# CI freshness gate: regenerate every committed contract, fail if the tree moved
+contracts-check:
+    scripts/contracts-check.sh
 
 # ---------- e2e ----------
 
