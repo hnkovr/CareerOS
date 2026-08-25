@@ -119,6 +119,81 @@ function AuditView({ audit }: { audit: AuditOut }) {
   );
 }
 
+function DriftPanel() {
+  const queryClient = useQueryClient();
+  const drift = useQuery({
+    queryKey: ["drift"],
+    queryFn: async () => unwrap(await api.GET("/api/profiles/drift", { params: { query: { open_only: false } } })),
+  });
+  const recompute = useMutation({
+    mutationFn: async () => unwrap(await api.POST("/api/profiles/drift/recompute")),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["drift"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+      queryClient.invalidateQueries({ queryKey: ["brief"] });
+    },
+  });
+  const resolve = useMutation({
+    mutationFn: async ({ id, resolution }: { id: string; resolution: "resolved" | "dismissed" | "open" }) =>
+      unwrap(
+        await api.PATCH("/api/profiles/drift/{finding_id}", {
+          params: { path: { finding_id: id } },
+          body: { resolution },
+        }),
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["drift"] }),
+  });
+  const open = (drift.data?.findings ?? []).filter((f) => f.resolution === "open");
+  const decided = (drift.data?.findings ?? []).filter((f) => f.resolution !== "open");
+  return (
+    <Card
+      title={`Drift — ${drift.data?.open ?? 0} out of sync`}
+      action={
+        <button className="btn" onClick={() => recompute.mutate()} disabled={recompute.isPending}>
+          {recompute.isPending ? "Checking…" : "Recompute"}
+        </button>
+      }
+    >
+      {recompute.isError && <ErrorBox error={recompute.error} />}
+      {drift.isPending ? (
+        <Spinner />
+      ) : open.length === 0 ? (
+        <Empty>No open drift between platforms and the vault. Recompute after new snapshots.</Empty>
+      ) : (
+        <ul className="space-y-2">
+          {open.map((f) => (
+            <li key={f.id} className="rounded-lg border border-line p-2.5 text-sm">
+              <div className="flex flex-wrap items-center gap-1.5 pb-1">
+                <Badge tone={severityTone(f.severity)}>{f.severity}</Badge>
+                <Badge>{f.field.replaceAll("_", " ")}</Badge>
+                <span className="text-xs text-ink-dim">
+                  {f.platform_a} ↔ {f.platform_b}
+                </span>
+              </div>
+              <p>{f.message}</p>
+              <p className="text-xs text-ink-dim">
+                {f.platform_a}: <span className="text-ink">{f.value_a}</span> · {f.platform_b}:{" "}
+                <span className="text-ink">{f.value_b}</span>
+              </p>
+              <div className="flex gap-1.5 pt-1.5">
+                <button className="btn px-2 py-0.5 text-[11px]" onClick={() => resolve.mutate({ id: f.id, resolution: "resolved" })}>
+                  fixed
+                </button>
+                <button className="btn px-2 py-0.5 text-[11px]" onClick={() => resolve.mutate({ id: f.id, resolution: "dismissed" })}>
+                  dismiss
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {decided.length > 0 && (
+        <p className="pt-2 text-xs text-ink-dim">{decided.length} resolved/dismissed (kept across recomputes)</p>
+      )}
+    </Card>
+  );
+}
+
 function ProfilesPageInner() {
   const searchParams = useSearchParams();
   const [showNew, setShowNew] = useState(searchParams.get("new") === "1");
@@ -218,6 +293,7 @@ function ProfilesPageInner() {
           </Card>
         </div>
 
+        <div className="space-y-4">
         <Card title="Audit result">
           {runAudit.isError ? (
             <ErrorBox error={runAudit.error} />
@@ -227,6 +303,8 @@ function ProfilesPageInner() {
             <AuditView audit={audit} />
           )}
         </Card>
+        <DriftPanel />
+        </div>
       </div>
     </div>
   );

@@ -18,6 +18,7 @@ class NotificationKind(StrEnum):
     high_score_opportunity = "high_score_opportunity"
     urgent_message = "urgent_message"
     pending_suggestions = "pending_suggestions"
+    profile_drift = "profile_drift"
 
 
 class Notification(BaseModel):
@@ -175,6 +176,19 @@ async def compute_notifications(session: AsyncSession, user_id: uuid.UUID) -> No
                 kind=NotificationKind.pending_suggestions,
                 title=f"{pending} AI suggestion{'s' if pending != 1 else ''} awaiting review",
                 url_path="/suggestions",
+                severity="normal",
+            )
+        )
+
+    from careeros.modules.profiles.drift import open_drift_count
+
+    drift_open = await open_drift_count(session)
+    if drift_open:
+        items.append(
+            Notification(
+                kind=NotificationKind.profile_drift,
+                title=f"Profiles out of sync: {drift_open}",
+                url_path="/profiles",
                 severity="normal",
             )
         )

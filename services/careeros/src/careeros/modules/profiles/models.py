@@ -86,3 +86,19 @@ class AuditFinding(UUIDPrimaryKeyMixin, Base):
     resolution: Mapped[str] = mapped_column(String(12), nullable=False, default="open")
 
     audit: Mapped[ProfileAudit] = relationship(back_populates="findings")
+
+
+class DriftFinding(UUIDPrimaryKeyMixin, OwnedMixin, TimestampMixin, Base):
+    """A fact told differently on two platforms (or vs vault). Recomputed; decisions persist."""
+
+    __tablename__ = "drift_finding"
+
+    key: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    field: Mapped[str] = mapped_column(String(40), nullable=False, index=True)
+    platform_a: Mapped[str] = mapped_column(String(30), nullable=False)
+    platform_b: Mapped[str] = mapped_column(String(30), nullable=False)
+    value_a: Mapped[str] = mapped_column(String(300), nullable=False)
+    value_b: Mapped[str] = mapped_column(String(300), nullable=False)
+    severity: Mapped[str] = mapped_column(String(10), nullable=False)
+    message: Mapped[str] = mapped_column(String(500), nullable=False)
+    resolution: Mapped[str] = mapped_column(String(12), nullable=False, default="open", index=True)

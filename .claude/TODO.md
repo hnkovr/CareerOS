@@ -37,6 +37,11 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
     [#9](https://github.com/hnkovr/CareerOS/issues/9) first deploy
   - BLOCKED on you: `CAREEROS_TG_OWNER_CHAT_ID` — message @careeros_hnkovr_bot once
 
+## P2/P3 — lane careeros-d1 (2026-08-26)
+- [x] P2.x Drift detection: latest snapshot per platform vs each other and vs vault (years, headline tech, rates, current employer, location, first-priority skills); persisted findings with resolved/dismissed kept across recomputes; /profiles drift panel; counted in notifications
+- [x] P3.x Daily brief: /api/insights/brief — deterministic stats + ranked actions (overdue follow-ups, interviews, urgent replies, best new opportunity, drift, pending suggestions); optional AI narrative (daily_brief prompt); dashboard "Today" card
+- [ ] tech debt: insights/notifications.py reads other modules' ORM models directly (invariant 7) — move to service-level helpers like new_opportunity_stats/active_application_count
+
 ## P2 — Platform connectors ([GH #10](https://github.com/hnkovr/CareerOS/issues/10), [Linear MY-26](https://linear.app/my-1st/issue/MY-26), [ADR 013](../docs/adr/013-platform-connectors.md))
 - [x] core: contract/registry/matrix, token store + OAuth2, HTTP, tables, sync, API, CLI, just recipes ([#11](https://github.com/hnkovr/CareerOS/issues/11))
 - [x] hh.ru [#12](https://github.com/hnkovr/CareerOS/issues/12) · Upwork [#13](https://github.com/hnkovr/CareerOS/issues/13) · LinkedIn [#14](https://github.com/hnkovr/CareerOS/issues/14) · Wellfound [#15](https://github.com/hnkovr/CareerOS/issues/15) · Indeed [#16](https://github.com/hnkovr/CareerOS/issues/16) · getmatch [#17](https://github.com/hnkovr/CareerOS/issues/17) · Toptal [#18](https://github.com/hnkovr/CareerOS/issues/18)

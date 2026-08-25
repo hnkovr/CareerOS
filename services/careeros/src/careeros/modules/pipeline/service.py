@@ -328,3 +328,16 @@ class PipelineService:
             created_at=app.created_at,
             updated_at=app.updated_at,
         )
+
+
+async def active_application_count(session: AsyncSession) -> int:
+    """Service-level read for other modules: applications not in a terminal stage."""
+    from sqlalchemy import func as _func
+
+    terminal = [str(s) for s in TERMINAL_STAGES]
+    return (
+        await session.scalar(
+            select(_func.count()).select_from(Application).where(Application.stage.not_in(terminal))
+        )
+        or 0
+    )

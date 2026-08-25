@@ -7,6 +7,10 @@ import { recommendationLabel, timeAgo, truncate } from "@/lib/format";
 import { Badge, Card, Empty, ScoreRing, Spinner, severityTone } from "@/components/ui";
 
 export default function DashboardPage() {
+  const brief = useQuery({
+    queryKey: ["brief"],
+    queryFn: async () => unwrap(await api.GET("/api/insights/brief")),
+  });
   const vault = useQuery({
     queryKey: ["vault-status"],
     queryFn: async () => unwrap(await api.GET("/api/vault/status")),
@@ -50,6 +54,62 @@ export default function DashboardPage() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <Card
+        title={brief.data ? `${brief.data.greeting}. Today, ${brief.data.date}` : "Today"}
+        className="md:col-span-2 xl:col-span-3"
+      >
+        {brief.isPending ? (
+          <Spinner />
+        ) : brief.isError || !brief.data ? (
+          <Empty>Brief unavailable — is the backend running?</Empty>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-[1fr_1fr]">
+            <div className="flex flex-wrap gap-1.5">
+              <Badge tone={brief.data.stats.new_opportunities ? "accent" : "neutral"}>
+                {brief.data.stats.new_opportunities} new opportunities
+              </Badge>
+              <Badge tone={brief.data.stats.urgent_messages ? "bad" : "neutral"}>
+                {brief.data.stats.urgent_messages} urgent messages
+              </Badge>
+              <Badge tone={brief.data.stats.follow_ups_overdue ? "bad" : brief.data.stats.follow_ups_due ? "warn" : "neutral"}>
+                {brief.data.stats.follow_ups_overdue + brief.data.stats.follow_ups_due} follow-ups
+              </Badge>
+              <Badge tone={brief.data.stats.interviews_soon ? "warn" : "neutral"}>
+                {brief.data.stats.interviews_soon} interviews soon
+              </Badge>
+              <Badge tone={brief.data.stats.profiles_out_of_sync ? "warn" : "good"}>
+                profiles out of sync: {brief.data.stats.profiles_out_of_sync}
+              </Badge>
+              <Badge>{brief.data.stats.applications_active} active applications</Badge>
+              {brief.data.stats.best_opportunity && (
+                <Link href={`/opportunities/${brief.data.stats.best_opportunity.id}`}>
+                  <Badge tone="good">
+                    best today: {truncate(String(brief.data.stats.best_opportunity.title), 40)} —{" "}
+                    {String(brief.data.stats.best_opportunity.score)}/100
+                  </Badge>
+                </Link>
+              )}
+            </div>
+            <div>
+              <div className="label">Recommended actions</div>
+              {brief.data.actions.length === 0 ? (
+                <p className="text-sm text-ink-dim">Nothing pressing. Paste a JD or capture a profile.</p>
+              ) : (
+                <ol className="list-inside list-decimal space-y-1 text-sm">
+                  {brief.data.actions.map((a, i) => (
+                    <li key={i}>
+                      <Link href={a.url_path} className="hover:text-accent">
+                        {a.text}
+                      </Link>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
+
       <Card
         title="Career Vault"
         action={<Link className="btn" href="/vault">Open</Link>}

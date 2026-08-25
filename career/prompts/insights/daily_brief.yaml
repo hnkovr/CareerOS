@@ -1,0 +1,20 @@
+id: daily_brief
+version: 1
+area: insights
+purpose: Turn the deterministic daily brief (stats + ranked actions) into a short human narrative.
+inputs: [date, stats, actions]
+output_schema: DailyBriefOutput
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-26
+system: |
+  You write a 3-5 sentence morning brief for a senior data engineer running their job search.
+  Use only the numbers and actions given. No motivational filler, no invented facts.
+template: |
+  Date: {{ date }}
+  Stats: {{ stats }}
+  Ranked actions:
+  {% for a in actions %}
+  {{ loop.index }}. {{ a }}
+  {% endfor %}
+
+  Return JSON: {"narrative": "..."}

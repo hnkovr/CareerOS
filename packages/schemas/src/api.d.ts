@@ -669,6 +669,57 @@ export interface paths {
         patch: operations["set_finding_resolution_api_profiles_findings__finding_id__patch"];
         trace?: never;
     };
+    "/api/profiles/drift": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Drift */
+        get: operations["drift_api_profiles_drift_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profiles/drift/recompute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Drift Recompute */
+        post: operations["drift_recompute_api_profiles_drift_recompute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/profiles/drift/{finding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Drift Resolution */
+        patch: operations["drift_resolution_api_profiles_drift__finding_id__patch"];
+        trace?: never;
+    };
     "/api/pipeline/board": {
         parameters: {
             query?: never;
@@ -1003,6 +1054,23 @@ export interface paths {
         };
         /** Notifications */
         get: operations["notifications_api_notifications_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/insights/brief": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Daily Brief */
+        get: operations["daily_brief_api_insights_brief_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1576,6 +1644,83 @@ export interface components {
             columns: components["schemas"]["BoardColumn"][];
             /** Stages */
             stages: components["schemas"]["Stage"][];
+        };
+        /** BriefAction */
+        BriefAction: {
+            /** Priority */
+            priority: number;
+            /** Kind */
+            kind: string;
+            /** Text */
+            text: string;
+            /** Url Path */
+            url_path: string;
+        };
+        /** BriefOut */
+        BriefOut: {
+            /** Date */
+            date: string;
+            /** Greeting */
+            greeting: string;
+            stats: components["schemas"]["BriefStats"];
+            /** Actions */
+            actions: components["schemas"]["BriefAction"][];
+            /** Narrative */
+            narrative?: string | null;
+            /** Ai Run Id */
+            ai_run_id?: string | null;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+        };
+        /** BriefStats */
+        BriefStats: {
+            /**
+             * New Opportunities
+             * @default 0
+             */
+            new_opportunities: number;
+            /** Best Opportunity */
+            best_opportunity?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Urgent Messages
+             * @default 0
+             */
+            urgent_messages: number;
+            /**
+             * Follow Ups Due
+             * @default 0
+             */
+            follow_ups_due: number;
+            /**
+             * Follow Ups Overdue
+             * @default 0
+             */
+            follow_ups_overdue: number;
+            /**
+             * Interviews Soon
+             * @default 0
+             */
+            interviews_soon: number;
+            /**
+             * Profiles Out Of Sync
+             * @default 0
+             */
+            profiles_out_of_sync: number;
+            /**
+             * Pending Suggestions
+             * @default 0
+             */
+            pending_suggestions: number;
+            /**
+             * Applications Active
+             * @default 0
+             */
+            applications_active: number;
         };
         /** Bullet */
         Bullet: {
@@ -2206,6 +2351,52 @@ export interface components {
             /** Fix */
             fix?: string | null;
         };
+        /** DriftOut */
+        DriftOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Key */
+            key: string;
+            /** Field */
+            field: string;
+            /** Platform A */
+            platform_a: string;
+            /** Platform B */
+            platform_b: string;
+            /** Value A */
+            value_a: string;
+            /** Value B */
+            value_b: string;
+            severity: components["schemas"]["Severity"];
+            /** Message */
+            message: string;
+            /** Resolution */
+            resolution: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** DriftResolutionIn */
+        DriftResolutionIn: {
+            /** Resolution */
+            resolution: string;
+        };
+        /** DriftSummary */
+        DriftSummary: {
+            /** Open */
+            open: number;
+            /** By Field */
+            by_field: {
+                [key: string]: number;
+            };
+            /** Findings */
+            findings: components["schemas"]["DriftOut"][];
+        };
         /** EducationEntryDoc */
         EducationEntryDoc: {
             /** Education Id */
@@ -2676,7 +2867,7 @@ export interface components {
          * NotificationKind
          * @enum {string}
          */
-        NotificationKind: "follow_up_overdue" | "follow_up_due" | "interview_soon" | "high_score_opportunity" | "urgent_message" | "pending_suggestions";
+        NotificationKind: "follow_up_overdue" | "follow_up_due" | "interview_soon" | "high_score_opportunity" | "urgent_message" | "pending_suggestions" | "profile_drift";
         /** NotificationsOut */
         NotificationsOut: {
             /** Count */
@@ -4813,6 +5004,92 @@ export interface operations {
             };
         };
     };
+    drift_api_profiles_drift_get: {
+        parameters: {
+            query?: {
+                open_only?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftSummary"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    drift_recompute_api_profiles_drift_recompute_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftSummary"];
+                };
+            };
+        };
+    };
+    drift_resolution_api_profiles_drift__finding_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                finding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DriftResolutionIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DriftOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     board_api_pipeline_board_get: {
         parameters: {
             query?: {
@@ -5519,6 +5796,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationsOut"];
+                };
+            };
+        };
+    };
+    daily_brief_api_insights_brief_get: {
+        parameters: {
+            query?: {
+                narrative?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BriefOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

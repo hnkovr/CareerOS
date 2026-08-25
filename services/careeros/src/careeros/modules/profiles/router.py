@@ -118,3 +118,55 @@ async def set_finding_resolution(
         return await _svc(request, user, session).set_finding_resolution(finding_id, req.resolution)
     except SnapshotNotFound as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "finding not found") from exc
+
+
+# ----------------------------------------------------------------------------- drift (brief §12)
+from pydantic import BaseModel as _BaseModel  # noqa: E402
+from pydantic import Field as _Field  # noqa: E402
+
+from careeros.modules.profiles.drift import (  # noqa: E402
+    DriftOut,
+    DriftSummary,
+    list_drift,
+    recompute_drift,
+    set_drift_resolution,
+)
+
+
+class DriftResolutionIn(_BaseModel):
+    resolution: str = _Field(pattern="^(open|resolved|dismissed)$")
+
+
+@router.get("/drift", response_model=DriftSummary)
+async def drift(
+    request: Request, user: CurrentUserDep, session: SessionDep, open_only: bool = False
+) -> DriftSummary:
+    _ = request, user
+    return await list_drift(session, open_only=open_only)
+
+
+@router.post("/drift/recompute", response_model=DriftSummary)
+async def drift_recompute(
+    request: Request, user: CurrentUserDep, session: SessionDep
+) -> DriftSummary:
+    settings = request.app.state.settings
+    try:
+        data = get_vault(settings).require()
+    except VaultInvalid as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    return await recompute_drift(session, user.id, data)
+
+
+@router.patch("/drift/{finding_id}", response_model=DriftOut)
+async def drift_resolution(
+    finding_id: uuid.UUID,
+    req: DriftResolutionIn,
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+) -> DriftOut:
+    _ = request, user
+    out = await set_drift_resolution(session, finding_id, req.resolution)
+    if out is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "drift finding not found")
+    return out

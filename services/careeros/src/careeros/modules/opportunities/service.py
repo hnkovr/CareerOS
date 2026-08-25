@@ -508,3 +508,39 @@ class OpportunityService:
             score=score,
             analysis=analysis,
         )
+
+
+async def new_opportunity_stats(session: AsyncSession) -> tuple[int, dict[str, Any] | None]:
+    """Service-level read for other modules: (# status=new, best new by latest score)."""
+    from sqlalchemy import func as _func
+
+    latest = (
+        select(
+            OpportunityScore.opportunity_id, _func.max(OpportunityScore.computed_at).label("latest")
+        )
+        .group_by(OpportunityScore.opportunity_id)
+        .subquery()
+    )
+    stmt = (
+        select(Opportunity, OpportunityScore.overall, OpportunityScore.recommendation)
+        .join(OpportunityScore, OpportunityScore.opportunity_id == Opportunity.id)
+        .join(
+            latest,
+            (latest.c.opportunity_id == OpportunityScore.opportunity_id)
+            & (latest.c.latest == OpportunityScore.computed_at),
+        )
+        .where(Opportunity.status == "new")
+        .order_by(OpportunityScore.overall.desc())
+    )
+    rows = (await session.execute(stmt)).all()
+    best = None
+    if rows:
+        opp, overall, rec = rows[0]
+        best = {
+            "id": str(opp.id),
+            "title": opp.title,
+            "company": opp.company_name,
+            "score": overall,
+            "recommendation": rec,
+        }
+    return len(rows), best
