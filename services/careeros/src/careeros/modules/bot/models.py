@@ -8,9 +8,8 @@ project from.
 
 from __future__ import annotations
 
-from typing import Any
-
 import uuid
+from typing import Any
 
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
