@@ -21,6 +21,11 @@ SECRETS_TMPL = REPO_ROOT / "config" / ".env.secrets.demo.template"
 TG_BOT_SH = REPO_ROOT / "scripts" / "prj-tools" / "tg-bot.sh"
 BOT_GUARD_SH = REPO_ROOT / "scripts" / "hooks" / "bot-guard.sh"
 SETTINGS = Path.home() / ".ai" / "skills" / "_settings" / "careeros.yml"
+# The settings SSoT lives on the owner's workstation, not in the repo: on CI these checks are
+# skipped rather than failed (the repo-only invariants below still run everywhere).
+needs_ssot = pytest.mark.skipif(
+    not SETTINGS.exists(), reason=f"workstation settings SSoT not present: {SETTINGS}"
+)
 
 
 @pytest.fixture(scope="module")
@@ -85,6 +90,7 @@ def test_task_runner_is_inline_so_no_redis_addon_is_required(fly):
     assert fly["env"]["CAREEROS_TASK_RUNNER"] == "inline"
 
 
+@needs_ssot
 def test_public_url_matches_the_settings_ssot(fly):
     settings = yaml.safe_load(SETTINGS.read_text())
     assert (
@@ -144,6 +150,7 @@ def test_every_bot_secret_is_declared_in_the_template():
 # ── script ↔ settings contract ────────────────────────────────────────────────
 
 
+@needs_ssot
 @pytest.mark.parametrize("script", [TG_BOT_SH, BOT_GUARD_SH], ids=lambda p: p.name)
 def test_every_settings_key_a_script_reads_exists(script):
     """Settings drift must fail here, not at deploy time with a cryptic bash error.
@@ -164,6 +171,7 @@ def test_every_settings_key_a_script_reads_exists(script):
         assert node not in (None, ""), f"empty settings value: careeros.{dotted}"
 
 
+@needs_ssot
 def test_settings_handle_and_token_var_are_consistent():
     deploy = yaml.safe_load(SETTINGS.read_text())["careeros"]["tg_bot"]
     assert deploy["handle"].startswith("@")
