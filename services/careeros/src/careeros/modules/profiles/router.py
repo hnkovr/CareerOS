@@ -170,3 +170,20 @@ async def drift_resolution(
     if out is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "drift finding not found")
     return out
+
+
+# ------------------------------------------------------------------ update checklist (§20/§29)
+from careeros.modules.profiles.checklist import ChecklistOut, checklist_for  # noqa: E402
+
+
+@router.get("/checklist/{platform}", response_model=ChecklistOut)
+async def checklist(
+    platform: Platform, request: Request, user: CurrentUserDep, session: SessionDep
+) -> ChecklistOut:
+    _ = user
+    settings = request.app.state.settings
+    try:
+        data = get_vault(settings).require()
+    except VaultInvalid as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    return await checklist_for(session, data, platform)

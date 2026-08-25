@@ -720,6 +720,23 @@ export interface paths {
         patch: operations["drift_resolution_api_profiles_drift__finding_id__patch"];
         trace?: never;
     };
+    "/api/profiles/checklist/{platform}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Checklist */
+        get: operations["checklist_api_profiles_checklist__platform__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/pipeline/board": {
         parameters: {
             query?: never;
@@ -2132,6 +2149,51 @@ export interface components {
             /** Commit Sha */
             commit_sha: string;
         };
+        /** ChecklistItem */
+        ChecklistItem: {
+            /** Order */
+            order: number;
+            severity: components["schemas"]["Severity"];
+            /** Origin */
+            origin: string;
+            /** Category */
+            category: string;
+            /** Action */
+            action: string;
+            /** Why */
+            why?: string | null;
+            /** Current */
+            current?: string | null;
+            /** Suggested */
+            suggested?: string | null;
+            /** Source Fact Ids */
+            source_fact_ids?: string[];
+            /**
+             * Ref Id
+             * @description audit finding / drift finding id
+             */
+            ref_id?: string | null;
+        };
+        /** ChecklistOut */
+        ChecklistOut: {
+            platform: components["schemas"]["Platform"];
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Snapshot Id */
+            snapshot_id: string | null;
+            /** Audit Id */
+            audit_id: string | null;
+            /** Health Score */
+            health_score: number | null;
+            /** Items */
+            items: components["schemas"]["ChecklistItem"][];
+            copy_ready: components["schemas"]["CopyReady"];
+            /** Notes */
+            notes?: string[];
+        };
         /** Combo */
         Combo: {
             /** Technologies */
@@ -2348,6 +2410,22 @@ export interface components {
          * @enum {string}
          */
         ContractType: "employment" | "b2b" | "freelance" | "contract_to_hire";
+        /** CopyReady */
+        CopyReady: {
+            /** Headline */
+            headline?: string | null;
+            /** Headline Limit */
+            headline_limit?: number | null;
+            /** About */
+            about?: string | null;
+            /** About Limit */
+            about_limit?: number | null;
+            /**
+             * Source
+             * @default vault
+             */
+            source: string;
+        };
         /** DevPacketOut */
         DevPacketOut: {
             /** Agent */
@@ -3544,7 +3622,7 @@ export interface components {
         SkillsGapOut: {
             /**
              * Disclaimer
-             * @default Demand counts come from your observed opportunity stream.
+             * @default Demand counts come from your observed opportunity stream and cover technologies in the vault vocabulary (skills + scoring groups); add a skill or scoring alias to start tracking a new one.
              */
             disclaimer: string;
             /** Sample Size */
@@ -5315,6 +5393,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DriftOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    checklist_api_profiles_checklist__platform__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                platform: components["schemas"]["Platform"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChecklistOut"];
                 };
             };
             /** @description Validation Error */

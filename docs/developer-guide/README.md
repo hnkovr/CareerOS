@@ -32,6 +32,9 @@ never be committed as the owner's. `just vault-init <path>` creates a real one.
 cross-run interference — `CAREEROS_TEST_DATABASE_URL=postgresql+asyncpg://careeros:careeros@localhost:5432/careeros_test_<lane> uv run pytest`
 (create it once: `docker compose exec postgres psql -U careeros -c "CREATE DATABASE careeros_test_<lane>;"` plus the `vector`/`pg_trgm` extensions).
 
+Note: `pytest` already carries `-q` via `addopts`; passing `-q` again yields `-qq`, which drops the
+`N passed` summary line — don't grep for it. Rely on the exit code.
+
 Tests that need Postgres use `CAREEROS_TEST_DATABASE_URL` (defaults to the compose instance's
 `careeros_test` database) and are marked `@pytest.mark.db`; they are skipped when the DB is
 unreachable. Tests that call a real AI provider are marked `@pytest.mark.ai` and run only with

@@ -65,6 +65,12 @@ Two blockers found and fixed while wiring it up:
   and said nothing; they now print why, so a half-run gate cannot read as a green gate.
 - CI additionally builds `deploy/docker/Dockerfile.web` (P0.8 docker item now verified in CI).
 
+## P2/P3 progress (lane careeros-d1, 2026-08-26)
+- `0f7383e` P2 drift detection (platform↔platform, platform↔vault; persisted, resolvable) + P3 daily brief (`/api/insights/brief`, dashboard 'Today')
+- `58d5370` P3 insights: market intelligence, skills-gap + portfolio planner, funnel analytics (`/insights`)
+- next commit: per-platform update checklists (`/api/profiles/checklist/{platform}`)
+- still blocked on user: P1.3 Gmail (Google OAuth app credentials)
+
 ## Known quirks
 - Concurrent sessions sharing `careeros_test` make db-marked tests flaky; this lane runs its
   gates against `careeros_test_d1` (see developer guide); the platform lane uses `careeros_test_d2`.

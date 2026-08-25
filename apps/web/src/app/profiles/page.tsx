@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { api, unwrap, type AuditOut } from "@/lib/api";
 import { timeAgo } from "@/lib/format";
-import { Badge, Card, Empty, ErrorBox, ScoreRing, severityTone, Spinner } from "@/components/ui";
+import { Badge, Card, copyToClipboard, Empty, ErrorBox, ScoreRing, severityTone, Spinner } from "@/components/ui";
 
 const PLATFORMS = ["linkedin", "wellfound", "upwork", "toptal", "hh", "indeed", "getmatch"] as const;
 
@@ -194,6 +194,86 @@ function DriftPanel() {
   );
 }
 
+function ChecklistPanel() {
+  const [platform, setPlatform] = useState<(typeof PLATFORMS)[number]>("linkedin");
+  const [copied, setCopied] = useState<string | null>(null);
+  const checklist = useQuery({
+    queryKey: ["checklist", platform],
+    queryFn: async () =>
+      unwrap(await api.GET("/api/profiles/checklist/{platform}", { params: { path: { platform } } })),
+  });
+  const copy = async (label: string, text: string | null | undefined) => {
+    if (!text) return;
+    setCopied((await copyToClipboard(text)) ? label : null);
+  };
+  return (
+    <Card
+      title="Update checklist"
+      action={
+        <select className="input w-auto" value={platform} onChange={(e) => setPlatform(e.target.value as (typeof PLATFORMS)[number])}>
+          {PLATFORMS.map((p) => (
+            <option key={p}>{p}</option>
+          ))}
+        </select>
+      }
+    >
+      {checklist.isPending ? (
+        <Spinner />
+      ) : checklist.isError ? (
+        <ErrorBox error={checklist.error} />
+      ) : (
+        <div className="space-y-3 text-sm">
+          {(checklist.data.notes ?? []).map((n, i) => (
+            <p key={i} className="text-xs text-warn">
+              {n}
+            </p>
+          ))}
+          {checklist.data.items.length === 0 ? (
+            <Empty>Nothing to update on {platform} — audit and drift are clean.</Empty>
+          ) : (
+            <ol className="space-y-1.5">
+              {checklist.data.items.map((i) => (
+                <li key={`${i.origin}-${i.order}`} className="rounded-lg border border-line p-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs tabular-nums text-ink-dim">{i.order}.</span>
+                    <Badge tone={severityTone(i.severity)}>{i.severity}</Badge>
+                    <Badge tone={i.origin === "drift" ? "violet" : "neutral"}>{i.category.replaceAll("_", " ")}</Badge>
+                  </div>
+                  <p className="pt-1">{i.action}</p>
+                  {i.suggested && <p className="text-xs text-accent">→ {i.suggested}</p>}
+                  {i.current && <p className="text-xs text-ink-dim">currently: {i.current}</p>}
+                </li>
+              ))}
+            </ol>
+          )}
+          <div className="grid gap-2 md:grid-cols-2">
+            <div>
+              <div className="label">
+                Headline ({checklist.data.copy_ready.headline?.length ?? 0}/{checklist.data.copy_ready.headline_limit ?? "∞"}) · {checklist.data.copy_ready.source}
+              </div>
+              <blockquote className="rounded-lg border border-line bg-panel-2 p-2 text-sm">{checklist.data.copy_ready.headline}</blockquote>
+              <button className="btn mt-1 px-2 py-0.5 text-[11px]" onClick={() => copy("headline", checklist.data.copy_ready.headline)}>
+                {copied === "headline" ? "Copied ✓" : "Copy headline"}
+              </button>
+            </div>
+            <div>
+              <div className="label">
+                About ({checklist.data.copy_ready.about?.length ?? 0}/{checklist.data.copy_ready.about_limit ?? "∞"})
+              </div>
+              <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-lg border border-line bg-panel-2 p-2 text-sm">
+                {checklist.data.copy_ready.about}
+              </pre>
+              <button className="btn mt-1 px-2 py-0.5 text-[11px]" onClick={() => copy("about", checklist.data.copy_ready.about)}>
+                {copied === "about" ? "Copied ✓" : "Copy about"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function ProfilesPageInner() {
   const searchParams = useSearchParams();
   const [showNew, setShowNew] = useState(searchParams.get("new") === "1");
@@ -304,6 +384,7 @@ function ProfilesPageInner() {
           )}
         </Card>
         <DriftPanel />
+        <ChecklistPanel />
         </div>
       </div>
     </div>
