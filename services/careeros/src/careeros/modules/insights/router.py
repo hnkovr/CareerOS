@@ -39,3 +39,39 @@ async def daily_brief(
         else None
     )
     return await compute_brief(session, user.id, ai=ai, narrative=narrative)
+
+
+from fastapi import HTTPException, status  # noqa: E402
+
+from careeros.modules.insights.funnel import FunnelOut, funnel_for  # noqa: E402
+from careeros.modules.insights.market import MarketOut, market_for  # noqa: E402
+from careeros.modules.insights.skills_gap import SkillsGapOut, skills_gap_for  # noqa: E402
+from careeros.modules.vault.deps import get_vault  # noqa: E402
+from careeros.modules.vault.service import VaultInvalid  # noqa: E402
+
+
+def _data(request: Request):  # type: ignore[no-untyped-def]
+    try:
+        return get_vault(request.app.state.settings).require()
+    except VaultInvalid as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+
+
+@brief_router.get("/market", response_model=MarketOut)
+async def market(
+    request: Request, user: CurrentUserDep, session: SessionDep, window_days: int = 90
+) -> MarketOut:
+    _ = user
+    return await market_for(session, _data(request), window_days=window_days)
+
+
+@brief_router.get("/skills-gap", response_model=SkillsGapOut)
+async def skills_gap(request: Request, user: CurrentUserDep, session: SessionDep) -> SkillsGapOut:
+    _ = user
+    return await skills_gap_for(session, _data(request))
+
+
+@brief_router.get("/funnel", response_model=FunnelOut)
+async def funnel(request: Request, user: CurrentUserDep, session: SessionDep) -> FunnelOut:
+    _ = request, user
+    return await funnel_for(session)

@@ -1079,6 +1079,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/insights/market": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Market */
+        get: operations["market_api_insights_market_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/insights/skills-gap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Skills Gap */
+        get: operations["skills_gap_api_insights_skills_gap_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/insights/funnel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Funnel */
+        get: operations["funnel_api_insights_funnel_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/capabilities": {
         parameters: {
             query?: never;
@@ -2081,6 +2132,13 @@ export interface components {
             /** Commit Sha */
             commit_sha: string;
         };
+        /** Combo */
+        Combo: {
+            /** Technologies */
+            technologies: string[];
+            /** Count */
+            count: number;
+        };
         /** CommitOut */
         CommitOut: {
             /** Sha */
@@ -2159,6 +2217,21 @@ export interface components {
          * @enum {string}
          */
         CompensationPeriod: "year" | "month" | "hour" | "day" | "project";
+        /** CompensationStats */
+        CompensationStats: {
+            /** Kind */
+            kind: string;
+            /** Currency */
+            currency: string;
+            /** N */
+            n: number;
+            /** P25 */
+            p25: number;
+            /** Median */
+            median: number;
+            /** P75 */
+            p75: number;
+        };
         /** ConnectionOut */
         ConnectionOut: {
             platform: components["schemas"]["Platform"];
@@ -2591,6 +2664,43 @@ export interface components {
             /** Overdue */
             overdue: boolean;
         };
+        /** FunnelOut */
+        FunnelOut: {
+            /** Applications Total */
+            applications_total: number;
+            /** Active */
+            active: number;
+            /** By Kind */
+            by_kind: {
+                [key: string]: number;
+            };
+            /** By Stage */
+            by_stage: {
+                [key: string]: number;
+            };
+            /** Applied */
+            applied: number;
+            /** With Response */
+            with_response: number;
+            /** Response Rate */
+            response_rate: number | null;
+            /** Interviews */
+            interviews: number;
+            /** Interview Rate */
+            interview_rate: number | null;
+            /** Offers */
+            offers: number;
+            /** Offer Rate */
+            offer_rate: number | null;
+            /** Rejected */
+            rejected: number;
+            /** Median Days To First Response */
+            median_days_to_first_response: number | null;
+            /** Events By Kind */
+            events_by_kind: {
+                [key: string]: number;
+            };
+        };
         /** GenerateCVRequest */
         GenerateCVRequest: {
             /** Variant Id */
@@ -2769,6 +2879,51 @@ export interface components {
          * @enum {string}
          */
         MailboxProvider: "manual" | "gmail";
+        /** MarketOut */
+        MarketOut: {
+            /**
+             * Disclaimer
+             * @default Based on your observed opportunity stream — not global market research.
+             */
+            disclaimer: string;
+            /** Window Days */
+            window_days: number;
+            /**
+             * Since
+             * Format: date-time
+             */
+            since: string;
+            /** Sample Size */
+            sample_size: number;
+            /** Technologies */
+            technologies: components["schemas"]["TechDemand"][];
+            /** Combos */
+            combos: components["schemas"]["Combo"][];
+            /** Remote Policy */
+            remote_policy: {
+                [key: string]: number;
+            };
+            /** Contract Type */
+            contract_type: {
+                [key: string]: number;
+            };
+            /** Seniority */
+            seniority: {
+                [key: string]: number;
+            };
+            /** Sources */
+            sources: {
+                [key: string]: number;
+            };
+            /** Recommendations */
+            recommendations: {
+                [key: string]: number;
+            };
+            /** Compensation */
+            compensation: components["schemas"]["CompensationStats"][];
+            /** Avg Score */
+            avg_score: number | null;
+        };
         /**
          * MessageClass
          * @enum {string}
@@ -3125,6 +3280,22 @@ export interface components {
             /** Audited At */
             audited_at: string | null;
         };
+        /** PortfolioSuggestion */
+        PortfolioSuggestion: {
+            /** Technology */
+            technology: string;
+            gap: components["schemas"]["SkillStatus"];
+            /** Demand */
+            demand: number;
+            /** Suggested Proof */
+            suggested_proof: string;
+            /** Project Id */
+            project_id?: string | null;
+            /** Estimated Roi */
+            estimated_roi: string;
+            /** Why */
+            why: string;
+        };
         /** ProjectEntryDoc */
         ProjectEntryDoc: {
             /** Project Id */
@@ -3324,6 +3495,27 @@ export interface components {
          * @enum {string}
          */
         Severity: "critical" | "high" | "medium" | "nice";
+        /** SkillGapItem */
+        SkillGapItem: {
+            /** Technology */
+            technology: string;
+            status: components["schemas"]["SkillStatus"];
+            /** Demand */
+            demand: number;
+            /** Demand Share */
+            demand_share: number;
+            tier?: components["schemas"]["SkillTier"] | null;
+            level?: components["schemas"]["SkillLevel"] | null;
+            /**
+             * Evidence
+             * @description fact ids proving it
+             */
+            evidence?: string[];
+            /** Market Groups */
+            market_groups?: string[];
+            /** Suggested Action */
+            suggested_action?: string | null;
+        };
         /** SkillGroupDoc */
         SkillGroupDoc: {
             /** Label */
@@ -3332,6 +3524,39 @@ export interface components {
             items: string[];
             /** Derived From */
             derived_from: string[];
+        };
+        /**
+         * SkillLevel
+         * @enum {string}
+         */
+        SkillLevel: "expert" | "proficient" | "working" | "learning";
+        /**
+         * SkillStatus
+         * @enum {string}
+         */
+        SkillStatus: "evidenced" | "claimed" | "known" | "missing" | "worth_learning";
+        /**
+         * SkillTier
+         * @enum {string}
+         */
+        SkillTier: "first_priority" | "additional" | "target";
+        /** SkillsGapOut */
+        SkillsGapOut: {
+            /**
+             * Disclaimer
+             * @default Demand counts come from your observed opportunity stream.
+             */
+            disclaimer: string;
+            /** Sample Size */
+            sample_size: number;
+            /** Items */
+            items: components["schemas"]["SkillGapItem"][];
+            /** Counts */
+            counts: {
+                [key: string]: number;
+            };
+            /** Portfolio */
+            portfolio: components["schemas"]["PortfolioSuggestion"][];
         };
         /** SnapshotExperienceItem */
         SnapshotExperienceItem: {
@@ -3631,6 +3856,19 @@ export interface components {
          * @enum {string}
          */
         SyncStatus: "ok" | "partial" | "failed" | "skipped";
+        /** TechDemand */
+        TechDemand: {
+            /** Technology */
+            technology: string;
+            /** Count */
+            count: number;
+            /** Share */
+            share: number;
+            /** Avg Score */
+            avg_score?: number | null;
+            /** Market Groups */
+            market_groups?: string[];
+        };
         /** TestimonialDoc */
         TestimonialDoc: {
             /** Id */
@@ -5827,6 +6065,77 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    market_api_insights_market_get: {
+        parameters: {
+            query?: {
+                window_days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    skills_gap_api_insights_skills_gap_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SkillsGapOut"];
+                };
+            };
+        };
+    };
+    funnel_api_insights_funnel_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FunnelOut"];
                 };
             };
         };

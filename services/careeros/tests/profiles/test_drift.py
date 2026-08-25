@@ -92,10 +92,8 @@ def test_detects_years_headline_rate_employer_drift(data: VaultData) -> None:
     )
     rate = [d for d in drafts if d.field == "rate"]
     assert any(
-        (d.platform_a == "toptal"
-        and d.platform_b == "upwork")
-        or (d.platform_a == "upwork"
-        and d.platform_b == "toptal")
+        (d.platform_a == "toptal" and d.platform_b == "upwork")
+        or (d.platform_a == "upwork" and d.platform_b == "toptal")
         for d in rate
     )  # 60 vs 95
     assert any(

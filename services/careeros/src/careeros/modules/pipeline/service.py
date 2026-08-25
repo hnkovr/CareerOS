@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -341,3 +342,29 @@ async def active_application_count(session: AsyncSession) -> int:
         )
         or 0
     )
+
+
+async def funnel_rows(session: AsyncSession) -> list[dict[str, Any]]:
+    """Service-level read for insights: one row per application with its event kinds/dates."""
+    from sqlalchemy.orm import selectinload as _selectinload
+
+    rows = (
+        await session.scalars(
+            select(Application).options(
+                _selectinload(Application.events), _selectinload(Application.interviews)
+            )
+        )
+    ).all()
+    return [
+        {
+            "id": str(app.id),
+            "kind": app.kind,
+            "stage": app.stage,
+            "applied_at": app.applied_at,
+            "closed_at": app.closed_at,
+            "created_at": app.created_at,
+            "events": [{"kind": e.kind, "at": e.at} for e in app.events],
+            "interviews": [{"kind": i.kind, "outcome": i.outcome} for i in app.interviews],
+        }
+        for app in rows
+    ]

@@ -544,3 +544,48 @@ async def new_opportunity_stats(session: AsyncSession) -> tuple[int, dict[str, A
             "recommendation": rec,
         }
     return len(rows), best
+
+
+async def opportunity_stream(session: AsyncSession, *, limit: int = 2000) -> list[dict[str, Any]]:
+    """Service-level read for insights: lightweight rows of the observed opportunity stream."""
+    from sqlalchemy import func as _func
+
+    latest = (
+        select(
+            OpportunityScore.opportunity_id, _func.max(OpportunityScore.computed_at).label("latest")
+        )
+        .group_by(OpportunityScore.opportunity_id)
+        .subquery()
+    )
+    stmt = (
+        select(Opportunity, OpportunityScore.overall, OpportunityScore.recommendation)
+        .outerjoin(latest, latest.c.opportunity_id == Opportunity.id)
+        .outerjoin(
+            OpportunityScore,
+            (OpportunityScore.opportunity_id == Opportunity.id)
+            & (OpportunityScore.computed_at == latest.c.latest),
+        )
+        .order_by(Opportunity.received_at.desc())
+        .limit(limit)
+    )
+    out: list[dict[str, Any]] = []
+    for opp, overall, rec in (await session.execute(stmt)).all():
+        out.append(
+            {
+                "id": str(opp.id),
+                "title": opp.title,
+                "company": opp.company_name,
+                "source": opp.source,
+                "status": opp.status,
+                "received_at": opp.received_at,
+                "technologies": list(opp.technologies or []),
+                "remote_policy": opp.remote_policy,
+                "remote_regions": list(opp.remote_regions or []),
+                "contract_type": opp.contract_type,
+                "seniority": opp.seniority,
+                "compensation": dict(opp.compensation or {}) if opp.compensation else None,
+                "score": overall,
+                "recommendation": rec,
+            }
+        )
+    return out

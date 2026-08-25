@@ -40,6 +40,7 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 ## P2/P3 — lane careeros-d1 (2026-08-26)
 - [x] P2.x Drift detection: latest snapshot per platform vs each other and vs vault (years, headline tech, rates, current employer, location, first-priority skills); persisted findings with resolved/dismissed kept across recomputes; /profiles drift panel; counted in notifications
 - [x] P3.x Daily brief: /api/insights/brief — deterministic stats + ranked actions (overdue follow-ups, interviews, urgent replies, best new opportunity, drift, pending suggestions); optional AI narrative (daily_brief prompt); dashboard "Today" card
+- [x] P3.x Insights: market intelligence over the observed stream (tech demand/combos, remote/contract/seniority/source mix, compensation p25/median/p75, windowed), skills-gap engine (evidenced/claimed/known/missing/worth-learning + portfolio planner with ROI), funnel analytics (response/interview/offer rates, median days to reply); /insights page
 - [ ] tech debt: insights/notifications.py reads other modules' ORM models directly (invariant 7) — move to service-level helpers like new_opportunity_stats/active_application_count
 
 ## P2 — Platform connectors ([GH #10](https://github.com/hnkovr/CareerOS/issues/10), [Linear MY-26](https://linear.app/my-1st/issue/MY-26), [ADR 013](../docs/adr/013-platform-connectors.md))
