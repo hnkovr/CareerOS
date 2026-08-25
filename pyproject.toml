@@ -88,3 +88,15 @@ forbidden_modules = [
   "careeros.modules.opportunities.service", "careeros.modules.opportunities.models",
   "careeros.modules.ai", "careeros.modules.cv",
 ]
+
+[[tool.importlinter.contracts]]
+name = "insights reads other modules only through their service layer (invariant 7)"
+type = "forbidden"
+source_modules = ["careeros.modules.insights"]
+forbidden_modules = [
+  "careeros.modules.ai.models", "careeros.modules.ai.suggestions",
+  "careeros.modules.inbox.models", "careeros.modules.opportunities.models",
+  "careeros.modules.pipeline.models", "careeros.modules.profiles.models",
+  "careeros.modules.profiles.drift", "careeros.modules.cv.models", "careeros.modules.platform.models",
+]
+allow_indirect_imports = true

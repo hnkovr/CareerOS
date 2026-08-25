@@ -744,3 +744,42 @@ async def opportunity_stream(session: AsyncSession, *, limit: int = 2000) -> lis
             }
         )
     return out
+
+
+async def top_new_opportunities(
+    session: AsyncSession, *, min_score: int = 80, limit: int = 5
+) -> list[dict[str, Any]]:
+    """Service-level read for insights: new opportunities whose latest score clears the bar."""
+    from sqlalchemy import func as _func
+
+    latest = (
+        select(
+            OpportunityScore.opportunity_id, _func.max(OpportunityScore.computed_at).label("latest")
+        )
+        .group_by(OpportunityScore.opportunity_id)
+        .subquery()
+    )
+    stmt = (
+        select(Opportunity, OpportunityScore.overall)
+        .join(OpportunityScore, OpportunityScore.opportunity_id == Opportunity.id)
+        .join(
+            latest,
+            (latest.c.opportunity_id == OpportunityScore.opportunity_id)
+            & (latest.c.latest == OpportunityScore.computed_at),
+        )
+        .where(
+            Opportunity.status == str(OpportunityStatus.new), OpportunityScore.overall >= min_score
+        )
+        .order_by(OpportunityScore.overall.desc())
+        .limit(limit)
+    )
+    return [
+        {
+            "id": str(opp.id),
+            "title": opp.title,
+            "company": opp.company_name,
+            "overall": overall,
+            "received_at": opp.received_at,
+        }
+        for opp, overall in (await session.execute(stmt)).all()
+    ]

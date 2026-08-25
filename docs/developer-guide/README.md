@@ -12,6 +12,18 @@ Run: `make dev` (API with reload on :8000 + worker). Tests: `make test`. Quality
 local pipeline in dependency order — env → infra → openapi → fmt → lint → test → migrate →
 seed → validate-career → generate-cv → platform-sync → bot-check. `make help` lists every target.
 
+**Blank env vars mean *unset*.** Every optional value renders blank out of
+`config/.env.*.template` until the owner fills it in (a non-empty literal there would be a leaked
+secret), so `Settings` maps `""` → `None` for every field whose annotation accepts `None`. Without
+that, an `int | None` setting makes `Settings()` raise and takes down the API, worker, CLI and
+pipeline at once, and a `SecretStr | None` becomes `SecretStr("")` — a credential that tests
+truthy and authenticates nothing. Adding an optional setting needs nothing extra;
+`test_blank_env_var_reads_as_unset` covers it.
+
+**SessionStart guards** (`scripts/hooks/`, wired in `.claude/settings.json`; both always exit 0):
+`config-guard.sh` builds `Settings()` from the current `.env` and names the offending field;
+`bot-guard.sh` asks Telegram who owns the webhook.
+
 **Generated contracts.** Two generators feed two committed trees: `career/schemas` from
 `careeros vault export-schemas` (python) and `packages/schemas` from `openapi-typescript`
 (node, off the exported OpenAPI). `scripts/contracts-check.sh` — `make contracts` locally, the
@@ -49,7 +61,9 @@ unreachable. Tests that call a real AI provider are marked `@pytest.mark.ai` and
 3. `just migration "<message>"` → review the generated file → `just migrate`.
 4. Tests next to the module in `services/careeros/tests/<name>/`.
 5. Import rule: other modules may import only `service`, `schemas`, `enums` of your module
-   (import-linter contracts in the root `pyproject.toml`).
+   (import-linter contracts in the root `pyproject.toml`; contract 5 enforces it for
+   `modules/insights` today). When insights needs another module's data, add a `*_rows` /
+   `*_count` helper to that module's `service.py` — never query its ORM models from outside.
 6. Docs: update `docs/architecture/02-domain-model.md` if tables/enums changed; ADR for any
    boundary decision.
 

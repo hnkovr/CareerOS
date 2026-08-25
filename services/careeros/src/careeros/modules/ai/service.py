@@ -465,3 +465,17 @@ class AIService:
             output=r.output,
             error=r.error,
         )
+
+
+async def pending_suggestion_count(session: AsyncSession) -> int:
+    """Service-level read for insights: suggestions still awaiting review."""
+    from sqlalchemy import func, select
+
+    from careeros.modules.ai.models import Suggestion
+
+    return (
+        await session.scalar(
+            select(func.count()).select_from(Suggestion).where(Suggestion.state == "suggested")
+        )
+        or 0
+    )

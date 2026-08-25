@@ -368,3 +368,57 @@ async def funnel_rows(session: AsyncSession) -> list[dict[str, Any]]:
         }
         for app in rows
     ]
+
+
+async def due_follow_ups(
+    session: AsyncSession, *, within_hours: int = 24, limit: int = 10
+) -> list[dict[str, Any]]:
+    """Service-level read for insights: follow-ups due within the horizon (overdue included)."""
+    now = datetime.now(UTC)
+    rows = (
+        await session.execute(
+            select(Application, Opportunity.title)
+            .join(Opportunity, Application.opportunity_id == Opportunity.id)
+            .where(
+                Application.next_follow_up_at.is_not(None),
+                Application.next_follow_up_at <= now + timedelta(hours=within_hours),
+            )
+            .order_by(Application.next_follow_up_at)
+            .limit(limit)
+        )
+    ).all()
+    return [
+        {"application_id": str(app.id), "title": title, "due_at": app.next_follow_up_at}
+        for app, title in rows
+    ]
+
+
+async def upcoming_interviews(
+    session: AsyncSession, *, within_hours: int = 48, grace_hours: int = 2, limit: int = 10
+) -> list[dict[str, Any]]:
+    """Service-level read for insights: pending interviews, ``grace_hours`` ago → the horizon."""
+    now = datetime.now(UTC)
+    rows = (
+        await session.execute(
+            select(Interview, Opportunity.title)
+            .join(Application, Interview.application_id == Application.id)
+            .join(Opportunity, Application.opportunity_id == Opportunity.id)
+            .where(
+                Interview.outcome == "pending",
+                Interview.scheduled_at.is_not(None),
+                Interview.scheduled_at >= now - timedelta(hours=grace_hours),
+                Interview.scheduled_at <= now + timedelta(hours=within_hours),
+            )
+            .order_by(Interview.scheduled_at)
+            .limit(limit)
+        )
+    ).all()
+    return [
+        {
+            "application_id": str(interview.application_id),
+            "kind": interview.kind,
+            "scheduled_at": interview.scheduled_at,
+            "title": title,
+        }
+        for interview, title in rows
+    ]

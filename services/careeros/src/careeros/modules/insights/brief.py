@@ -65,7 +65,7 @@ async def compute_brief(
 ) -> BriefOut:
     from careeros.modules.opportunities.service import new_opportunity_stats
     from careeros.modules.pipeline.service import active_application_count
-    from careeros.modules.profiles.drift import open_drift_count
+    from careeros.modules.profiles.service import open_drift_count
 
     now = now or datetime.now(UTC)
     notes = await compute_notifications(session, user_id)

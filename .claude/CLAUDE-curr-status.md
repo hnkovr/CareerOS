@@ -72,8 +72,30 @@ Two blockers found and fixed while wiring it up:
 - `33b8eef` P2 per-platform update checklists (`/api/profiles/checklist/{platform}`, copy-ready headline/about)
 - `f23b677` fix handed over by the platform lane: the search_documents migration now creates the pgvector extension (CI's bare Postgres had none) — CI fully green at 6ed6325 (contracts, python, web, docker)
 - P3 interview prep + negotiation intelligence + §31 AI-ranked comparison (`modules/opportunities/assistants.py`): deterministic frame → AI → provenance guard; Suggestion rows; opportunity page cards + list compare mode
+- invariant-7 tech debt paid for insights: notifications/brief read other modules only via service helpers; import-linter contract 5 enforces it
 - lane gates: 148 backend tests (excl. platform/deploy lanes), pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
 - still blocked on user: P1.3 Gmail (Google OAuth app credentials); next candidates: §55 tool-calling assistants (ADR + go-ahead), §53 WAIT_FOR_APPROVAL workflows, notifications.py invariant-7 tech debt
+
+### 2026-08-26 — gate hardening (session 3)
+`make all` → exit 0, 13/13 steps, 590 python + 5 web tests.
+- **[#22](https://github.com/hnkovr/CareerOS/issues/22) blank env var broke everything.** A freshly
+  rendered `.env` could not build `Settings()` — `CAREEROS_TG_OWNER_CHAT_ID=` is what the template
+  emits, and `int | None` cannot parse `""`. API, worker, CLI and pipeline all died on import, with
+  a traceback naming pydantic rather than the template. Same root cause made blank `SecretStr`
+  fields into `SecretStr("")`, truthy but useless (`ProviderRegistry` tested it with a bare `if`).
+  `Settings._blank_means_unset` maps `""` → `None` for every `| None` field.
+- **`config/gate.yml`** — the pipeline as data (step order, `proves`, `fails_when`, bot exit codes,
+  guards, contracts). `tests/test_gate_config.py` asserts the order equals the Makefile's `all:`,
+  so the description cannot drift from the thing it describes.
+- **Guards**: `scripts/hooks/config-guard.sh` (SessionStart, cached, always exit 0) builds
+  `Settings()` from the live `.env` and names the offending field — this bug now costs one line
+  instead of one pipeline run. Registered next to `bot-guard.sh` in `.claude/settings.json`.
+- **Skill + agent**: `/careeros-gate` (catalog `projects/careeros/careeros-gate`, with
+  `references/triage.md` = every failure this repo has produced) and `.claude/agents/careeros-gate.md`
+  (runs the 4-minute pipeline, returns a verdict not a log).
+- Cleared 54 pyright errors in the bot lane's new tests (`Settings(**dict)` unpacks).
+- [#23](https://github.com/hnkovr/CareerOS/issues/23) filed: CI still repeats the lint commands
+  inline instead of calling the Justfile recipe.
 
 ## Known quirks
 - Concurrent sessions sharing `careeros_test` make db-marked tests flaky; this lane runs its

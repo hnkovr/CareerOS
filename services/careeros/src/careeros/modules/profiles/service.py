@@ -20,6 +20,7 @@ from careeros.modules.profiles.audit import (
     category_scores,
     health_score,
 )
+from careeros.modules.profiles.drift import open_drift_count as open_drift_count  # re-export
 from careeros.modules.profiles.enums import PROFILE_PLATFORMS, FindingResolution, Severity
 from careeros.modules.profiles.models import AuditFinding, ProfileAudit, ProfileSnapshot
 from careeros.modules.profiles.schemas import (

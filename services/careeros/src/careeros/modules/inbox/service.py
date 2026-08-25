@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import uuid
 from datetime import UTC, datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rapidfuzz import fuzz
 from sqlalchemy import func, select
@@ -468,3 +468,24 @@ class InboxService:
             extracted_opportunity=m.extracted_opportunity,
             created_at=m.created_at,
         )
+
+
+async def unread_urgent_messages(session: AsyncSession, *, limit: int = 5) -> list[dict[str, Any]]:
+    """Service-level read for insights: unread messages classified as high urgency, newest first."""
+    rows = (
+        await session.scalars(
+            select(Message)
+            .where(Message.read_at.is_(None), Message.urgency == "high")
+            .order_by(Message.received_at.desc())
+            .limit(limit)
+        )
+    ).all()
+    return [
+        {
+            "id": str(m.id),
+            "subject": m.subject,
+            "from_email": m.from_email,
+            "received_at": m.received_at,
+        }
+        for m in rows
+    ]

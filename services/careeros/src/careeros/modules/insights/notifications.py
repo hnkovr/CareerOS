@@ -1,14 +1,20 @@
-"""Computed notifications: read-only aggregation over pipeline, opportunities, inbox, AI."""
+"""Computed notifications: read-only aggregation over pipeline, opportunities, inbox, AI and
+profiles — through each module's service layer only (invariant 7; enforced by import-linter)."""
 
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from enum import StrEnum
 
 from pydantic import BaseModel
-from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from careeros.modules.ai.service import pending_suggestion_count
+from careeros.modules.inbox.service import unread_urgent_messages
+from careeros.modules.opportunities.service import top_new_opportunities
+from careeros.modules.pipeline.service import due_follow_ups, upcoming_interviews
+from careeros.modules.profiles.service import open_drift_count
 
 
 class NotificationKind(StrEnum):
@@ -43,133 +49,61 @@ HIGH_SCORE = 80
 
 
 async def compute_notifications(session: AsyncSession, user_id: uuid.UUID) -> NotificationsOut:
-    from careeros.modules.ai.models import Suggestion
-    from careeros.modules.inbox.models import Message
-    from careeros.modules.opportunities.models import Opportunity, OpportunityScore
-    from careeros.modules.pipeline.models import Application, Interview
-
     now = datetime.now(UTC)
     items: list[Notification] = []
 
-    # follow-ups (join opportunity for the title)
-    rows = (
-        await session.execute(
-            select(Application, Opportunity.title)
-            .join(Opportunity, Application.opportunity_id == Opportunity.id)
-            .where(
-                Application.next_follow_up_at.is_not(None),
-                Application.next_follow_up_at <= now + timedelta(hours=FOLLOW_UP_HORIZON_H),
-            )
-            .order_by(Application.next_follow_up_at)
-            .limit(10)
-        )
-    ).all()
-    for app, title in rows:
-        overdue = app.next_follow_up_at < now
+    for f in await due_follow_ups(session, within_hours=FOLLOW_UP_HORIZON_H, limit=10):
+        overdue = f["due_at"] < now
         items.append(
             Notification(
                 kind=NotificationKind.follow_up_overdue
                 if overdue
                 else NotificationKind.follow_up_due,
-                title=f"Follow up: {title}",
+                title=f"Follow up: {f['title']}",
                 detail="overdue" if overdue else "due within a day",
-                url_path=f"/pipeline/{app.id}",
-                at=app.next_follow_up_at,
+                url_path=f"/pipeline/{f['application_id']}",
+                at=f["due_at"],
                 severity="high" if overdue else "normal",
             )
         )
 
-    # interviews in the next 48h
-    rows = (
-        await session.execute(
-            select(Interview, Opportunity.title)
-            .join(Application, Interview.application_id == Application.id)
-            .join(Opportunity, Application.opportunity_id == Opportunity.id)
-            .where(
-                Interview.outcome == "pending",
-                Interview.scheduled_at.is_not(None),
-                Interview.scheduled_at >= now - timedelta(hours=2),
-                Interview.scheduled_at <= now + timedelta(hours=INTERVIEW_HORIZON_H),
-            )
-            .order_by(Interview.scheduled_at)
-            .limit(10)
-        )
-    ).all()
-    for interview, title in rows:
+    for iv in await upcoming_interviews(session, within_hours=INTERVIEW_HORIZON_H, limit=10):
         items.append(
             Notification(
                 kind=NotificationKind.interview_soon,
-                title=f"Interview ({interview.kind.replace('_', ' ')}): {title}",
+                title=f"Interview ({str(iv['kind']).replace('_', ' ')}): {iv['title']}",
                 detail=None,
-                url_path=f"/pipeline/{interview.application_id}",
-                at=interview.scheduled_at,
+                url_path=f"/pipeline/{iv['application_id']}",
+                at=iv["scheduled_at"],
                 severity="high",
             )
         )
 
-    # new high-score opportunities
-    latest_score = (
-        select(
-            OpportunityScore.opportunity_id,
-            func.max(OpportunityScore.computed_at).label("latest"),
-        )
-        .group_by(OpportunityScore.opportunity_id)
-        .subquery()
-    )
-    rows = (
-        await session.execute(
-            select(Opportunity, OpportunityScore.overall)
-            .join(OpportunityScore, OpportunityScore.opportunity_id == Opportunity.id)
-            .join(
-                latest_score,
-                (latest_score.c.opportunity_id == OpportunityScore.opportunity_id)
-                & (latest_score.c.latest == OpportunityScore.computed_at),
-            )
-            .where(Opportunity.status == "new", OpportunityScore.overall >= HIGH_SCORE)
-            .order_by(OpportunityScore.overall.desc())
-            .limit(5)
-        )
-    ).all()
-    for opp, overall in rows:
+    for opp in await top_new_opportunities(session, min_score=HIGH_SCORE, limit=5):
         items.append(
             Notification(
                 kind=NotificationKind.high_score_opportunity,
-                title=f"{overall}/100: {opp.title}",
-                detail=opp.company_name,
-                url_path=f"/opportunities/{opp.id}",
-                at=opp.received_at,
-                severity="high" if overall >= 85 else "normal",
+                title=f"{opp['overall']}/100: {opp['title']}",
+                detail=opp["company"],
+                url_path=f"/opportunities/{opp['id']}",
+                at=opp["received_at"],
+                severity="high" if opp["overall"] >= 85 else "normal",
             )
         )
 
-    # unread urgent messages
-    rows = (
-        await session.scalars(
-            select(Message)
-            .where(Message.read_at.is_(None), Message.urgency == "high")
-            .order_by(Message.received_at.desc())
-            .limit(5)
-        )
-    ).all()
-    for msg in rows:
+    for msg in await unread_urgent_messages(session, limit=5):
         items.append(
             Notification(
                 kind=NotificationKind.urgent_message,
-                title=f"Urgent: {msg.subject or '(no subject)'}",
-                detail=msg.from_email,
+                title=f"Urgent: {msg['subject'] or '(no subject)'}",
+                detail=msg["from_email"],
                 url_path="/inbox",
-                at=msg.received_at,
+                at=msg["received_at"],
                 severity="high",
             )
         )
 
-    # pending suggestions (one aggregate line)
-    pending = (
-        await session.scalar(
-            select(func.count()).select_from(Suggestion).where(Suggestion.state == "suggested")
-        )
-        or 0
-    )
+    pending = await pending_suggestion_count(session)
     if pending:
         items.append(
             Notification(
@@ -179,8 +113,6 @@ async def compute_notifications(session: AsyncSession, user_id: uuid.UUID) -> No
                 severity="normal",
             )
         )
-
-    from careeros.modules.profiles.drift import open_drift_count
 
     drift_open = await open_drift_count(session)
     if drift_open:
