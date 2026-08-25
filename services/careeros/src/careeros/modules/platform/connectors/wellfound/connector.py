@@ -6,6 +6,8 @@ The user copies the page text (profile, jobs list / job page, "Applied" tab) and
 
 from __future__ import annotations
 
+import re
+
 from careeros.modules.platform.base import BaseConnector
 from careeros.modules.platform.connectors.wellfound import parsers
 from careeros.modules.platform.enums import AuthKind, SyncMethod
@@ -13,6 +15,7 @@ from careeros.modules.platform.schemas import (
     ApplicationObservationIn,
     Capabilities,
     JobPosting,
+    JobQuery,
     ProfileRead,
 )
 from careeros.modules.vault.enums import Platform
@@ -20,6 +23,16 @@ from careeros.modules.vault.enums import Platform
 
 class Connector(BaseConnector):
     platform = Platform.wellfound
+
+    def search_url(self, query: JobQuery) -> str | None:
+        if not query.text:
+            return None  # Wellfound has no free-text search URL, only role pages
+        slug = re.sub(r"[^a-z0-9]+", "-", query.text.lower()).strip("-")
+        return f"https://wellfound.com/role/r/{slug}" if slug else None
+
+    def profile_url(self, handle: str | None = None) -> str | None:
+        return f"https://wellfound.com/u/{handle}" if handle else None
+
     capabilities = Capabilities(
         platform=Platform.wellfound,
         profile=[SyncMethod.paste],

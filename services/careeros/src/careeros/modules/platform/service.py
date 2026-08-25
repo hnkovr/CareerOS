@@ -51,6 +51,7 @@ from careeros.modules.platform.tokens import (
     get_token_store,
     resolve_tokens,
 )
+from careeros.modules.profiles.deps import latest_snapshot_preferences
 from careeros.modules.vault.enums import Platform
 
 log = get_logger(__name__)
@@ -171,6 +172,28 @@ class PlatformService:
             last_error=row.last_error if row else None,
             capabilities=connector.capabilities,
         )
+
+    # ------------------------------------------------------------------ profile URL
+    async def own_profile_url(self, platform: Platform) -> str | None:
+        """The owner's profile URL on ``platform``: from the OAuth identity, else the latest
+        profile snapshot (``preferences.profile_url`` / ``external_id``). ``None`` = not known."""
+        connector = self.connector(platform)
+        row = await self._connection_row(platform)
+        meta = dict(row.meta or {}) if row else {}
+        if meta.get("profile_url"):
+            return str(meta["profile_url"])
+        if row and row.account_id:
+            url = connector.profile_url(row.account_id)
+            if url:
+                return url
+        prefs = await latest_snapshot_preferences(self.session, self.user_id, platform)
+        if prefs is not None:
+            if prefs.get("profile_url"):
+                return str(prefs["profile_url"])
+            handle = prefs.get("external_id") or prefs.get("handle")
+            if handle:
+                return connector.profile_url(str(handle))
+        return None
 
     # ------------------------------------------------------------------ oauth
     def _oauth_config(self, platform: Platform) -> OAuthConfig:

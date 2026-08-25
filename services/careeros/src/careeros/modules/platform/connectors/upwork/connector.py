@@ -4,6 +4,8 @@ every capability (ADR-004 / ADR-005 / ADR-011). No HTML fetching, no browser, no
 
 from __future__ import annotations
 
+from urllib.parse import urlencode
+
 from careeros.core.config import Settings
 from careeros.modules.platform.base import (
     BaseConnector,
@@ -34,6 +36,18 @@ API_KEYS_URL = "https://www.upwork.com/developer/keys"
 
 class Connector(BaseConnector):
     platform = Platform.upwork
+
+    def search_url(self, query: JobQuery) -> str | None:
+        params: dict[str, str] = {}
+        if query.text:
+            params["q"] = query.text
+        return "https://www.upwork.com/nx/search/jobs/" + (
+            "?" + urlencode(params) if params else ""
+        )
+
+    def profile_url(self, handle: str | None = None) -> str | None:
+        return f"https://www.upwork.com/freelancers/{handle}" if handle else None
+
     capabilities = Capabilities(
         platform=Platform.upwork,
         profile=[SyncMethod.api, SyncMethod.paste],

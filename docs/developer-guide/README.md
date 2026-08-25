@@ -79,7 +79,8 @@ To add a connector: create `modules/platform/connectors/<name>/connector.py` wit
 `class Connector(BaseConnector)` declaring `platform` and `capabilities` (only the methods you
 implement: `read_profile` / `import_profile_export` / `parse_profile_text`, `search_jobs` /
 `import_jobs_export` / `parse_jobs_text`, `application_statuses` / `import_applications_export` /
-`parse_applications_text`, plus `oauth_config`, `whoami`, `doctor` for API platforms), add the name to
+`parse_applications_text`, plus `oauth_config`, `whoami`, `doctor` for API platforms, and the URL pair
+`search_url(JobQuery)` / `profile_url(handle)` returning `None` when not expressible), add the name to
 `connectors/__init__.py:CONNECTOR_MODULES`, the `Platform`/`Source` enum members if new, fixtures +
 `tests/platform/test_<name>.py` (no network: `httpx.MockTransport`), and `docs/platform/<name>.md`.
 `PlatformRegistry.verify()` (run by `test_core.py`) fails when a declared capability has no

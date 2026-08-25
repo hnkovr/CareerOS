@@ -75,6 +75,16 @@ install (nothing connected yet) is clean and safe to put in a pipeline such as `
   `core/config.py`), because the deployed app does not sync. Adding a new credential setting means
   extending those excludes; moving sync to Fly means inverting the block together with the volume.
 
+## Links for the user (no fetching)
+
+`GET /api/platform/{platform}/urls?q=…&location=…&remote=true` returns the platform's own job-search
+page for a query (`search_url`) and the owner's profile URL (`profile_url`). Connectors implement
+`search_url(JobQuery)` / `profile_url(handle)`; `None` means "cannot be expressed" (Toptal has no
+public search; Indeed/getmatch profiles have no public URL) — callers should say so rather than omit
+the platform. The owner's URL comes from the OAuth identity or the latest snapshot
+(`preferences.profile_url` / `external_id`). URL templates are best-effort and may need updating
+when a platform changes its routes.
+
 ## What CareerOS will never do
 
 Log in for you, store passwords or session cookies, run a headless browser, scrape listings, or

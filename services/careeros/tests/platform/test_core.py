@@ -256,3 +256,43 @@ def test_generic_applications_parser() -> None:
     assert obs[0].applied_at == datetime(2026, 8, 12, tzinfo=UTC)
     assert obs[1].applied_at == NOW.replace(day=22) and obs[1].company == "Lumen Analytics"
     assert obs[0].status_raw == "Application viewed"
+
+
+def test_every_connector_answers_the_url_contract() -> None:
+    from urllib.parse import parse_qs, urlparse
+
+    from careeros.modules.platform.schemas import JobQuery
+
+    reg = get_registry()
+    query = JobQuery(text="data engineer", remote=True, location="Warsaw")
+    expected_search = {
+        Platform.hh: "https://hh.ru/search/vacancy",
+        Platform.upwork: "https://www.upwork.com/nx/search/jobs/",
+        Platform.linkedin: "https://www.linkedin.com/jobs/search/",
+        Platform.wellfound: "https://wellfound.com/role/r/data-engineer",
+        Platform.indeed: "https://www.indeed.com/jobs",
+        Platform.getmatch: "https://getmatch.ru/vacancies",
+        Platform.toptal: None,
+    }
+    for platform, base in expected_search.items():
+        url = reg.get(platform).search_url(query)
+        if base is None:
+            assert url is None, platform
+            continue
+        assert url is not None and url.startswith(base), (platform, url)
+        if platform != Platform.wellfound:
+            qs = parse_qs(urlparse(url).query)
+            assert any("data engineer" in v[0] for v in qs.values()), (platform, url)
+    assert reg.get("hh").search_url(JobQuery(text="x", extra={"area": 1})) is not None
+    assert "schedule=remote" in (reg.get("hh").search_url(query) or "")
+    assert reg.get("wellfound").search_url(JobQuery()) is None  # no free-text search page
+    assert (
+        reg.get("linkedin").profile_url("dana-kovalenko")
+        == "https://www.linkedin.com/in/dana-kovalenko"
+    )
+    assert reg.get("hh").profile_url("abc123") == "https://hh.ru/resume/abc123"
+    assert reg.get("toptal").profile_url("dana") == "https://www.toptal.com/resume/dana"
+    for platform in (Platform.indeed, Platform.getmatch):
+        assert reg.get(platform).profile_url("dana") is None
+    for c in reg.all():
+        assert c.profile_url(None) is None

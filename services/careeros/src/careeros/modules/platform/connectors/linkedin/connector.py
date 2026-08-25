@@ -10,6 +10,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlencode
 
 from careeros.modules.platform import parsers as generic
 from careeros.modules.platform.base import BaseConnector, ParseError
@@ -20,6 +21,7 @@ from careeros.modules.platform.schemas import (
     ApplicationObservationIn,
     Capabilities,
     JobPosting,
+    JobQuery,
     ProfileRead,
 )
 from careeros.modules.profiles.enums import CaptureMethod
@@ -44,6 +46,20 @@ _LI_DATETIME_FORMATS = ("%m/%d/%y, %I:%M %p", "%m/%d/%Y, %I:%M %p", "%m/%d/%y", 
 
 class Connector(BaseConnector):
     platform = Platform.linkedin
+
+    def search_url(self, query: JobQuery) -> str | None:
+        params: dict[str, str] = {}
+        if query.text:
+            params["keywords"] = query.text
+        if query.location:
+            params["location"] = query.location
+        if query.remote:
+            params["f_WT"] = "2"  # LinkedIn's "Remote" workplace-type filter
+        return "https://www.linkedin.com/jobs/search/" + ("?" + urlencode(params) if params else "")
+
+    def profile_url(self, handle: str | None = None) -> str | None:
+        return f"https://www.linkedin.com/in/{handle}" if handle else None
+
     capabilities = Capabilities(
         platform=Platform.linkedin,
         profile=[SyncMethod.export, SyncMethod.paste],

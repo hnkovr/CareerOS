@@ -26,8 +26,10 @@ from careeros.modules.platform.schemas import (
     Capabilities,
     ConnectionOut,
     DoctorCheck,
+    JobQuery,
     OAuthStartOut,
     ParseResult,
+    PlatformUrls,
     SyncRequest,
     SyncResult,
     SyncRunOut,
@@ -130,6 +132,30 @@ async def disconnect(
         return await _svc(request, user, session).platform.disconnect(platform)
     except _ERRORS as exc:
         raise _http_error(exc) from exc
+
+
+@router.get("/{platform}/urls", response_model=PlatformUrls)
+async def urls(
+    platform: Platform,
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+    q: str | None = None,
+    location: str | None = None,
+    remote: bool | None = None,
+) -> PlatformUrls:
+    """Links the user can open: the platform's search page for a query and their own profile."""
+    svc = _svc(request, user, session)
+    try:
+        connector = svc.platform.connector(platform)
+    except UnknownPlatform as exc:
+        raise _http_error(exc) from exc
+    query = JobQuery(text=q, location=location, remote=remote)
+    return PlatformUrls(
+        platform=platform,
+        search_url=connector.search_url(query),
+        profile_url=await svc.platform.own_profile_url(platform),
+    )
 
 
 @router.get("/{platform}/doctor", response_model=list[DoctorCheck])

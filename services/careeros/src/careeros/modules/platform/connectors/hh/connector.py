@@ -9,6 +9,7 @@ OAuth token from ``ctx.tokens``. Paste tier — see ``parsers.py``.
 from __future__ import annotations
 
 from typing import Any
+from urllib.parse import urlencode
 
 from careeros.core.config import Settings
 from careeros.core.logging import get_logger
@@ -62,6 +63,22 @@ PASSTHROUGH_EXTRA = (
 
 class Connector(BaseConnector):
     platform = Platform.hh
+
+    def search_url(self, query: JobQuery) -> str | None:
+        params: dict[str, str] = {}
+        if query.text:
+            params["text"] = query.text
+        if query.remote:
+            params["schedule"] = "remote"
+        if query.extra.get("area"):
+            params["area"] = str(query.extra["area"])
+        if query.salary_min:
+            params["salary"] = str(int(query.salary_min))
+        return "https://hh.ru/search/vacancy" + ("?" + urlencode(params) if params else "")
+
+    def profile_url(self, handle: str | None = None) -> str | None:
+        return f"https://hh.ru/resume/{handle}" if handle else None
+
     jobs_without_token = True  # GET /vacancies is public; resumes/negotiations need the token
     capabilities = Capabilities(
         platform=Platform.hh,

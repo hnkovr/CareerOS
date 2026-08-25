@@ -8,6 +8,7 @@ e-mails are a P1 Inbox concern (``email_fallback``).
 from __future__ import annotations
 
 from datetime import datetime
+from urllib.parse import urlencode
 
 from careeros.modules.platform.base import BaseConnector
 from careeros.modules.platform.connectors.getmatch import parsers as gm
@@ -16,6 +17,7 @@ from careeros.modules.platform.schemas import (
     ApplicationObservationIn,
     Capabilities,
     JobPosting,
+    JobQuery,
     ProfileRead,
 )
 from careeros.modules.vault.enums import Platform
@@ -23,6 +25,16 @@ from careeros.modules.vault.enums import Platform
 
 class Connector(BaseConnector):
     platform = Platform.getmatch
+
+    def search_url(self, query: JobQuery) -> str | None:
+        params: dict[str, str] = {}
+        if query.text:
+            params["q"] = query.text
+        return "https://getmatch.ru/vacancies" + ("?" + urlencode(params) if params else "")
+
+    def profile_url(self, handle: str | None = None) -> str | None:
+        return None  # getmatch profiles are private (companies see them, not the public)
+
     capabilities = Capabilities(
         platform=Platform.getmatch,
         profile=[SyncMethod.paste],

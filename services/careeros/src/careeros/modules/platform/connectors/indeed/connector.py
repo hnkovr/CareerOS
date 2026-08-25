@@ -8,6 +8,8 @@ Job-alert e-mails arrive through the inbox (P1) — declared as ``email_fallback
 
 from __future__ import annotations
 
+from urllib.parse import urlencode
+
 from careeros.modules.platform.base import BaseConnector
 from careeros.modules.platform.connectors.indeed import parsers
 from careeros.modules.platform.enums import AuthKind, SyncMethod
@@ -15,6 +17,7 @@ from careeros.modules.platform.schemas import (
     ApplicationObservationIn,
     Capabilities,
     JobPosting,
+    JobQuery,
     ProfileRead,
 )
 from careeros.modules.vault.enums import Platform
@@ -22,6 +25,19 @@ from careeros.modules.vault.enums import Platform
 
 class Connector(BaseConnector):
     platform = Platform.indeed
+
+    def search_url(self, query: JobQuery) -> str | None:
+        params: dict[str, str] = {}
+        if query.text:
+            params["q"] = query.text
+        location = query.location or ("Remote" if query.remote else None)
+        if location:
+            params["l"] = location
+        return "https://www.indeed.com/jobs" + ("?" + urlencode(params) if params else "")
+
+    def profile_url(self, handle: str | None = None) -> str | None:
+        return None  # Indeed profiles have no public handle-based URL
+
     capabilities = Capabilities(
         platform=Platform.indeed,
         profile=[SyncMethod.paste],

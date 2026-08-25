@@ -521,3 +521,40 @@ async def test_api_status_filter_and_callback_without_bearer(settings: Settings,
                 headers=headers,
             )
             assert r.status_code == 200 and [o["status"] for o in r.json()] == ["rejected"]
+
+
+@pytest.mark.db
+async def test_own_profile_url_from_connection_or_snapshot(
+    settings: Settings, session: AsyncSession, user_id: uuid.UUID
+) -> None:
+
+    svc = _svc(settings, session, user_id)
+    assert await svc.platform.own_profile_url(Platform.toptal) is None
+    await svc.sync(
+        Platform.toptal,
+        SyncKind.profile,
+        SyncRequest(text="Dana Kovalenko\nSenior Data Engineer\n"),
+    )
+    assert await svc.platform.own_profile_url(Platform.toptal) is None  # paste carries no handle
+    await svc.platform.upsert_connection(
+        Platform.toptal, meta={"profile_url": "https://www.toptal.com/resume/dana"}
+    )
+    assert (
+        await svc.platform.own_profile_url(Platform.toptal) == "https://www.toptal.com/resume/dana"
+    )
+
+
+@pytest.mark.db
+async def test_urls_endpoint(db_client: AsyncClient) -> None:
+    r = await db_client.get("/api/platform/hh/urls", params={"q": "dbt", "remote": "true"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert (
+        body["search_url"].startswith("https://hh.ru/search/vacancy?")
+        and "dbt" in body["search_url"]
+    )
+    # the shared test DB may already hold an hh connection from earlier tests; getmatch never has one
+    r = await db_client.get("/api/platform/getmatch/urls", params={"q": "dbt"})
+    assert r.status_code == 200 and r.json()["profile_url"] is None
+    r = await db_client.get("/api/platform/toptal/urls", params={"q": "dbt"})
+    assert r.status_code == 200 and r.json()["search_url"] is None

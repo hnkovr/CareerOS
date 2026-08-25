@@ -279,6 +279,12 @@ class ConnectionOut(BaseModel):
     capabilities: Capabilities
 
 
+class PlatformUrls(BaseModel):
+    platform: Platform
+    search_url: str | None = Field(default=None, description="None = not expressible as a URL")
+    profile_url: str | None = Field(default=None, description="None = the owner's URL is not known")
+
+
 class OAuthStartOut(BaseModel):
     platform: Platform
     authorize_url: str

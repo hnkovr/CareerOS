@@ -145,6 +145,15 @@ class BaseConnector(ABC):
     def parse_applications_text(self, text: str) -> list[ApplicationObservationIn]:
         raise self._unavailable(SyncKind.applications, SyncMethod.paste)
 
+    # ---- URLs the user can open (no fetching — these are for the user's own browser / the bot)
+    def search_url(self, query: JobQuery) -> str | None:
+        """The platform's own job-search page for ``query`` (``None`` = not expressible)."""
+        return None
+
+    def profile_url(self, handle: str | None = None) -> str | None:
+        """Canonical public profile URL for ``handle`` on this platform; ``None`` when unknown."""
+        return None
+
     # ---- auth / health
     def oauth_config(self, settings: Settings) -> OAuthConfig | None:
         """OAuth2 endpoints for API platforms; ``None`` when the platform needs no tokens.

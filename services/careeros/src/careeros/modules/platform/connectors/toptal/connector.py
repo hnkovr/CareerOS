@@ -15,6 +15,7 @@ from careeros.modules.platform.schemas import (
     ApplicationObservationIn,
     Capabilities,
     JobPosting,
+    JobQuery,
     ProfileRead,
 )
 from careeros.modules.vault.enums import Platform
@@ -22,6 +23,13 @@ from careeros.modules.vault.enums import Platform
 
 class Connector(BaseConnector):
     platform = Platform.toptal
+
+    def search_url(self, query: JobQuery) -> str | None:
+        return None  # jobs live behind the talent portal login; no public search URL
+
+    def profile_url(self, handle: str | None = None) -> str | None:
+        return f"https://www.toptal.com/resume/{handle}" if handle else None
+
     capabilities = Capabilities(
         platform=Platform.toptal,
         profile=[SyncMethod.paste],
