@@ -17,6 +17,13 @@ from careeros.modules.bot.capture import looks_like_job_description
 from careeros.modules.bot.client import TelegramClient
 from careeros.modules.bot.formatting import escape_md, score_card
 from careeros.modules.bot.keyboards import triage_keyboard
+from careeros.modules.bot.platforms import (
+    UnknownPlatforms,
+    format_platform_set,
+    known_platforms,
+    parse_platform_set,
+)
+from careeros.modules.bot.preferences import PreferenceStore
 from careeros.modules.opportunities.enums import Source
 
 log = structlog.get_logger(__name__)
@@ -24,6 +31,7 @@ log = structlog.get_logger(__name__)
 HELP = (
     "*CareerOS*\n"
     "Forward me a job description and I will parse, dedupe and score it.\n\n"
+    "/services — show the platforms commands act on; /services set hh,upwork to change\n"
     "/status — environment, database, webhook state\n"
     "/whoami — your chat id and whether you are the owner\n"
     "/help — this message"
@@ -70,6 +78,8 @@ class BotService:
             await self._client.send_message(
                 chat_id, escape_md(self._status()), parse_mode="MarkdownV2"
             )
+        elif command == "/services":
+            await self._services(chat_id, text)
         elif looks_like_job_description(text):
             await self._capture(chat_id, text)
         else:
@@ -78,6 +88,51 @@ class BotService:
                 escape_md("Forward me a job description, or try /help."),
                 parse_mode="MarkdownV2",
             )
+
+    async def _services(self, chat_id: int, text: str) -> None:
+        """Show or replace the saved platform set."""
+        parts = text.split(maxsplit=2)
+        if len(parts) >= 2 and parts[1].lower() == "set":
+            if len(parts) < 3:
+                await self._say(chat_id, "usage: /services set hh,upwork")
+                return
+            try:
+                wanted = parse_platform_set(parts[2])
+            except UnknownPlatforms as exc:
+                # Name what was wrong AND what exists: a rejection that does not
+                # say what is valid just makes the user guess again.
+                await self._say(chat_id, str(exc))
+                return
+            except ValueError as exc:
+                await self._say(chat_id, str(exc))
+                return
+            saved = await self._with_store(lambda s: s.set_platforms(wanted))
+            await self._say(chat_id, f"platforms: {format_platform_set(saved)}")
+            return
+
+        current = await self._with_store(lambda s: s.get_platforms())
+        if current:
+            await self._say(chat_id, f"platforms: {format_platform_set(current)}")
+        else:
+            # Unset is not "none": say what the commands will actually do.
+            await self._say(
+                chat_id,
+                "no platform set saved — commands use all known platforms: "
+                f"{', '.join(sorted(known_platforms()))}\n"
+                "set one with: /services set hh,upwork",
+            )
+
+    async def _with_store(self, fn):
+        """Run one PreferenceStore operation in its own committed session."""
+        if self._sessionmaker is None:
+            raise RuntimeError("no database configured")
+        async with self._sessionmaker() as session:
+            result = await fn(PreferenceStore(session, SINGLE_USER_ID))
+            await session.commit()
+            return result
+
+    async def _say(self, chat_id: int, text: str) -> None:
+        await self._client.send_message(chat_id, escape_md(text), parse_mode="MarkdownV2")
 
     async def _capture(self, chat_id: int, text: str) -> None:
         """Ingest a forwarded job description and reply with its triage card."""

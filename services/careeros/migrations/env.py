@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlalchemy.pool import NullPool
 
 from careeros.core.config import get_settings
-from careeros.core.db import Base
+from careeros.core.db import Base, normalize_database_url
 
 config = context.config
 if config.config_file_name is not None:
@@ -28,13 +28,16 @@ for _mod in (
     "careeros.modules.platform.models",
     "careeros.modules.pipeline.models",
     "careeros.modules.inbox.models",
+    "careeros.modules.bot.models",
     "careeros.modules.search.models",
 ):
     with contextlib.suppress(ModuleNotFoundError):
         importlib.import_module(_mod)
 
 target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", get_settings().database_url)
+# Fly Managed Postgres hands out `postgres://`, which the async driver rejects.
+# alembic runs as the release_command, so without this the DEPLOY fails, not the app.
+config.set_main_option("sqlalchemy.url", normalize_database_url(get_settings().database_url))
 
 
 def run_migrations_offline() -> None:
