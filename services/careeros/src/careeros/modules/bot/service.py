@@ -17,6 +17,12 @@ from careeros.modules.bot.capture import looks_like_job_description
 from careeros.modules.bot.client import TelegramClient
 from careeros.modules.bot.formatting import escape_md, score_card
 from careeros.modules.bot.keyboards import triage_keyboard
+from careeros.modules.bot.links import (
+    build_profile_rows,
+    build_search_rows,
+    render_rows,
+    resolve_open_target,
+)
 from careeros.modules.bot.platforms import (
     UnknownPlatforms,
     format_platform_set,
@@ -32,6 +38,9 @@ HELP = (
     "*CareerOS*\n"
     "Forward me a job description and I will parse, dedupe and score it.\n\n"
     "/services — show the platforms commands act on; /services set hh,upwork to change\n"
+    "/open <service> — link to a platform\n"
+    "/profiles [services] — your profile URL on each platform\n"
+    '/urls "<query>" [services] — a job search URL per platform\n'
     "/status — environment, database, webhook state\n"
     "/whoami — your chat id and whether you are the owner\n"
     "/help — this message"
@@ -80,6 +89,12 @@ class BotService:
             )
         elif command == "/services":
             await self._services(chat_id, text)
+        elif command == "/open":
+            await self._open(chat_id, text)
+        elif command == "/profiles":
+            await self._profiles(chat_id, text)
+        elif command == "/urls":
+            await self._urls(chat_id, text)
         elif looks_like_job_description(text):
             await self._capture(chat_id, text)
         else:
@@ -122,6 +137,72 @@ class BotService:
                 "set one with: /services set hh,upwork",
             )
 
+    # ── links (#26, #27) ──────────────────────────────────────────────────────
+
+    async def _open(self, chat_id: int, text: str) -> None:
+        parts = text.split(maxsplit=1)
+        if len(parts) < 2:
+            await self._say(chat_id, "usage: /open hh")
+            return
+        try:
+            target = resolve_open_target(parts[1])
+        except ValueError as exc:
+            await self._say(chat_id, str(exc))
+            return
+        await self._say_links(chat_id, f"{target.platform}: {target.url}")
+
+    async def _profiles(self, chat_id: int, text: str) -> None:
+        parts = text.split(maxsplit=1)
+        platforms = await self._effective_platforms(parts[1] if len(parts) > 1 else None)
+        if platforms is None:
+            return await self._say(chat_id, "unknown platform in that list")
+        rows = await self._with_platform_service(lambda svc: build_profile_rows(svc, platforms))
+        await self._say_links(chat_id, render_rows(rows, empty="no platforms selected"))
+
+    async def _urls(self, chat_id: int, text: str) -> None:
+        """/urls "query" [services] — the quoted query is required, the set optional."""
+        query, rest = _split_quoted(text)
+        if not query:
+            await self._say(chat_id, 'usage: /urls "senior data engineer" [hh,upwork]')
+            return
+        platforms = await self._effective_platforms(rest)
+        if platforms is None:
+            return await self._say(chat_id, "unknown platform in that list")
+        try:
+            rows = await self._with_platform_service(
+                lambda svc: build_search_rows(svc, platforms, query)
+            )
+        except ValueError as exc:
+            await self._say(chat_id, str(exc))
+            return
+        await self._say_links(
+            chat_id, f"{query}\n" + render_rows(rows, empty="no platforms selected")
+        )
+
+    async def _effective_platforms(self, inline: str | None) -> list[str] | None:
+        """Inline override, else the saved set, else every known platform.
+
+        Unset is NOT "none": a user who never ran /services should still get answers.
+        Returns None when an inline list names something that does not exist.
+        """
+        if inline and inline.strip():
+            try:
+                return parse_platform_set(inline)
+            except ValueError:
+                return None
+        saved = await self._with_store(lambda s: s.get_platforms())
+        return saved or sorted(known_platforms())
+
+    async def _with_platform_service(self, fn):
+        """Run one PlatformService operation in its own session (invariant 7)."""
+        if self._sessionmaker is None:
+            raise RuntimeError("no database configured")
+        from careeros.modules.platform.service import PlatformService
+
+        async with self._sessionmaker() as session:
+            svc = PlatformService(self._settings, session=session, user_id=SINGLE_USER_ID)
+            return await fn(svc)
+
     async def _with_store(self, fn):
         """Run one PreferenceStore operation in its own committed session."""
         if self._sessionmaker is None:
@@ -133,6 +214,17 @@ class BotService:
 
     async def _say(self, chat_id: int, text: str) -> None:
         await self._client.send_message(chat_id, escape_md(text), parse_mode="MarkdownV2")
+
+    async def _say_links(self, chat_id: int, text: str) -> None:
+        """Send link output as PLAIN text, with no parse_mode.
+
+        MarkdownV2 requires escaping `.`, `-`, `_` and more, all of which occur in
+        every URL. Escaping renders correctly but makes the message unreadable in
+        any client that shows the raw text, and one missed character returns a 400
+        naming a byte offset. Telegram auto-links bare URLs in plain text, so the
+        formatting buys nothing here and costs a whole class of failure.
+        """
+        await self._client.send_message(chat_id, text)
 
     async def _capture(self, chat_id: int, text: str) -> None:
         """Ingest a forwarded job description and reply with its triage card."""
@@ -181,3 +273,21 @@ class BotService:
             "note: webhook ownership shown here is this process's startup claim; "
             "Telegram is the authority (just bot-webhook-info)"
         )
+
+
+def _split_quoted(text: str) -> tuple[str | None, str | None]:
+    """Split `/urls "a b c" hh,upwork` into the quoted query and the remainder.
+
+    Quoting is required rather than guessed: a bare `/urls senior data engineer hh`
+    has no unambiguous boundary between the query and the platform list, and
+    guessing wrong sends the user a search for the wrong words.
+    """
+    rest = text.split(maxsplit=1)
+    if len(rest) < 2:
+        return None, None
+    body = rest[1].strip()
+    for quote in ('"', "'"):
+        if body.startswith(quote) and body.count(quote) >= 2:
+            end = body.index(quote, 1)
+            return body[1:end].strip() or None, body[end + 1 :].strip() or None
+    return None, None
