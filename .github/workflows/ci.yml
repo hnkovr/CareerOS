@@ -71,7 +71,7 @@ jobs:
 
   web:
     runs-on: ubuntu-latest
-    if: ${{ hashFiles('apps/web/package.json') != '' }}
+    # (no job-level hashFiles() guard: that function is step-only and makes GitHub reject the file)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
