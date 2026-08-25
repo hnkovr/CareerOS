@@ -157,3 +157,71 @@ decision needs the owner's call.
 [#24](https://github.com/hnkovr/CareerOS/issues/24) — opportunities dedup test fails only in
 a full run (shared `careeros_test` contamination). Verified NOT caused by this lane: it fails
 identically without these changes.
+
+
+---
+
+## UPDATE 2 — команды #25/#26/#27 сделаны
+
+Гейт зелёный целиком: ruff по всему проекту, pyright 0 errors, 5/5 контрактов
+импортов, `alembic check` — no drift, тесты бота/core/deploy проходят.
+
+| # | Что | Коммит |
+|---|---|---|
+| [#25](https://github.com/hnkovr/CareerOS/issues/25) | `/services` — сохранённый набор площадок (Postgres, UNIQUE на user_id) | `af574c9`, `c173512`, `b2e7a38` |
+| [#26](https://github.com/hnkovr/CareerOS/issues/26) | `/open`, `/profiles` — ссылки по площадкам | `864693c` |
+| [#27](https://github.com/hnkovr/CareerOS/issues/27) | `/urls "<query>" [services]` | `864693c` |
+
+Миграция `b1c7d0e9a4f2` (bot_preference) применена к реальному Postgres, дрейфа нет.
+
+### Два бага, найденных ПОСЛЕ моего гейта — причина в узости гейта
+
+1. **pyright**: я гонял его по `src/careeros/modules/bot`, а не проектный
+   `just typecheck`, и тестовые файлы не попадали в область. Деталь на будущее:
+   ошибка вылезла в одном файле только потому, что остальные тесты строят
+   `Settings` через dict-splat, который pyright проверить не может — тот же
+   неверный тип там есть, но невидим.
+2. **alembic**: рукописная миграция создала `ix_bot_preference_user_id` как UNIQUE,
+   а модель наследовала `user_id` от `OwnedMixin` с обычным `index=True`. Будущий
+   autogenerate снёс бы уникальность — единственное, что не даёт двум гонящимся
+   `/services set` оставить две строки. Ловится ровно `alembic check`, которого я
+   не мог запустить, пока Docker лежал.
+
+**Вывод для следующих слайсов: гейт = `just lint` + `just typecheck` + `alembic check`
+целиком, а не по подкаталогу.**
+
+### Решение, изменённое по ходу
+
+Вывод со ссылками уходит **простым текстом, без `parse_mode`**. MarkdownV2 требует
+экранировать `.`, `-`, `_` — то есть всё, из чего состоит URL; рендерится верно, но
+сырое сообщение нечитаемо, а один пропущенный символ даёт 400 с байтовым смещением.
+Telegram сам линкует голые URL. Три теста упали именно на этом.
+
+`/urls` требует запрос **в кавычках**: в `/urls senior data engineer hh` нет
+однозначной границы между запросом и списком площадок.
+
+### Контракт с platform-лейном (получен, стабилен, коммит `ccbe87f`)
+
+- `BaseConnector.search_url(JobQuery) -> str | None`
+- `BaseConnector.profile_url(handle) -> str | None`
+- `PlatformService.own_profile_url(platform) -> str | None`
+- `GET /api/platform/{platform}/urls?q=&location=&remote=`
+
+`None` = «не знаем» → бот обязан сказать об этом строкой, а не пропустить площадку.
+
+### Осталось
+
+- [#28](https://github.com/hnkovr/CareerOS/issues/28) `/queries` — read-only, из vault
+- [#29](https://github.com/hnkovr/CareerOS/issues/29) `/cv update` — core CV и варианты
+- [#30](https://github.com/hnkovr/CareerOS/issues/30) `/cv improve` — Suggestion, не запись в vault
+- [#4](https://github.com/hnkovr/CareerOS/issues/4) callback-кнопки — **упирается в вопрос про aiogram**
+- [#9](https://github.com/hnkovr/CareerOS/issues/9) первый деплой на Fly
+- [#31](https://github.com/hnkovr/CareerOS/issues/31) mini-app — нужен отдельный спек (подпись `initData`)
+
+### Открытый вопрос — решает владелец
+
+**aiogram**. ADR 012 фиксирует aiogram 3, но он не понадобился ни разу: тонкий
+httpx-клиент закрыл вебхук, три гейта, claim, capture, клавиатуры, `/services`,
+`/open`, `/profiles`, `/urls`. Моя рекомендация — оставить тонкий клиент и на `#4`
+дописать типизированный роутер по `callback_data`; aiogram решает задачу владения
+event loop, которой у нас нет. Но это отмена принятого решения, и молча я её не делаю.
