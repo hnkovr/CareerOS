@@ -1,6 +1,6 @@
 # HANDOFF — CareerOS Telegram bot + Fly deploy
 
-Date: 2026-08-26 · Lane: bot core features and deploying to hosting
+Date: 2026-08-26 (updated) · Lane: bot core features and deploying to hosting
 Keep-list snapshot for `/compact-safely`. Everything below is on disk and committed.
 
 Authoritative reading order:
@@ -99,3 +99,61 @@ just deploy-dry           # print every deploy command, run none
 just deploy-fly           # deploy, then claim the webhook
 uv run pytest tests/deploy -q   # 49 tests
 ```
+
+
+## UPDATE — bot core landed; command batch designed, not built
+
+**Implemented and pushed** (73 bot tests + 49 deploy tests, ruff/pyright/5 import contracts clean):
+
+| # | What | Commit |
+|---|---|---|
+| [#8](https://github.com/hnkovr/CareerOS/issues/8) | `normalize_database_url` — `postgres://` → `postgresql+asyncpg://` | `8f0fadc` |
+| [#1](https://github.com/hnkovr/CareerOS/issues/1) | webhook route + three gates, ACK-then-background | `f26d4e3` |
+| [#2](https://github.com/hnkovr/CareerOS/issues/2) | ownership claim (never takes a live owner's webhook) | `f26d4e3` |
+| [#3](https://github.com/hnkovr/CareerOS/issues/3) | capture — forwarded JD → scored triage card | `57abb26` |
+| partial [#6](https://github.com/hnkovr/CareerOS/issues/6) | `/status` `/whoami` `/help` | `f26d4e3` |
+
+`careeros bot webhook-info|webhook-set|webhook-delete|check` verified live against
+@careeros_hnkovr_bot. A real triage card was delivered to the owner chat end to end.
+
+**`CAREEROS_TG_OWNER_CHAT_ID` is now SET** (40937921, @NikolayKrupiy) — captured from a
+pending `getUpdates`. That blocker is closed.
+
+### Command batch — decisions made 2026-08-26, code NOT written
+
+Issues [#25](https://github.com/hnkovr/CareerOS/issues/25)–[#30](https://github.com/hnkovr/CareerOS/issues/30)
+carry the full spec each. The four decisions behind them:
+
+1. **"Open" means send a tappable link.** A bot cannot open anything on a device. `/open`
+   and `/profiles` reply with URLs; each platform's app handles the deep link.
+2. **A saved default platform set** (`/services set hh,upwork,…`), stored in **Postgres,
+   not the vault** — a search preference is operational state, not a canonical career fact
+   (invariant 1, ADR 002). Chosen over the stateless "all configured, override inline".
+3. **"meta" = the core/master CV** that channel variants project from; "in ..." = a specific
+   variant. Not metadata fields.
+4. **Compact before building** — chosen deliberately; the tree was clean.
+
+Command surface: `/open <service>` · `/profiles [services]` · `/urls "<query>" [services]` ·
+`/queries` · `/services [set …]` · `/cv update [in <variant>]` · `/cv improve [in <variant>]`.
+The original request ended with "..." — more commands are expected; the list is not closed.
+
+### Project B — web / Telegram mini-app ([#31](https://github.com/hnkovr/CareerOS/issues/31))
+
+Deliberately NOT designed. Architectural, needs its own brainstorm → spec → plan cycle.
+Key thing already known: a mini-app authenticates by verifying Telegram's `initData`
+signature, which is a **different trust model** from the bot's secret-token + owner-chat
+gates — it cannot reuse them. Blocked on #25–#30.
+
+### Open question carried forward
+
+**aiogram.** It was the accepted library (ADR 012), but nothing has needed it — the thin
+httpx client covers webhook, gates, claim, capture and inline keyboards. I added the
+dependency, found nothing imported it, and removed it rather than ship an unused one.
+Keep the thin client, or adopt aiogram for the callback work in #4? Reversing an accepted
+decision needs the owner's call.
+
+### Also filed
+
+[#24](https://github.com/hnkovr/CareerOS/issues/24) — opportunities dedup test fails only in
+a full run (shared `careeros_test` contamination). Verified NOT caused by this lane: it fails
+identically without these changes.
