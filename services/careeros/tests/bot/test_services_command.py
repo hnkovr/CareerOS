@@ -8,6 +8,7 @@ says what the commands will actually do rather than printing an empty list.
 from __future__ import annotations
 
 import pytest
+from pydantic import SecretStr
 
 from careeros.core.config import Settings
 from careeros.modules.bot.service import BotService
@@ -41,8 +42,10 @@ def bot(monkeypatch):
     settings = Settings(
         env="test",
         tg_enabled=True,
-        tg_bot_token="1:a",
-        tg_webhook_secret="s",
+        # SecretStr explicitly: pydantic coerces a str at runtime, but the
+        # annotation is SecretStr | None and pyright checks direct kwargs.
+        tg_bot_token=SecretStr("1:a"),
+        tg_webhook_secret=SecretStr("s"),
         tg_owner_chat_id=OWNER,
     )
     client = SpyClient()
