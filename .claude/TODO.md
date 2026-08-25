@@ -22,20 +22,23 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] P1.5a unified search: FTS (GIN) + optional pgvector semantic over facts/opportunities/messages/CVs/contacts, /search UI
 - [x] P1.5b computed notification center (/api/notifications + header bell) + PWA manifest/icon; web push deferred until HTTPS deploy
 
-- [ ] P0.9 Telegram bot ([GH #1–#9](https://github.com/hnkovr/CareerOS/issues), [Linear: CareerOS](https://linear.app/my-1st/project/careeros-2039a962e2cf))
+- [ ] P0.9 Telegram bot ([GH #1–#9](https://github.com/hnkovr/CareerOS/issues), [Linear](https://linear.app/my-1st/project/careeros-2039a962e2cf))
   - Spec: `docs/superpowers/specs/2026-08-25-careeros-telegram-bot-design.md` · [ADR 012](../docs/adr/012-telegram-bot-surface.md)
-  - DONE: deploy path (`fly.toml`, `config/deploy.yml`), ops scripts, SessionStart guard,
-    `/careeros-bot` skill, `@careeros_hnkovr_bot` + webhook secret, 47 tests in `tests/deploy/`
-  - TODO: [#1](https://github.com/hnkovr/CareerOS/issues/1) webhook + 3 gates ·
-    [#2](https://github.com/hnkovr/CareerOS/issues/2) ownership claim ·
-    [#3](https://github.com/hnkovr/CareerOS/issues/3) capture ·
-    [#4](https://github.com/hnkovr/CareerOS/issues/4) triage ·
+  - DONE: deploy path, ops scripts, session guard, `/careeros-bot` skill, `@careeros_hnkovr_bot`
+    (token + webhook secret + **owner chat id** all stored 0600), `modules/bot` with
+    [#1](https://github.com/hnkovr/CareerOS/issues/1) webhook + 3 gates,
+    [#2](https://github.com/hnkovr/CareerOS/issues/2) ownership claim,
+    [#3](https://github.com/hnkovr/CareerOS/issues/3) capture,
+    [#8](https://github.com/hnkovr/CareerOS/issues/8) db scheme — 73 bot + 49 deploy tests
+  - TODO: [#4](https://github.com/hnkovr/CareerOS/issues/4) triage callbacks ·
     [#5](https://github.com/hnkovr/CareerOS/issues/5) career cmds ·
-    [#6](https://github.com/hnkovr/CareerOS/issues/6) ops cmds ·
+    [#6](https://github.com/hnkovr/CareerOS/issues/6) ops cmds (partial: /status /whoami /help) ·
     [#7](https://github.com/hnkovr/CareerOS/issues/7) notifications ·
-    [#8](https://github.com/hnkovr/CareerOS/issues/8) db scheme ·
     [#9](https://github.com/hnkovr/CareerOS/issues/9) first deploy
-  - BLOCKED on you: `CAREEROS_TG_OWNER_CHAT_ID` — message @careeros_hnkovr_bot once
+  - OPEN QUESTION: aiogram 3 was the accepted library, but nothing has needed it — the thin
+    httpx client covers webhook, gates, claim, capture and keyboards. Keep the thin client or
+    adopt aiogram for #4?
+  - Also filed: [#24](https://github.com/hnkovr/CareerOS/issues/24) opportunities test isolation
 
 ## P2/P3 — lane careeros-d1 (2026-08-26)
 - [x] P2.x Drift detection: latest snapshot per platform vs each other and vs vault (years, headline tech, rates, current employer, location, first-priority skills); persisted findings with resolved/dismissed kept across recomputes; /profiles drift panel; counted in notifications
@@ -45,7 +48,8 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] P3.x Interview & negotiation intelligence + §31 comparison ranking: deterministic frames (evidence map with fact ids; offer vs floor/target vs observed p25/median/p75) → AI plan/script → provenance guards (stories must cite facts; negotiation lines may only use frame numbers or cited facts; a ranking must be a permutation of the compared ids); saved as Suggestions; opportunity page cards + tick-to-compare mode on the list
 - [ ] P3 assistants via tool-calling (§55): needs tool-use in the `AIProvider` port (Anthropic + OpenAI-compatible) and a typed tool registry over the domain services — ADR first; awaiting go-ahead
 - [ ] §53 workflows with WAIT_FOR_APPROVAL on top of the Suggestion state machine (multi-step: analyze → select CV → draft reply → approve → create application)
-- [ ] tech debt: insights/notifications.py reads other modules' ORM models directly (invariant 7) — move to service-level helpers like new_opportunity_stats/active_application_count
+- [x] tech debt: insights reads other modules only through service helpers (`due_follow_ups`, `upcoming_interviews`, `top_new_opportunities`, `unread_urgent_messages`, `pending_suggestion_count`; `open_drift_count` re-exported by `profiles.service`); import-linter contract 5 now enforces invariant 7 for `modules/insights`
+- [ ] tech debt (remaining): `pipeline/service.py` and `inbox/service.py` import `opportunities.models` directly — same treatment (service helpers + a contract) when those modules are next touched
 
 ## P2 — Platform connectors ([GH #10](https://github.com/hnkovr/CareerOS/issues/10), [Linear MY-26](https://linear.app/my-1st/issue/MY-26), [ADR 013](../docs/adr/013-platform-connectors.md))
 - [x] core: contract/registry/matrix, token store + OAuth2, HTTP, tables, sync, API, CLI, just recipes ([#11](https://github.com/hnkovr/CareerOS/issues/11))
@@ -68,6 +72,17 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] migrations create the pgvector extension themselves — CI's bare Postgres had none, only the compose init script did (f23b677); CI green since 6ed6325
 - [ ] CI still repeats the lint commands inline instead of calling `just lint` (needs `just` on
   the runner); they match today — keep them in step when either changes
+
+## Session 2026-08-26 — gate hardening
+- [x] blank env var → unset ([GH #22](https://github.com/hnkovr/CareerOS/issues/22)): `Settings()`
+  refused to build from a freshly rendered `.env` (`int | None` cannot parse `""`), taking down
+  API/worker/CLI/pipeline; blank `SecretStr` fields also read as present. Fix + regression test +
+  `scripts/hooks/config-guard.sh` SessionStart guard.
+- [x] `config/gate.yml` — the `all` pipeline as data; `tests/test_gate_config.py` asserts it equals
+  the Makefile. Skill `/careeros-gate` (+ `references/triage.md`), agent `careeros-gate`.
+- [x] pyright: `Settings(**dict)` unpacks in the bot tests (`dict[str, Any]`, one `type: ignore`)
+- [ ] CI lint duplication ([GH #23](https://github.com/hnkovr/CareerOS/issues/23)) — prefer moving
+  the gate into `scripts/gate.sh`, mirroring `scripts/contracts-check.sh`
 
 ## Parked
 - `packages/ui` extraction (when Tauri lands)
