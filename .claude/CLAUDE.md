@@ -28,6 +28,8 @@ Read first: `docs/architecture/01-architecture-proposal.md`, `docs/adr/README.md
 ## Commands
 `make dev` · `make check` (gate: lint+test) · `make all` (whole local pipeline, ordered) · `make validate-career` · `make generate-cv` · `make seed` — `make help` lists every target, `Justfile` has the granular recipes.
 The vault default: `CAREEROS_VAULT_PATH` when initialised, else the bundled demo vault, opened **read-only** (`Vault.read_only` → `VaultReadOnly` on write).
+`config/gate.yml` describes the `all` pipeline as data (step order, what each proves, how each fails, bot exit codes); `tests/test_gate_config.py` asserts it equals the Makefile. Skill `/careeros-gate` + agent `careeros-gate` run and triage it.
+Blank env vars read as **unset** (`Settings._blank_means_unset`) — the templates render every unfilled optional blank, and `int | None` cannot parse `""`.
 
 ## Conventions
 Commits: conventional (`feat(vault): …`, `career(experience): …` for vault data). Python: ruff + pyright strict-ish, pytest, loguru/structlog. TS: eslint, tsc, vitest. Each slice = code + tests + docs + commit.

@@ -41,6 +41,31 @@ def test_settings_redaction(monkeypatch: pytest.MonkeyPatch) -> None:
     assert "sk-secret" not in str(dumped)
 
 
+def test_blank_env_var_reads_as_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every optional value renders blank out of the templates until the owner fills it in.
+
+    Regression: `CAREEROS_TG_OWNER_CHAT_ID=` made Settings() raise (int cannot parse ""), so a
+    freshly rendered .env could not start the app at all — and a blank secret became
+    SecretStr(""), which tests truthy while authenticating nothing.
+    """
+    for var in (
+        "CAREEROS_TG_OWNER_CHAT_ID",
+        "CAREEROS_ANTHROPIC_API_KEY",
+        "CAREEROS_TG_PUBLIC_URL",
+        "CAREEROS_HH_CLIENT_ID",
+    ):
+        monkeypatch.setenv(var, "")
+    monkeypatch.setenv("CAREEROS_TG_NOTIFY_MIN_SCORE", "80")
+
+    s = Settings()
+    assert s.tg_owner_chat_id is None
+    assert s.anthropic_api_key is None  # not SecretStr("")
+    assert s.tg_public_url is None
+    assert s.hh_client_id is None
+    assert s.tg_notify_min_score == 80  # a value that IS set still parses
+    assert s.tg_webhook_path == "/tg/webhook"  # a non-optional field keeps its default
+
+
 async def test_inline_task_runner_executes_registered_handler() -> None:
     reg = TaskRegistry()
     seen: list[int] = []

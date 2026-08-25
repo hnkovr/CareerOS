@@ -1,0 +1,84 @@
+# CareerOS local pipeline — the scalars behind `make all`, as data.
+#
+# Consumed by the /careeros-gate skill (registered as
+# ~/.ai/config/locations.yml#projects.careeros.gate_settings). Keep in step with the `all`
+# target in the Makefile: order here IS the order there.
+
+gate:
+  make:
+    all: all                 # whole pipeline, dependency-ordered
+    check: check             # lint + test only, mutates nothing
+    contracts: contracts     # generated schemas / TS API types match the code
+    help: help
+
+  # Ordered exactly as the `all` prerequisites. `proves` is what a green step actually
+  # establishes; `fails_when` is the failure this step has really produced, not a guess.
+  order:
+    - step: env
+      proves: .env renders from config/*.template with no secret literals
+      fails_when: a template carries a non-empty literal (env-render --check refuses it)
+    - step: infra
+      proves: postgres + redis are up (idempotent)
+      fails_when: docker is not running
+    - step: openapi
+      proves: the app imports and the OpenAPI schema + TS types regenerate
+      fails_when: >-
+        Settings() cannot build — a blank optional env var whose type cannot parse ""
+        (see careeros/core/config.py::_blank_means_unset; guard: scripts/hooks/config-guard.sh)
+    - step: fmt
+      proves: ruff format + fixable lint applied before anything checks formatting
+      fails_when: ruff reports an unfixable violation (E501 on a comment or docstring)
+    - step: lint
+      proves: ruff · pyright · import-linter contracts · env-render --check · eslint
+      fails_when: >-
+        a Settings(**dict) unpack in a test trips pyright — annotate the dict as dict[str, Any];
+        a plain literal into a SecretStr field needs `# type: ignore[arg-type]`
+    - step: test
+      proves: pytest (python) + vitest (web)
+      fails_when: db-marked tests collide with a parallel session sharing careeros_test
+    - step: migrate
+      proves: alembic upgrade head applies cleanly
+      fails_when: a migration needs an extension created before its column type
+    - step: seed
+      proves: the single user and demo data exist
+      fails_when: postgres is unreachable
+    - step: validate-career
+      proves: the vault validates (schemas + referential integrity)
+      fails_when: never, on a fresh checkout — CAREEROS_VAULT_PATH falls back to the demo vault
+    - step: generate-cv
+      proves: RenderCV produces pdf/md/json from vault facts
+      fails_when: the vault is invalid (this step reads it, so it fails after validate-career)
+    - step: platform-sync
+      proves: every connector capability was swept
+      fails_when: >-
+        a platform was reached and errored. "not connected" / "needs a paste" is SKIPPED,
+        never FAILED — a sweep on a fresh install must exit 0
+    - step: bot-check
+      proves: the token is live and belongs to @careeros_hnkovr_bot; who owns the webhook
+      fails_when: >-
+        the token is rejected (2) or a foreign host owns the webhook (3).
+        Unreachable is 4 and is tolerated — being offline says nothing about the token
+
+  # scripts/prj-tools/tg-bot.sh contract; `make bot-check` tolerates 4 and only 4.
+  bot_exit_codes:
+    0: ok
+    1: usage or config
+    2: telegram rejected (bad token / wrong bot)
+    3: refused (foreign webhook owner)
+    4: telegram unreachable (offline)
+    tolerated_by_pipeline: [4]
+
+  guards:
+    config: scripts/hooks/config-guard.sh   # SessionStart: does .env still build Settings()?
+    bot: scripts/hooks/bot-guard.sh         # SessionStart: do we still own the webhook?
+
+  contracts:
+    script: scripts/contracts-check.sh
+    generated:
+      - path: career/schemas
+        from: careeros vault export-schemas
+      - path: packages/schemas
+        from: openapi-typescript (off the exported OpenAPI)
+    note: >-
+      both generators must run; checking only the installed half reports "fresh" while the
+      other half drifts — that was the original bug (GH #22 sibling, fixed 2026-08-26)
