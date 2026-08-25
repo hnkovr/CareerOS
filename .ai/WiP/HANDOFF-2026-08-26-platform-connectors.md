@@ -51,3 +51,8 @@ Lane: platform connectors (own profile · job search · application statuses). T
 - `main` pushed to https://github.com/hnkovr/CareerOS (origin/main = `6ed6325`); first green CI run since the remote existed: https://github.com/hnkovr/CareerOS/actions/runs/32903529610 (contracts · python · web · docker).
 - CI fixes on the way there: `f650878` ci.yml — job-level `hashFiles()` guard made GitHub reject the workflow (0 s failures on every push); `f23b677` (search lane) — `CREATE EXTENSION IF NOT EXISTS vector` before the `search_document` VECTOR column; `6ed6325` — deploy tests that read the workstation SSoT `~/.ai/skills/_settings/careeros.yml` skip when it is absent.
 - Owner decision now closed: push done. Still open: OAuth apps (hh.ru, Upwork), LinkedIn archive, Todoist postpone-overdue apply, stale branch `feat/platform-connectors` on origin (fully merged into main — safe to delete when convenient).
+
+## Update 2026-08-26 (later) — smart-commit/merge check, second compaction
+- `/smart-commit … merge other branches`: nothing to merge — local and remote have only `main` (stale `feat/platform-connectors` pruned from origin); nothing of this lane is uncommitted. Dirty files at that moment belonged to other lanes (`services/careeros/migrations/env.py`, `modules/bot/models.py` — the Telegram-bot implementation session) and were left alone.
+- `origin/main` = `5667c62` (green CI); local `main` carries other lanes' later commits (P3 assistants `0fa7e6f`, insights refactor `0f0d8b8`, gate lane …) — push remains the owner's call.
+- This lane is complete; the only follow-ups are the owner actions listed above and GH #20/#21.
