@@ -6,18 +6,45 @@ real values. Secrets are read only here and never logged (see ``redacted_dump``)
 
 from __future__ import annotations
 
+import types
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, Union, get_args, get_origin
 
-from pydantic import Field, SecretStr
+from pydantic import Field, SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 Environment = Literal["dev", "test", "prod"]
 
 
+def _accepts_none(annotation: Any) -> bool:
+    return get_origin(annotation) in (Union, types.UnionType) and type(None) in get_args(annotation)
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="CAREEROS_", extra="ignore", env_file=None)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _blank_means_unset(cls, data: Any) -> Any:
+        """``VAR=`` in a rendered .env means "not set", for every optional field.
+
+        Every value the owner has not filled in yet renders blank out of
+        ``config/.env.*.template`` (a non-empty literal there would be a leaked secret). An
+        empty string must therefore read as ``None`` — otherwise ``int | None`` fields refuse
+        to parse at all (the app could not start with an unclaimed
+        ``CAREEROS_TG_OWNER_CHAT_ID``) and ``SecretStr | None`` fields become ``SecretStr("")``,
+        a credential that tests truthy but authenticates nothing.
+        """
+        if not isinstance(data, dict):
+            return data
+
+        def optional(name: str) -> bool:
+            field = cls.model_fields.get(name)
+            return field is not None and _accepts_none(field.annotation)
+
+        blanks = [name for name, value in data.items() if value == "" and optional(name)]
+        return {**data, **dict.fromkeys(blanks)} if blanks else data
 
     # --- runtime ---
     env: Environment = "dev"
@@ -73,6 +100,23 @@ class Settings(BaseSettings):
     upwork_client_secret: SecretStr | None = None
     upwork_access_token: SecretStr | None = None
     upwork_refresh_token: SecretStr | None = None
+
+    # --- telegram bot (ADR-012) ---
+    tg_enabled: bool = False
+    tg_bot_token: SecretStr | None = None
+    #: Echoed by Telegram in X-Telegram-Bot-Api-Secret-Token; an unsigned request is 403.
+    tg_webhook_secret: SecretStr | None = None
+    #: The only chat served. Any other chat gets 200 and no side effect.
+    tg_owner_chat_id: int | None = None
+    tg_webhook_path: str = "/tg/webhook"
+    #: Eligibility key. Unset → this process never contacts Telegram, so a local run
+    #: cannot claim the webhook away from the deployed bot.
+    tg_public_url: str | None = None
+    #: Deliberate takeover of a webhook held by a different live URL.
+    tg_webhook_force_claim: bool = False
+    tg_notify_min_score: int = 75
+    tg_api_base: str = "https://api.telegram.org"
+    tg_http_timeout_s: float = 20.0
 
     # --- tasks ---
     task_runner: Literal["inline", "arq"] = "arq"

@@ -19,10 +19,37 @@ from careeros.core.tasks import TaskRunner, build_runner
 log = get_logger(__name__)
 
 
+async def _start_bot(app: FastAPI, settings: Settings) -> None:
+    """Wire the Telegram surface and claim its webhook, if this process may serve one.
+
+    Failure here must never prevent the API from starting: the bot is one surface
+    among several, and an unreachable Telegram at boot is a transient condition,
+    not a reason to take the whole service down.
+    """
+    from careeros.modules.bot.client import TelegramClient
+    from careeros.modules.bot.security import UpdateGate
+    from careeros.modules.bot.service import BotService
+    from careeros.modules.bot.webhook import claim_webhook
+
+    app.state.bot_gate = UpdateGate(settings)
+    app.state.bot_service = None
+    app.state.bot_claim = None
+    if not settings.tg_enabled or settings.tg_bot_token is None:
+        return
+    try:
+        client = TelegramClient(settings)
+        app.state.bot_service = BotService(settings, client)
+        app.state.bot_claim = await claim_webhook(settings, client)
+        log.info("bot.start", claim=str(app.state.bot_claim))
+    except Exception:
+        log.exception("bot.start_failed")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings: Settings = app.state.settings
     app.state.task_runner = build_runner(settings.task_runner, settings.redis_url)
+    await _start_bot(app, settings)
     log.info("api.start", version=__version__, env=settings.env, vault=str(settings.vault_path))
     try:
         yield

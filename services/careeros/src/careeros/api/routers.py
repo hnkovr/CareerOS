@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from careeros.modules.ai.router import router as ai_router
+from careeros.modules.bot.router import router as bot_router
 from careeros.modules.cv.router import router as cv_router
 from careeros.modules.inbox.router import router as inbox_router
 from careeros.modules.insights.router import brief_router
@@ -30,4 +31,5 @@ ROUTERS: list[APIRouter] = [
     insights_router,
     brief_router,
     platform_router,
+    bot_router,
 ]
