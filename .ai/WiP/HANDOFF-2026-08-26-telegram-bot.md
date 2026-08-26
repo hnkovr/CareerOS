@@ -225,3 +225,61 @@ httpx-клиент закрыл вебхук, три гейта, claim, capture,
 `/open`, `/profiles`, `/urls`. Моя рекомендация — оставить тонкий клиент и на `#4`
 дописать типизированный роутер по `callback_data`; aiogram решает задачу владения
 event loop, которой у нас нет. Но это отмена принятого решения, и молча я её не делаю.
+
+---
+
+## UPDATE 3 — бот-лейн закрыт до деплоя (2026-08-26, вечер)
+
+**Resume:** `claude --resume c082649a-9918-4009-a587-2872a54c6c6b`
+
+### Сделано (с SHA)
+
+| Слайс | SHA | Что |
+|---|---|---|
+| [#28](https://github.com/hnkovr/CareerOS/issues/28) `/queries` · [#29](https://github.com/hnkovr/CareerOS/issues/29) `/cv update` · [#30](https://github.com/hnkovr/CareerOS/issues/30) `/cv improve` | `35898ba` | + `bot/{queries,cv}.py`, `CVService.improve`, `client.send_document`, `chunk_message`, 6-й контракт import-linter |
+| статус/логи | `236a86a` | секция бот-лейна в `CLAUDE-curr-status.md`, строки в оба PROMPTS-LOG |
+| [#4](https://github.com/hnkovr/CareerOS/issues/4) триаж + callback'и | `1a99cf9` | + `bot/callbacks.py`, `client.answer_callback_query`, `/next` `/top` `/opp`, `formatting.{ranked_list,analysis_card,short_id}` |
+
+Гейт на момент `1a99cf9`: ruff · pyright 0 · **6/6 контрактов** · `alembic check` чисто · весь набор
+зелёный против **реального Postgres** — 220 bot + 49 deploy тестов.
+
+GH закрыты: 1, 2, 4, 25, 27, 28, 29, 30. Linear: MY-38 → Done; MY-39…MY-42 заведены на остаток.
+
+### Решения, которые НЕ переспрашивать
+
+1. **aiogram не берём** — остаётся тонкий httpx-клиент. Записано в
+   `docs/superpowers/specs/2026-08-25-careeros-telegram-bot-design.md` → *Decision reversals*.
+   Пересмотреть только если появится многошаговый диалог (там FSM перестаёт быть церемонией).
+2. **ADR 012 библиотеку никогда не называл** — прежние заметки «ADR-012 принял aiogram» были
+   ошибкой атрибуции, исправлены. Выбор библиотеки жил в спеке, там и разворот.
+3. **`meta` = core-вариант CV** из `meta.default_cv_variant`; синонимы `core`/`master`/`main`/`default`.
+4. **`/cv improve` генерирует базовую линию заново**, а не берёт последний артефакт: иначе сравнение
+   каждый раз отвечает на другой вопрос, а при AI-артефакте показывает дрейф AI-против-AI.
+5. **Ссылки и листинги уходят plain text** без `parse_mode` — экранирование ломает URL и `/opp_<id>`.
+6. **Callback отвечается ДО работы**; неизвестный payload отклоняется, а не игнорируется.
+7. **Skip → `ignored`, не удаление** — dedup-ключ должен продолжать совпадать.
+
+### Не сделано, и почему
+
+- [#5](https://github.com/hnkovr/CareerOS/issues/5) `/facts` `/profile` — просто не дошли руки;
+  `/cv` из этого issue закрыт, в issue висит комментарий об этом.
+- [#6](https://github.com/hnkovr/CareerOS/issues/6) ops-команды — частично (`/status` `/whoami` `/help`).
+- [#7](https://github.com/hnkovr/CareerOS/issues/7) нотификации — нужен воркер-триггер, не трогал.
+- [#9](https://github.com/hnkovr/CareerOS/issues/9) **первый деплой на Fly** — требует `fly mpg create`
+  + `fly mpg attach --variable-name CAREEROS_DATABASE_URL`. Это единственное, что отделяет бота от
+  живого состояния; всё остальное уже проверено локально.
+- [#31](https://github.com/hnkovr/CareerOS/issues/31) mini-app — нужен свой цикл brainstorm→spec→plan:
+  аутентификация по подписи `initData` — другая модель доверия, три гейта бота не переиспользуются.
+
+### Уроки этого окна
+
+- **Гейт гонять целиком и проектным ruff.** Системный `ruff` 0.13 не знает `ASYNC240`; проектный
+  0.16 (через `uv run`) поймал блокирующее чтение файла в event loop. Правило: `just lint`, не своя команда.
+- **Docker в середине прогона упал** — db-тесты тихо ушли в SKIP. Проверять, что Postgres реально жив,
+  а не полагаться на «тесты прошли».
+- **Дерево общее, лейнов минимум три.** Кроме platform (`careeros-d2`) появился assistants/tool-calling
+  (ADR-**014**, `3e5add6`) и gate-лейн (`56a77cb`). Стейджить только свои пути, пинговать перед чужими.
+
+### Состояние на момент снимка
+
+Дерево чистое. Незапушенным висит `f35ad22` — **чужой** коммит (jobs/UJI лейн), не трогал.
