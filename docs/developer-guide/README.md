@@ -52,8 +52,10 @@ nothing about the token, so `make all` warns and carries on; a rejected token (2
 open it **read-only** — `apply_change()` raises `VaultReadOnly` (HTTP 403) so demo facts can
 never be committed as the owner's. `just vault-init <path>` creates a real one.
 
-**Concurrent agent sessions:** point each session's gates at its own database to avoid
-cross-run interference — `CAREEROS_TEST_DATABASE_URL=postgresql+asyncpg://careeros:careeros@localhost:5432/careeros_test_<lane> uv run pytest`
+**Concurrent agent sessions:** point each session's gates at its own database, and never run a
+suite on a database another run is using. `tests/conftest.py::_isolated_rows` TRUNCATEs every
+table after each `db`-marked test, so two overlapping suites on one database fail a scattered,
+random-looking set across unrelated modules — it reads as a regression, not as interference — `CAREEROS_TEST_DATABASE_URL=postgresql+asyncpg://careeros:careeros@localhost:5432/careeros_test_<lane> uv run pytest`
 (create it once: `docker compose exec postgres psql -U careeros -c "CREATE DATABASE careeros_test_<lane>;"` plus the `vector`/`pg_trgm` extensions).
 
 Note: `pytest` already carries `-q` via `addopts`; passing `-q` again yields `-qq`, which drops the
@@ -103,6 +105,44 @@ The web surface is `/platforms` (`apps/web/src/app/platforms/`): it iterates
 `GET /api/platform/capabilities` — never a hard-coded platform list — merges it with
 `/connections`, and offers connect/refresh/disconnect, doctor, links, per-kind sync, a paste box
 with a dry-run preview, sync runs and observed application statuses.
+
+## Reading a job by URL
+
+`careeros platform read <url>` ([ADR-015](../adr/015-public-job-url-reads.md),
+[ADR-016](../adr/016-job-provenance-snapshots.md)) is the one path that fetches a page. The
+application wiring lives in `PlatformSyncService.read_job(ReadRequest, source=SourceRef|None)`:
+
+1. **detect** — `sources.detect()` asks every connector (`req.platform` forces one); the generic
+   `website` connector answers for any http(s) URL, so there is no hostname `if/elif`.
+2. **policy** — `Capabilities.access == unsupported` or no declared `read_job` is refused before
+   any request; the per-provider and per-strategy kill switches (`CAREEROS_JOB_FETCH_ENABLE_*`,
+   `CAREEROS_<PROVIDER>_ENABLE_PUBLIC_HTML`) turn into a `JobReadError` naming the variable.
+3. **fetch** — `connector.fetch_job()` runs the declared strategy chain best-first under a
+   `FetchBudget`, with `robots.txt` checked before a public page read.
+4. **identity** — `(platform, external_id)` first, then the normalised `canonical_url`. A hit
+   becomes `record_snapshot()` (a new `OpportunityRaw` only when the fingerprint changed); a miss
+   becomes `OpportunityService.ingest()`.
+5. **provenance** — an `opportunity_source` row is upserted for the primary source (plus an
+   `aggregates` row when the posting names the employer's own URL), and the posting's per-field
+   evidence is merged. Nothing is overwritten: disagreeing values sit side by side.
+6. **run** — every read is a `PlatformSyncRun(kind=job)` whose `details.attempts` hold each
+   strategy try. A failure finishes the run as `failed` and raises `JobReadError`; the API answers
+   422 with those attempts, never a bare "failed to fetch".
+
+`refresh_job(opportunity_id)` re-reads a stored job from its own URL. A 404/gone/closed outcome is
+not an error: `closed` evidence is recorded and an *untriaged* job is archived (a job you already
+applied to keeps its status).
+
+```bash
+just platform-detect  https://example.org/careers/12     # provider + canonical URL, no network
+just platform-read-dry https://example.org/careers/12    # parse only, nothing persisted
+just platform-read    https://example.org/careers/12 --show-attempts
+just platform-refresh <opportunity-id>
+```
+
+Surfaces: `POST /api/platform/read`, `GET /api/platform/detect`,
+`POST /api/opportunities/{id}/refresh`, and the bot — a forwarded bare link that `detect()`
+recognises is read instead of stored as a link, and answers with the same triage card.
 
 ## AI assistants (P3)
 

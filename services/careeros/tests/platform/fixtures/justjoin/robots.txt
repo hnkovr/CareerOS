@@ -1,0 +1,8 @@
+# justjoin.it robots.txt — shape recorded 2026-08-26 (trimmed to what the tests exercise).
+User-agent: *
+Disallow: /api/
+Disallow: /oferty-pracy/*,*
+Disallow: /terms-and-privacy-policies
+Allow: /
+
+Sitemap: https://justjoin.it/sitemap.xml

@@ -407,11 +407,18 @@ async def test_doctor_all_ok_with_mock_transport(settings: Settings) -> None:
         "tokens",
         "api_reachable",
         "me",
+        "read_detect",  # ADR-015: URL → canonical vacancy
+        "read_api",  # ADR-015: one real GET /vacancies/{id}, classified
+        "direct_html",
     ]
     assert all(c.ok for c in checks), [c.model_dump() for c in checks]
-    assert mock.paths() == ["/vacancies", "/me"]
+    # the read probe reuses the id the search probe returned, so it exercises a live vacancy
+    assert mock.paths() == ["/vacancies", "/me", "/vacancies/112233445"]
     probe = mock.requests[0]
     assert probe.url.params["per_page"] == "1" and "authorization" not in probe.headers
+    by_name = {c.name: c for c in checks}
+    assert "hh.ru/vacancy/136537758" in by_name["read_detect"].detail
+    assert "ADR-005" in by_name["direct_html"].detail
 
 
 async def test_doctor_reports_failed_probes_without_raising(settings: Settings) -> None:
@@ -423,6 +430,10 @@ async def test_doctor_reports_failed_probes_without_raising(settings: Settings) 
     assert by_name["api_reachable"].ok is False and "500" in by_name["api_reachable"].detail
     assert by_name["api_reachable"].fix
     assert by_name["me"].ok is False and "refresh hh" in (by_name["me"].fix or "")
+    # no vacancy id came back, so the read path could not be probed — said plainly, not skipped
+    assert by_name["read_detect"].ok is True
+    assert by_name["read_api"].ok is False and "not probed" in by_name["read_api"].detail
+    assert by_name["direct_html"].ok is True
 
 
 # --------------------------------------------------------------------------- paste parsers

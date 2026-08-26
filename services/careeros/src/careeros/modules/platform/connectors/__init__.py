@@ -8,5 +8,7 @@ CONNECTOR_MODULES: tuple[str, ...] = (
     "indeed",
     "getmatch",
     "toptal",
+    "rockethunt",
+    "justjoin",
     "generic",  # Platform.website — the fallback provider, always last
 )

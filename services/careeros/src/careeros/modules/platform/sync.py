@@ -19,7 +19,14 @@ from careeros.core.config import Settings
 from careeros.core.logging import get_logger
 from careeros.modules.ai.deps import build_ai_service
 from careeros.modules.ai.service import AIService
-from careeros.modules.opportunities.deps import find_opportunity_id_by_url
+from careeros.modules.opportunities.deps import (
+    find_opportunity_id_by_external_id,
+    find_opportunity_id_by_url,
+)
+from careeros.modules.opportunities.enums import FieldSource, OpportunityStatus
+from careeros.modules.opportunities.enums import SourceRelation as OpportunityRelation
+from careeros.modules.opportunities.schemas import SnapshotIn as OpportunitySnapshotIn
+from careeros.modules.opportunities.schemas import SourceIn
 from careeros.modules.opportunities.service import OpportunityError, OpportunityService
 from careeros.modules.platform.base import (
     BaseConnector,
@@ -28,20 +35,40 @@ from careeros.modules.platform.base import (
     NotConnected,
     ParseError,
     PlatformError,
+    ReadUnavailable,
 )
-from careeros.modules.platform.enums import SyncKind, SyncMethod, SyncStatus
+from careeros.modules.platform.enums import (
+    AccessMode,
+    FetchStrategy,
+    SyncKind,
+    SyncMethod,
+    SyncStatus,
+)
+from careeros.modules.platform.fetch.artifact import JobReadError
+from careeros.modules.platform.fetch.budget import FetchBudget
 from careeros.modules.platform.http import build_http
 from careeros.modules.platform.registry import PlatformRegistry
 from careeros.modules.platform.schemas import (
     ApplicationObservationIn,
+    DetectionOut,
+    FetchAttempt,
     JobPosting,
     JobQuery,
     ParseResult,
     ProfileRead,
+    ReadOut,
+    ReadRequest,
     SyncRequest,
     SyncResult,
 )
 from careeros.modules.platform.service import PlatformService
+from careeros.modules.platform.sources import (
+    CanonicalSource,
+    DetectionResult,
+    SourceKind,
+    SourceRef,
+)
+from careeros.modules.platform.sources import detect as detect_source
 from careeros.modules.platform.tokens import OAuthTokens, TokenStore
 from careeros.modules.profiles.service import ProfileService
 from careeros.modules.vault.deps import get_vault
@@ -49,6 +76,39 @@ from careeros.modules.vault.enums import Platform
 from careeros.modules.vault.service import Vault
 
 log = get_logger(__name__)
+
+#: Failure reasons that mean "the posting is gone", not "we could not reach it" (ADR-015 §4).
+CLOSED_REASONS: frozenset[str] = frozenset({"job_closed", "not_found", "gone"})
+#: The quality flag a closed posting carries when the page still rendered.
+CLOSED_FLAG = "job_closed"
+
+
+def authority_for(
+    platform: Platform, strategy: FetchStrategy | None, *, is_archive: bool = False
+) -> FieldSource:
+    """Field-evidence authority of a read (ADR-016 §3): who said it and how directly.
+
+    The generic ``website`` provider reads the employer's own page, so it outranks a board;
+    an archived copy is always ``archive``, whatever produced it.
+    """
+    if is_archive or strategy in (FetchStrategy.wayback, FetchStrategy.archive_today):
+        return FieldSource.archive
+    employer = platform == Platform.website
+    if strategy == FetchStrategy.api:
+        return FieldSource.employer_api if employer else FieldSource.board_api
+    if strategy == FetchStrategy.search_recovery:
+        return FieldSource.search_result
+    return FieldSource.employer_page if employer else FieldSource.board_page
+
+
+def closed_reason(exc: JobReadError) -> str | None:
+    """Why this read means "the job is gone" — ``None`` when it only means "we failed"."""
+    for attempt in exc.attempts:
+        if attempt.error_type in CLOSED_REASONS or attempt.status_code in (404, 410):
+            return attempt.error_type or f"http {attempt.status_code}"
+    if exc.best_partial is not None and CLOSED_FLAG in exc.best_partial.flags:
+        return CLOSED_FLAG
+    return None
 
 
 class PlatformSyncService:
@@ -413,6 +473,398 @@ class PlatformSyncService:
                     )
                 )
         return results
+
+    # ------------------------------------------------------------------ read one job (ADR-015)
+    def detect(
+        self, url_or_ref: str | SourceRef, *, platform: Platform | None = None
+    ) -> DetectionResult | None:
+        """Which connector owns this URL. ``platform`` forces one instead of asking the registry.
+
+        Pure: no network, no database. ``None`` = nothing recognised it (not even the generic
+        provider, which answers for any http(s) URL — so ``None`` means "not a URL").
+        """
+        ref = url_or_ref if isinstance(url_or_ref, SourceRef) else SourceRef(value=str(url_or_ref))
+        if platform is None:
+            return detect_source(ref, self.platform.registry)
+        connector = self.platform.connector(platform)
+        try:
+            canonical = connector.canonicalize(ref)
+        except (ValueError, NotImplementedError):
+            return None
+        return DetectionResult(platform=platform, confidence=1.0, canonical=canonical)
+
+    def detection_out(self, detection: DetectionResult) -> DetectionOut:
+        c = detection.canonical
+        return DetectionOut(
+            platform=detection.platform,
+            confidence=detection.confidence,
+            canonical_url=c.canonical_url,
+            external_id=c.external_id,
+            host=c.host,
+            locale=c.locale,
+            private=c.private,
+        )
+
+    def _read_target(self, req: ReadRequest, source: SourceRef | None) -> DetectionResult:
+        """Detect the provider, then enforce the access policy *before* any network call."""
+        ref = source or SourceRef(kind=SourceKind.url, value=req.url, provider_hint=req.platform)
+        if req.platform is not None and ref.provider_hint is None:
+            ref = ref.model_copy(update={"provider_hint": req.platform})
+        detection = self.detect(ref, platform=req.platform)
+        if detection is None:
+            raise ParseError(f"no connector recognises this source: {req.url!r}")
+        caps = self.platform.connector(detection.platform).capabilities
+        if caps.access == AccessMode.unsupported:
+            raise CapabilityUnavailable(detection.platform, SyncKind.job, None, [])
+        if not caps.read_job:
+            raise ReadUnavailable(detection.platform, req.strategy)
+        if req.strategy is not None and req.strategy not in caps.read_job:
+            raise ReadUnavailable(detection.platform, req.strategy)
+        return detection
+
+    async def read_job(self, req: ReadRequest, *, source: SourceRef | None = None) -> ReadOut:
+        """Read ONE job behind a user-supplied URL and file it (ADR-015 / ADR-016).
+
+        detect → access policy → the connector's strategy chain → identity (provider id, then
+        canonical URL) → a new opportunity **or** a snapshot of the one already known. Every run
+        is recorded as a ``PlatformSyncRun(kind=job)`` carrying the attempts; a failure raises
+        ``JobReadError`` with those attempts, never a bare "failed to fetch".
+        """
+        detection = self._read_target(req, source)
+        platform = detection.platform
+        canonical = detection.canonical
+        connector = self.platform.connector(platform)
+        budget = FetchBudget.from_settings(self.settings)
+
+        run = None
+        if not req.dry_run:
+            # SyncMethod has no member per fetch strategy (and the column is 10 chars wide):
+            # a job read is a machine read, and the strategy that produced it is in ``details``.
+            run = await self.platform.start_run(platform, SyncKind.job, SyncMethod.api)
+        try:
+            async with build_http(self.settings, transport=self._transport) as http:
+                ctx = self.platform.context(platform, http)
+                read = await connector.fetch_job(
+                    ctx,
+                    canonical,
+                    budget,
+                    only=req.strategy,
+                    use_cache=not req.no_cache,
+                )
+                warnings = list(ctx.warnings)
+        except JobReadError as exc:
+            if run is not None:
+                await self.session.rollback()
+                await self.platform.finish_run(
+                    run,
+                    status=SyncStatus.failed,
+                    error=exc.diagnostics[:500],
+                    details=_read_details(canonical, exc.attempts, exc.diagnostics, strategy=None),
+                )
+            raise
+
+        posting = read.posting
+        attempts = list(read.attempts)
+        if posting is None:  # the chain only returns without a posting when no extractor was set
+            raise JobReadError(platform, attempts, read.artifact, read.diagnostics)
+        closed = bool(read.artifact and CLOSED_FLAG in read.artifact.flags)
+        if req.dry_run:
+            log.info(
+                "platform.job_read_dry",
+                platform=str(platform),
+                strategy=str(posting.strategy),
+                url=canonical.canonical_url,
+            )
+            return ReadOut(
+                posting=posting,
+                attempts=attempts,
+                warnings=warnings,
+                diagnostics=read.diagnostics,
+                closed=closed,
+            )
+
+        out = await self._file_read(posting, req=req, canonical=canonical, closed=closed)
+        out = out.model_copy(
+            update={
+                "posting": posting,
+                "attempts": attempts,
+                "warnings": warnings,
+                "diagnostics": read.diagnostics,
+                "closed": closed,
+                "run_id": run.id if run is not None else None,
+            }
+        )
+        if run is not None:
+            run_out = await self.platform.finish_run(
+                run,
+                status=SyncStatus.partial if warnings else SyncStatus.ok,
+                seen=1,
+                created=1 if out.created else 0,
+                updated=1 if out.snapshot_created and not out.created else 0,
+                skipped=0 if (out.created or out.snapshot_created) else 1,
+                error="; ".join(warnings[:5]) or None,
+                details=_read_details(
+                    canonical,
+                    attempts,
+                    read.diagnostics,
+                    strategy=posting.strategy,
+                    opportunity_id=out.opportunity_id,
+                    created=out.created,
+                    snapshot_created=out.snapshot_created,
+                    closed=closed,
+                ),
+            )
+            out = out.model_copy(update={"run_id": run_out.id})
+        log.info(
+            "platform.job_read",
+            platform=str(platform),
+            strategy=str(posting.strategy),
+            host=canonical.host,
+            created=out.created,
+            snapshot=out.snapshot_created,
+            closed=closed,
+            opportunity=str(out.opportunity_id),
+        )
+        return out
+
+    async def _file_read(
+        self,
+        posting: JobPosting,
+        *,
+        req: ReadRequest,
+        canonical: CanonicalSource,
+        closed: bool,
+    ) -> ReadOut:
+        """Identity → ingest or snapshot → provenance rows. The only DB-writing part of a read."""
+        opportunities = self._opportunities()
+        platform_value = str(posting.platform)
+        canonical_url = posting.canonical_url or canonical.canonical_url
+        external_id = posting.external_id or canonical.external_id
+        source_url = posting.url or posting.resolved_url or canonical_url
+        authority = authority_for(posting.platform, posting.strategy, is_archive=posting.is_archive)
+
+        existing: uuid.UUID | None = None
+        if external_id:
+            existing = await find_opportunity_id_by_external_id(
+                self.session, platform_value, external_id, user_id=self.user_id
+            )
+        if existing is None and canonical_url:
+            existing = await find_opportunity_id_by_url(
+                self.session, canonical_url, user_id=self.user_id
+            )
+
+        created = False
+        snapshot_created = False
+        raw_id: uuid.UUID | None = None
+        if existing is None:
+            ingest = posting.to_ingest(use_ai=req.use_ai, notes=req.notes).model_copy(
+                update={
+                    "platform": platform_value,
+                    "canonical_url": canonical_url,
+                    "external_id": external_id,
+                }
+            )
+            detail = await opportunities.ingest(ingest)
+            opportunity_id = detail.id
+            created = True
+            snapshot_created = True
+        else:
+            opportunity_id = existing
+            snapshot, snapshot_created = await opportunities.record_snapshot(
+                existing,
+                OpportunitySnapshotIn(
+                    raw_text=posting.raw_text or posting.title,
+                    raw_payload={"provenance": posting.provenance()},
+                    strategy=str(posting.strategy) if posting.strategy else None,
+                    fetched_url=canonical_url,
+                    resolved_url=posting.resolved_url,
+                    is_archive=posting.is_archive,
+                    archive_ts=posting.archive_ts,
+                    quality=posting.quality,
+                    extracted=posting.extraction.model_dump(mode="json")
+                    if posting.extraction
+                    else None,
+                    content_hash=posting.content_hash,
+                    captured_at=posting.fetched_at,
+                    capture_method="read",
+                    authority=authority,
+                    source_url=source_url,
+                ),
+            )
+            raw_id = snapshot.id
+            log.info(
+                "platform.duplicate_detected",
+                platform=platform_value,
+                opportunity=str(existing),
+                snapshot=snapshot_created,
+                external_id=external_id,
+            )
+
+        await opportunities.record_source(
+            opportunity_id,
+            SourceIn(
+                platform=platform_value,
+                external_id=external_id,
+                source_url=source_url,
+                canonical_url=canonical_url,
+                original_url=posting.original_url,
+                relation=OpportunityRelation(str(posting.relation)),
+                authority=authority,
+                strategy=str(posting.strategy) if posting.strategy else None,
+                raw_id=raw_id,
+                fetched_at=posting.fetched_at,
+                published_at=posting.published_at or posting.posted_at,
+                content_hash=posting.content_hash,
+                is_archive=posting.is_archive,
+                confidence=posting.quality,
+            ),
+        )
+        if posting.original_url:
+            # The employer's own posting, reached THROUGH this listing: recorded as a place the
+            # job lives, never read here (that would be a second, unasked-for fetch).
+            await opportunities.record_source(
+                opportunity_id,
+                SourceIn(
+                    platform=str(Platform.website),
+                    source_url=posting.original_url,
+                    relation=OpportunityRelation.aggregates,
+                    authority=FieldSource.employer_page,
+                    confidence=None,
+                ),
+            )
+        if posting.field_evidence:
+            await opportunities.merge_field_evidence(
+                opportunity_id,
+                [e.model_dump(mode="json") for e in posting.field_evidence],
+            )
+        if closed:
+            await self._mark_closed(
+                opportunities,
+                opportunity_id,
+                authority=authority,
+                source_url=source_url,
+                observed_at=posting.fetched_at,
+            )
+        return ReadOut(
+            posting=posting,
+            opportunity_id=opportunity_id,
+            created=created,
+            duplicate_of=existing,
+            snapshot_created=snapshot_created,
+            closed=closed,
+        )
+
+    async def _mark_closed(
+        self,
+        opportunities: OpportunityService,
+        opportunity_id: uuid.UUID,
+        *,
+        authority: FieldSource,
+        source_url: str | None,
+        observed_at: datetime | None,
+    ) -> None:
+        """Record "this posting is gone" as evidence; only *untriaged* jobs are also archived.
+
+        A job the owner already applied to or explicitly filed keeps its status — the closure is
+        a fact about the posting, not a decision about their pipeline.
+        """
+        await opportunities.merge_field_evidence(
+            opportunity_id,
+            [
+                {
+                    "field": "closed",
+                    "value": True,
+                    "source": str(authority),
+                    "source_url": source_url,
+                    "observed_at": (observed_at or datetime.now(UTC)).isoformat(),
+                    "confidence": None,
+                }
+            ],
+        )
+        detail = await opportunities.get(opportunity_id)
+        if detail.status in (OpportunityStatus.new, OpportunityStatus.watching):
+            await opportunities.set_status(opportunity_id, OpportunityStatus.archived)
+        log.info("platform.job_closed", opportunity=str(opportunity_id), status=str(detail.status))
+
+    async def refresh_job(self, opportunity_id: uuid.UUID, *, no_cache: bool = True) -> ReadOut:
+        """Re-read a stored job from its own URL and snapshot what changed (ADR-016 §4).
+
+        A read that comes back 404/410 or "no longer available" is not an error: the closure is
+        recorded as field evidence (and archives an untriaged job), and the attempts are returned.
+        """
+        opportunities = self._opportunities()
+        detail = await opportunities.get(opportunity_id)
+        url = detail.canonical_url or detail.url
+        if not url:
+            raise ParseError(f"opportunity {opportunity_id} has no URL to refresh")
+        hint: Platform | None = None
+        if detail.platform:
+            try:
+                hint = Platform(detail.platform)
+            except ValueError:
+                hint = None
+        ref = SourceRef(
+            kind=SourceKind.url,
+            value=url,
+            provider_hint=hint,
+            metadata={
+                "opportunity_id": str(opportunity_id),
+                **({"external_id": detail.external_id} if detail.external_id else {}),
+            },
+        )
+        request = ReadRequest(url=url, no_cache=no_cache, platform=hint)
+        try:
+            return await self.read_job(request, source=ref)
+        except JobReadError as exc:
+            reason = closed_reason(exc)
+            if reason is None:
+                raise
+            await self._mark_closed(
+                opportunities,
+                opportunity_id,
+                authority=authority_for(hint or Platform.website, None),
+                source_url=url,
+                observed_at=datetime.now(UTC),
+            )
+            return ReadOut(
+                posting=None,
+                opportunity_id=opportunity_id,
+                duplicate_of=opportunity_id,
+                closed=True,
+                attempts=list(exc.attempts),
+                warnings=[f"posting is gone ({reason})"],
+                diagnostics=exc.diagnostics,
+            )
+
+    # kept as an alias so callers can say what they mean; ``refresh`` on this service is a job
+    # refresh, while ``PlatformService.refresh`` is the OAuth token refresh.
+    refresh = refresh_job
+
+
+def _read_details(
+    canonical: CanonicalSource,
+    attempts: list[FetchAttempt],
+    diagnostics: str,
+    *,
+    strategy: FetchStrategy | None,
+    opportunity_id: uuid.UUID | None = None,
+    created: bool = False,
+    snapshot_created: bool = False,
+    closed: bool = False,
+) -> dict[str, Any]:
+    """What a ``kind=job`` run stores: every attempt, in order, plus the outcome."""
+    return {
+        "url": canonical.canonical_url,
+        "host": canonical.host,
+        "external_id": canonical.external_id,
+        "strategy": str(strategy) if strategy else None,
+        "attempts": [a.model_dump(mode="json") for a in attempts],
+        "diagnostics": diagnostics,
+        "opportunity_id": str(opportunity_id) if opportunity_id else None,
+        "created": created,
+        "snapshot_created": snapshot_created,
+        "closed": closed,
+    }
 
 
 def _dump(items: BaseModel | list[Any]) -> list[dict[str, Any]]:

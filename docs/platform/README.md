@@ -48,7 +48,21 @@ just platform-applications hh --api
 just platform-applications indeed --text-file applied.txt
 just platform-sync                         # every API-backed capability of connected platforms
 just platform-status                       # observed application statuses, newest first
+
+just platform-detect https://rockethunt.com/jobs/123   # which provider owns that URL
+just platform-read   https://rockethunt.com/jobs/123 --show-attempts
+just platform-read-dry https://boards.greenhouse.io/acme/jobs/1   # parse it, persist nothing
+just platform-refresh 01a03aef-b36f-792d-b2d6-adf41a6963b6        # re-read a stored job
 ```
+
+**Reading one job by URL** (ADR-015). `platform-read` fetches exactly the page behind the link
+you give — `robots.txt` honoured, no cookies, no login, no listings — and files it as an
+opportunity with its provenance. A URL you already have is not captured twice: the read attaches
+a *snapshot* to the job you know, and only when the posting actually changed
+(`GET /api/opportunities/{id}/diff` shows what). A read that fails says which strategy hit what
+(`--show-attempts` prints them all); the paste path stays available for pages that cannot be read.
+`platform-refresh` takes an opportunity id — a posting that came back 404/gone is recorded as
+closed rather than reported as an error.
 
 Paste inputs: open the page on the platform, select all, copy, save as a `.txt` file (or pipe via
 stdin with `--text-file -`). Each guide says exactly which page to copy. Parsers never invent

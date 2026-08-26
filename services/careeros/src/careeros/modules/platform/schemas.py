@@ -54,6 +54,9 @@ class Capabilities(BaseModel):
     official_api: bool = False
     email_fallback: bool = False
     auth: AuthKind = AuthKind.none
+    #: True only for the provider that claims ANY url at low confidence (``website``).
+    #: Consumers group it apart: a reader, not a service the user has an account on.
+    fallback: bool = False
     #: Ordered strategies for reading one job behind a user-supplied URL (ADR-015), best first.
     read_job: list[FetchStrategy] = Field(default_factory=list)
     #: Access policy enforced before any network call; ``public`` is required by the
@@ -467,6 +470,23 @@ class ReadRequest(BaseModel):
     no_cache: bool = Field(default=False, description="bypass the in-process fetch cache")
     strategy: FetchStrategy | None = Field(default=None, description="force one strategy")
     notes: str | None = None
+    platform: Platform | None = Field(
+        default=None, description="force a provider instead of detecting one from the URL"
+    )
+
+
+class DetectionOut(BaseModel):
+    """Which provider owns a URL (``GET /api/platform/detect``) — no network, no persistence."""
+
+    platform: Platform
+    confidence: float = Field(ge=0.0, le=1.0)
+    canonical_url: str
+    external_id: str | None = None
+    host: str
+    locale: str | None = None
+    private: bool = Field(
+        default=False, description="came from a private message: no third-party strategies"
+    )
 
 
 class ReadOut(BaseModel):
@@ -475,6 +495,10 @@ class ReadOut(BaseModel):
     created: bool = False
     duplicate_of: uuid.UUID | None = None
     snapshot_created: bool = False
+    closed: bool = Field(
+        default=False, description="the posting reads as closed / gone (evidence recorded)"
+    )
+    run_id: uuid.UUID | None = Field(default=None, description="the PlatformSyncRun that read it")
     attempts: list[FetchAttempt] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
     diagnostics: str = ""

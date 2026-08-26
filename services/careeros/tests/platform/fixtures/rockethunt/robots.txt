@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /en/payment/
+Disallow: /ru/payment/
+Disallow: /en/profiles/
+Disallow: /ru/profiles/
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /api/
+
+User-agent: GPTBot
+Allow: /
+Disallow: /api/
+
+Sitemap: https://rockethunt.ai/sitemap.xml

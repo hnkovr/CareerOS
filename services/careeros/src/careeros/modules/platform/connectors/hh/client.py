@@ -5,6 +5,9 @@ ADR-005: official endpoints only — no HTML, no cookies, no passwords. Every re
 user's Bearer token when the connector passes ``auth``. ``platform.http.request_json`` already maps
 401 → ``NotConnected``; hh reports token problems as ``403 {"errors":[{"type":"oauth", …}]}``,
 which is mapped here as well so callers can branch on ``NotConnected`` uniformly.
+
+Two methods deliberately step outside that mapping: ``vacancy_raw`` (the read-one path needs the
+status code, not an exception) and ``app_token`` (an application token for public reads).
 """
 
 from __future__ import annotations
@@ -13,9 +16,12 @@ import re
 from typing import Any
 
 import httpx
+from pydantic import SecretStr
 
 from careeros.modules.platform.base import NotConnected, UpstreamError
-from careeros.modules.platform.http import request_json
+from careeros.modules.platform.http import request_json, request_text
+from careeros.modules.platform.oauth import parse_token_response
+from careeros.modules.platform.tokens import OAuthTokens
 from careeros.modules.vault.enums import Platform
 
 BASE_URL = "https://api.hh.ru"
@@ -107,6 +113,55 @@ class HHClient:
 
     async def vacancy(self, vacancy_id: str) -> dict[str, Any]:
         return _expect_dict(await self.get(f"/vacancies/{vacancy_id}"), "GET /vacancies/{id}")
+
+    async def vacancy_raw(
+        self,
+        vacancy_id: str,
+        *,
+        params: dict[str, Any] | None = None,
+        retries: int = 2,
+    ) -> tuple[int, str, str | None]:
+        """``GET /vacancies/{id}`` as ``(status, body, content_type)`` — nothing raised on status.
+
+        The read-one path (ADR-015 §4) keeps 403/404/429 as diagnostics instead of collapsing
+        them into an exception, so it needs the status code rather than a decoded payload.
+        Retries (429/502/503/504 with ``Retry-After``) still come from ``http._send``.
+        """
+        status, text, content_type, _ = await request_text(
+            self._http,
+            "GET",
+            f"{self._base}/vacancies/{vacancy_id}",
+            platform=Platform.hh,
+            ok=None,
+            retries=retries,
+            accept="application/json",
+            headers=self.headers(),
+            params={k: v for k, v in (params or {}).items() if v is not None},
+        )
+        return status, text, content_type
+
+    async def app_token(self, client_id: str, client_secret: SecretStr) -> OAuthTokens:
+        """Application token: ``POST /token`` with ``grant_type=client_credentials``.
+
+        hh issues it to a registered application for public data — no user, no scopes, no refresh
+        token. Needed because an anonymous ``GET /vacancies/{id}`` was refused with
+        ``403 {"errors":[{"type":"forbidden"}]}`` on 2026-08-26. The token is short-lived and
+        stays in memory: it never reaches the token store, which holds user grants only.
+        """
+        data = await request_json(
+            self._http,
+            "POST",
+            f"{self._base}/token",
+            platform=Platform.hh,
+            headers={**self.headers(), "Accept": "application/json"},
+            data={
+                "grant_type": "client_credentials",
+                "client_id": client_id,
+                "client_secret": client_secret.get_secret_value(),
+            },
+            retries=1,
+        )
+        return parse_token_response(Platform.hh, _expect_dict(data, "POST /token"))
 
     async def similar_vacancies(self, resume_id: str, *, per_page: int) -> dict[str, Any]:
         # VERIFY LIVE: "vacancies similar to a resume" comes from the legacy docs; the public spec

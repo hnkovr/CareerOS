@@ -147,7 +147,9 @@ async def test_ingest_records_primary_source_and_links_raw(
     svc = _svc(settings, session, user_id)
     detail = await svc.ingest(_ingest())
     assert detail.platform == "hh" and detail.external_id == "123"
-    assert detail.canonical_url == normalize_url(URL) and "utm_source" not in detail.canonical_url
+    canonical_url = detail.canonical_url
+    assert canonical_url is not None
+    assert canonical_url == normalize_url(URL) and "utm_source" not in canonical_url
 
     sources = await svc.list_sources(detail.id)
     assert len(sources) == 1
@@ -239,6 +241,7 @@ async def test_snapshot_unchanged_then_salary_change_creates_raw_and_diff(
     )
     row = await session.get(Opportunity, detail.id)
     assert row is not None and row.raw_id == snap.id
+    assert row.field_evidence is not None
     assert len(row.field_evidence["compensation"]) == 2  # both claims kept
 
     diff = await svc.diff(detail.id)
@@ -284,6 +287,7 @@ async def test_archive_and_weaker_sources_never_overwrite_the_live_view(
     row = await session.get(Opportunity, detail.id)
     assert row is not None and row.raw_id == live_raw_id  # history only
     assert row.compensation and row.compensation["max"] == 150000
+    assert row.field_evidence is not None
     assert {e["source"] for e in row.field_evidence["compensation"]} == {"board_api", "archive"}
 
     estimate, created = await svc.record_snapshot(
@@ -300,6 +304,7 @@ async def test_archive_and_weaker_sources_never_overwrite_the_live_view(
     assert created
     await session.refresh(row)
     assert row.raw_id == estimate.id  # live snapshot: it is the current capture …
+    assert row.compensation is not None and row.field_evidence is not None
     assert row.compensation["max"] == 150000  # … but the board API claim outranks the estimate
     assert len(row.field_evidence["compensation"]) == 3
     assert (await svc.get(detail.id)).title == "Senior Data Engineer"

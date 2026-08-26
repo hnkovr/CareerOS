@@ -565,7 +565,12 @@ class BotService:
             await self._client.send_message(chat_id, part)
 
     async def _capture(self, chat_id: int, text: str) -> None:
-        """Ingest a forwarded job description and reply with its triage card."""
+        """Ingest a forwarded job description and reply with its triage card.
+
+        A bare URL a connector recognises is READ (ADR-015) instead of stored as a link: the
+        card then shows the actual posting rather than the address of one. Everything else —
+        and any URL nothing recognises — takes the unchanged paste path.
+        """
         if self._sessionmaker is None:
             await self._say(chat_id, "Capture is unavailable: no database configured.")
             return
@@ -573,11 +578,76 @@ class BotService:
         from careeros.modules.opportunities.schemas import IngestRequest
 
         url = text.strip() if text.strip().startswith("http") else None
+        if url is not None and self._detect(url) is not None:
+            await self._capture_url(chat_id, url)
+            return
         detail = await self._with_opportunities(
             lambda svc: svc.ingest(
                 IngestRequest(text=None if url else text, url=url, source=Source.manual)
             )
         )
+        await self._send_card(chat_id, detail)
+
+    def _detect(self, url: str) -> Any:
+        """Which provider owns this URL (``None`` = none, not even the generic fallback).
+
+        Any detection counts as "read it" — the generic provider answers with low confidence
+        for any http(s) URL, and reading an employer page is exactly what it is for.
+        """
+        from careeros.modules.platform.registry import get_registry
+        from careeros.modules.platform.sources import detect
+
+        try:
+            return detect(url, get_registry())
+        except Exception as exc:  # a broken detector must not swallow the capture
+            log.warning("bot.detect_failed", error=f"{type(exc).__name__}: {exc}")
+            return None
+
+    async def _read_job(self, url: str) -> Any:
+        """One job read in its own committed session (invariant 7: through the service)."""
+        if self._sessionmaker is None:
+            raise RuntimeError("no database configured")
+        from careeros.modules.platform.schemas import ReadRequest
+        from careeros.modules.platform.sync import PlatformSyncService
+
+        async with self._sessionmaker() as session:
+            svc = PlatformSyncService(self._settings, session=session, user_id=SINGLE_USER_ID)
+            out = await svc.read_job(ReadRequest(url=url))
+            await session.commit()
+            return out
+
+    async def _capture_url(self, chat_id: int, url: str) -> None:
+        """Read the job behind a forwarded link and answer with the same triage card."""
+        from careeros.modules.platform.base import PlatformError
+        from careeros.modules.platform.fetch.artifact import JobReadError
+
+        try:
+            out = await self._read_job(url)
+        except JobReadError as exc:
+            # Naming the strategy that failed is the difference between "try again" and
+            # "this one needs a paste" — a bare "could not fetch" tells the owner neither.
+            log.info("bot.read_failed", url=url, diagnostics=exc.diagnostics)
+            await self._say_plain(
+                chat_id,
+                f"Could not read that page.\n{exc.diagnostics}\n\n"
+                "Copy the job text and forward it instead — I parse pastes the same way.",
+            )
+            return
+        except PlatformError as exc:
+            log.info("bot.read_unavailable", url=url, error=str(exc))
+            await self._say_plain(
+                chat_id, f"{exc}\n\nForward the job text instead and I will parse it."
+            )
+            return
+        if out.opportunity_id is None:
+            await self._say(chat_id, "read it, but nothing was stored")
+            return
+        detail = await self._with_opportunities(lambda svc: svc.get(out.opportunity_id))
+        if not out.created:
+            snapshot = "a new snapshot" if out.snapshot_created else "no change since last time"
+            await self._say(chat_id, f"already known — {snapshot}")
+        if out.closed:
+            await self._say(chat_id, "this posting reads as closed")
         await self._send_card(chat_id, detail)
 
     def _status(self) -> str:

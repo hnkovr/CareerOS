@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import sys
+import uuid
 import webbrowser
 from collections import Counter
 from collections.abc import Awaitable, Callable
@@ -20,11 +21,21 @@ import typer
 from careeros.core.auth import SINGLE_USER_ID
 from careeros.core.config import get_settings
 from careeros.core.db import get_sessionmaker
+from careeros.modules.opportunities.service import OpportunityError
 from careeros.modules.platform.base import PlatformError
-from careeros.modules.platform.enums import SyncKind, SyncMethod, SyncStatus
+from careeros.modules.platform.enums import FetchStrategy, SyncKind, SyncMethod, SyncStatus
+from careeros.modules.platform.fetch.artifact import JobReadError
 from careeros.modules.platform.http import build_http
 from careeros.modules.platform.registry import get_registry
-from careeros.modules.platform.schemas import JobQuery, SyncRequest, SyncResult
+from careeros.modules.platform.schemas import (
+    FetchAttempt,
+    JobQuery,
+    ReadOut,
+    ReadRequest,
+    SyncRequest,
+    SyncResult,
+)
+from careeros.modules.platform.sources import detect as detect_source
 from careeros.modules.platform.sync import PlatformSyncService
 from careeros.modules.vault.enums import Platform
 
@@ -40,7 +51,19 @@ def _run(fn: Callable[[PlatformSyncService], Awaitable[Any]]) -> Any:
 
     try:
         return asyncio.run(go())
+    except JobReadError as exc:
+        # A read that failed still owes the owner the diagnostics: which strategy was tried,
+        # what came back, and why it was rejected (ADR-015 §4).
+        print(f"error: {exc.platform}: could not read the job", file=sys.stderr)
+        for attempt in exc.attempts:
+            print("  " + _attempt_line(attempt), file=sys.stderr)
+        if not exc.attempts:
+            print(f"  {exc.diagnostics}", file=sys.stderr)
+        raise typer.Exit(1) from exc
     except PlatformError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        raise typer.Exit(1) from exc
+    except OpportunityError as exc:
         print(f"error: {exc}", file=sys.stderr)
         raise typer.Exit(1) from exc
 
@@ -61,6 +84,50 @@ def _print_result(res: SyncResult, *, as_json: bool) -> None:
         extra = item.get("company") or ", ".join(item.get("skills", [])[:6]) or ""
         status_txt = item.get("status_raw") or item.get("status") or ""
         print(f"  · {title}  {extra}  {status_txt}".rstrip())
+
+
+def _attempt_line(attempt: FetchAttempt) -> str:
+    """``public_html  200  ok           412ms  miss`` — strategy, status, reason, duration."""
+    status = str(attempt.status_code) if attempt.status_code is not None else "-"
+    reason = "ok" if attempt.ok else (attempt.error_type or "unusable")
+    if not attempt.ok and attempt.error_message:
+        reason += f" ({attempt.error_message[:60]})"
+    return (
+        f"{attempt.strategy!s:14s} {status:>4s}  {reason:28s} "
+        f"{attempt.duration_ms:5d}ms  {attempt.cache_status}"
+    )
+
+
+def _print_read(res: ReadOut, *, as_json: bool, show_attempts: bool) -> None:
+    if as_json:
+        print(json.dumps(res.model_dump(mode="json"), indent=2, ensure_ascii=False, default=str))
+        return
+    posting = res.posting
+    if posting is not None:
+        where = f"{posting.platform} via {posting.strategy or '-'}"
+        print(f"{posting.title} @ {posting.company or '?'}  ({where})")
+        print(f"  url: {posting.canonical_url or posting.url or '-'}")
+        if posting.external_id:
+            print(f"  id:  {posting.external_id}")
+        if posting.quality is not None:
+            print(
+                f"  quality: {posting.quality:.2f}  completeness: {posting.completeness or 0:.2f}"
+            )
+    if res.opportunity_id is None:
+        print("  not stored (dry run)")
+    elif res.created:
+        print(f"  created opportunity {res.opportunity_id}")
+    else:
+        snap = "new snapshot" if res.snapshot_created else "unchanged since the last read"
+        print(f"  already known: {res.opportunity_id} — {snap}")
+    if res.closed:
+        print("  the posting reads as CLOSED — recorded as evidence")
+    for warning in res.warnings:
+        print(f"  warning: {warning}")
+    if show_attempts and res.attempts:
+        print("attempts:")
+        for attempt in res.attempts:
+            print("  " + _attempt_line(attempt))
 
 
 def parse_extra(pairs: list[str] | None) -> dict[str, Any]:
@@ -182,8 +249,35 @@ def connect(
 
 
 @app.command()
-def refresh(platform: Platform) -> None:
-    """Refresh the access token using the stored refresh token."""
+def refresh(
+    target: str = typer.Argument(
+        ..., help="a platform (refresh its OAuth token) or an opportunity id (re-read the job)"
+    ),
+    as_json: bool = typer.Option(False, "--json"),
+    show_attempts: bool = typer.Option(False, "--show-attempts"),
+) -> None:
+    """Refresh an access token (platform name), or re-read a stored job (opportunity id).
+
+    One verb, two objects, told apart by the argument's shape: a uuid is a job, anything else
+    must name a platform. Both are "fetch the current truth again".
+    """
+    try:
+        opportunity_id = uuid.UUID(target)
+    except ValueError:
+        opportunity_id = None
+    if opportunity_id is not None:
+        out = _run(lambda svc: svc.refresh_job(opportunity_id))
+        _print_read(out, as_json=as_json, show_attempts=show_attempts)
+        return
+    try:
+        platform = Platform(target)
+    except ValueError as exc:
+        known = ", ".join(str(p) for p in get_registry().platforms())
+        print(
+            f"error: {target!r} is neither an opportunity id nor a platform ({known})",
+            file=sys.stderr,
+        )
+        raise typer.Exit(1) from exc
 
     async def go(svc: PlatformSyncService) -> Any:
         async with build_http(svc.settings) as http:
@@ -217,6 +311,73 @@ def doctor(platform: Platform, as_json: bool = typer.Option(False, "--json")) ->
             print(f"[{mark}] {c.name}: {c.detail}" + (f"  → {c.fix}" if c.fix else ""))
     if not all(c.ok for c in checks):
         raise typer.Exit(1)
+
+
+# ------------------------------------------------------------------------- read one job (ADR-015)
+
+
+@app.command()
+def read(
+    url: str = typer.Argument(..., help="the job URL you found"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="fetch and extract, persist nothing"),
+    as_json: bool = typer.Option(False, "--json"),
+    show_attempts: bool = typer.Option(False, "--show-attempts", help="list every strategy tried"),
+    no_cache: bool = typer.Option(False, "--no-cache", help="bypass the in-process fetch cache"),
+    strategy: FetchStrategy | None = typer.Option(None, "--strategy", help="force one strategy"),
+    use_ai: bool = typer.Option(False, "--use-ai", help="AI extraction to fill the gaps"),
+    notes: str | None = typer.Option(None, "--notes"),
+    platform: Platform | None = typer.Option(None, "--platform", help="skip provider detection"),
+) -> None:
+    """Read ONE job behind a URL and file it (ADR-015): new opportunity or a fresh snapshot."""
+    req = ReadRequest(
+        url=url,
+        dry_run=dry_run,
+        use_ai=use_ai,
+        no_cache=no_cache,
+        strategy=strategy,
+        notes=notes,
+        platform=platform,
+    )
+    out = _run(lambda svc: svc.read_job(req))
+    _print_read(out, as_json=as_json, show_attempts=show_attempts or dry_run)
+
+
+@app.command()
+def detect(
+    url: str = typer.Argument(..., help="a job URL"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Which provider owns this URL, and what its canonical form is. No network, no writes."""
+    registry = get_registry()
+    hit = detect_source(url, registry)
+    if hit is None:
+        print(f"no connector recognises {url!r}", file=sys.stderr)
+        raise typer.Exit(1)
+    canonical = hit.canonical
+    if as_json:
+        print(
+            json.dumps(
+                {
+                    "platform": str(hit.platform),
+                    "confidence": hit.confidence,
+                    "canonical_url": canonical.canonical_url,
+                    "external_id": canonical.external_id,
+                    "host": canonical.host,
+                    "locale": canonical.locale,
+                },
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+        return
+    print(f"{hit.platform} (confidence {hit.confidence:.2f})")
+    print(f"  canonical: {canonical.canonical_url}")
+    print(f"  host:      {canonical.host}")
+    if canonical.external_id:
+        print(f"  id:        {canonical.external_id}")
+    caps = registry.get(hit.platform).capabilities
+    chain = " → ".join(str(x) for x in caps.read_job) or "none (paste only)"
+    print(f"  read via:  {chain}  (access: {caps.access})")
 
 
 # ------------------------------------------------------------------------- sync commands

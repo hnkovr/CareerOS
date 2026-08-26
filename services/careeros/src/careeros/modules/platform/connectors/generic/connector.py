@@ -42,6 +42,7 @@ class Connector(BaseConnector):
         jobs=[SyncMethod.paste],
         read_job=[FetchStrategy.public_html, FetchStrategy.jina, FetchStrategy.wayback],
         access=AccessMode.public,
+        fallback=True,
         official_api=False,
         auth=AuthKind.none,
         notes=(

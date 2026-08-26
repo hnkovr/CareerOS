@@ -138,6 +138,8 @@ PLATFORMS: tuple[Platform, ...] = (
     Platform.indeed,
     Platform.getmatch,
     Platform.toptal,
+    Platform.rockethunt,
+    Platform.justjoin,
     Platform.website,  # generic fallback provider (any http(s) URL, ADR-015) — always last
 )
 

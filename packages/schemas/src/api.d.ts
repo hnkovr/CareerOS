@@ -646,6 +646,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/opportunities/{opportunity_id}/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Refresh
+         * @description Re-read this job from its own URL and snapshot what changed (ADR-015 / ADR-016).
+         *
+         *     Delegates to the platform layer — the read path lives there, with the connectors and the
+         *     strategy chain. A posting that came back 404/gone is reported as `closed`, not as an error.
+         */
+        post: operations["refresh_api_opportunities__opportunity_id__refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/opportunities/{opportunity_id}/diff": {
         parameters: {
             query?: never;
@@ -1273,6 +1296,50 @@ export interface paths {
         };
         /** Connections */
         get: operations["connections_api_platform_connections_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Read Job
+         * @description Read ONE job behind a URL the user supplies (ADR-015) and file it.
+         *
+         *     Detects the provider, honours its access policy and kill switches, runs the declared
+         *     strategy chain, then either creates the opportunity or snapshots the one already known.
+         *     `dry_run` fetches and extracts without persisting anything.
+         */
+        post: operations["read_job_api_platform_read_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/platform/detect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Detect
+         * @description Which provider owns this URL, and what its canonical form is. No network, no writes.
+         */
+        get: operations["detect_api_platform_detect_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2389,6 +2456,11 @@ export interface components {
             email_fallback: boolean;
             /** @default none */
             auth: components["schemas"]["AuthKind"];
+            /**
+             * Fallback
+             * @default false
+             */
+            fallback: boolean;
             /** Read Job */
             read_job?: components["schemas"]["FetchStrategy"][];
             /** @default manual_import */
@@ -2810,6 +2882,29 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /**
+         * DetectionOut
+         * @description Which provider owns a URL (``GET /api/platform/detect``) — no network, no persistence.
+         */
+        DetectionOut: {
+            platform: components["schemas"]["Platform"];
+            /** Confidence */
+            confidence: number;
+            /** Canonical Url */
+            canonical_url: string;
+            /** External Id */
+            external_id?: string | null;
+            /** Host */
+            host: string;
+            /** Locale */
+            locale?: string | null;
+            /**
+             * Private
+             * @description came from a private message: no third-party strategies
+             * @default false
+             */
+            private: boolean;
+        };
         /** DevPacketOut */
         DevPacketOut: {
             /** Agent */
@@ -3090,6 +3185,37 @@ export interface components {
             note?: string | null;
         };
         /**
+         * FetchAttempt
+         * @description One strategy attempt of a job read — the diagnostics unit stored in ``PlatformSyncRun``.
+         */
+        FetchAttempt: {
+            strategy: components["schemas"]["FetchStrategy"];
+            /** Url */
+            url: string;
+            /** Status Code */
+            status_code?: number | null;
+            /**
+             * Ok
+             * @default false
+             */
+            ok: boolean;
+            /** Error Type */
+            error_type?: string | null;
+            /** Error Message */
+            error_message?: string | null;
+            /**
+             * Duration Ms
+             * @default 0
+             */
+            duration_ms: number;
+            /**
+             * Cache Status
+             * @default miss
+             * @enum {string}
+             */
+            cache_status: "hit" | "miss" | "negative" | "bypass" | "skip";
+        };
+        /**
          * FetchStrategy
          * @description How one job behind a URL is acquired (ADR-015), best first per connector.
          *
@@ -3106,6 +3232,30 @@ export interface components {
             before?: unknown;
             /** After */
             after?: unknown;
+        };
+        /**
+         * FieldEvidence
+         * @description Where one extracted field came from (ADR-016): kept per field, never last-write-wins.
+         *
+         *     ``source`` names the extractor / authority (``jsonld``, ``embedded``, ``api``,
+         *     ``text_heuristic``, ``aggregator_estimate``, ``llm`` …); ``value`` is JSON-shaped.
+         */
+        FieldEvidence: {
+            /** Field */
+            field: string;
+            /** Value */
+            value?: unknown;
+            /** Source */
+            source: string;
+            /** Source Url */
+            source_url?: string | null;
+            /** Observed At */
+            observed_at?: string | null;
+            /**
+             * Confidence
+             * @default 1
+             */
+            confidence: number;
         };
         /**
          * FieldSource
@@ -3430,6 +3580,76 @@ export interface components {
             location: string;
             /** Message */
             message: string;
+        };
+        /**
+         * JobPosting
+         * @description A job as seen on a platform. Maps onto ``opportunities.IngestRequest``.
+         *
+         *     The provenance block (``canonical_url`` … ``field_evidence``) is filled by a job read
+         *     (ADR-015/016); paste/search postings leave it at the defaults.
+         */
+        JobPosting: {
+            platform: components["schemas"]["Platform"];
+            /** External Id */
+            external_id?: string | null;
+            /** Url */
+            url?: string | null;
+            /** Title */
+            title: string;
+            /** Company */
+            company?: string | null;
+            /** Location */
+            location?: string | null;
+            /** Posted At */
+            posted_at?: string | null;
+            /**
+             * Raw Text
+             * @default
+             */
+            raw_text: string;
+            extraction?: components["schemas"]["OpportunityExtraction"] | null;
+            /** Raw Payload */
+            raw_payload?: {
+                [key: string]: unknown;
+            } | null;
+            /** Canonical Url */
+            canonical_url?: string | null;
+            /** Resolved Url */
+            resolved_url?: string | null;
+            /**
+             * Original Url
+             * @description the employer's posting, if known
+             */
+            original_url?: string | null;
+            strategy?: components["schemas"]["FetchStrategy"] | null;
+            /** Fetched At */
+            fetched_at?: string | null;
+            /** Published At */
+            published_at?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Content Hash */
+            content_hash?: string | null;
+            /** Fingerprint */
+            fingerprint?: string | null;
+            /**
+             * Is Archive
+             * @default false
+             */
+            is_archive: boolean;
+            /**
+             * Archive Ts
+             * @description capture time, never a date
+             */
+            archive_ts?: string | null;
+            /** Quality */
+            quality?: number | null;
+            /** Completeness */
+            completeness?: number | null;
+            /** @default primary */
+            relation: components["schemas"]["careeros__modules__platform__enums__SourceRelation"];
+            /** Field Evidence */
+            field_evidence?: components["schemas"]["FieldEvidence"][];
         };
         /** JobQuery */
         JobQuery: {
@@ -4020,7 +4240,7 @@ export interface components {
             canonical_url: string | null;
             /** Original Url */
             original_url: string | null;
-            relation: components["schemas"]["SourceRelation"];
+            relation: components["schemas"]["careeros__modules__opportunities__enums__SourceRelation"];
             authority: components["schemas"]["FieldSource"];
             /** Strategy */
             strategy: string | null;
@@ -4201,6 +4421,76 @@ export interface components {
             rank: number;
             /** Rationale */
             rationale: string;
+        };
+        /** ReadOut */
+        ReadOut: {
+            posting: components["schemas"]["JobPosting"] | null;
+            /** Opportunity Id */
+            opportunity_id?: string | null;
+            /**
+             * Created
+             * @default false
+             */
+            created: boolean;
+            /** Duplicate Of */
+            duplicate_of?: string | null;
+            /**
+             * Snapshot Created
+             * @default false
+             */
+            snapshot_created: boolean;
+            /**
+             * Closed
+             * @description the posting reads as closed / gone (evidence recorded)
+             * @default false
+             */
+            closed: boolean;
+            /**
+             * Run Id
+             * @description the PlatformSyncRun that read it
+             */
+            run_id?: string | null;
+            /** Attempts */
+            attempts?: components["schemas"]["FetchAttempt"][];
+            /** Warnings */
+            warnings?: string[];
+            /**
+             * Diagnostics
+             * @default
+             */
+            diagnostics: string;
+        };
+        /**
+         * ReadRequest
+         * @description Read one job behind a user-supplied URL (ADR-015).
+         */
+        ReadRequest: {
+            /** Url */
+            url: string;
+            /**
+             * Dry Run
+             * @description fetch/extract only; persist nothing
+             * @default false
+             */
+            dry_run: boolean;
+            /**
+             * Use Ai
+             * @description AI extraction to fill deterministic gaps
+             * @default false
+             */
+            use_ai: boolean;
+            /**
+             * No Cache
+             * @description bypass the in-process fetch cache
+             * @default false
+             */
+            no_cache: boolean;
+            /** @description force one strategy */
+            strategy?: components["schemas"]["FetchStrategy"] | null;
+            /** Notes */
+            notes?: string | null;
+            /** @description force a provider instead of detecting one from the URL */
+            platform?: components["schemas"]["Platform"] | null;
         };
         /**
          * Recommendation
@@ -4520,12 +4810,6 @@ export interface components {
          * @enum {string}
          */
         Source: "linkedin" | "wellfound" | "upwork" | "toptal" | "hh" | "indeed" | "getmatch" | "rockethunt" | "justjoin" | "email" | "recruiter" | "direct" | "website" | "manual" | "clipboard" | "share" | "url";
-        /**
-         * SourceRelation
-         * @description How an ``opportunity_source`` row relates to the canonical job (ADR-016 §2).
-         * @enum {string}
-         */
-        SourceRelation: "primary" | "aggregates" | "repost_of" | "same_as" | "mirror" | "historical_version_of" | "possible_duplicate";
         /**
          * Stage
          * @enum {string}
@@ -5026,6 +5310,12 @@ export interface components {
              */
             b: string;
         };
+        /**
+         * SourceRelation
+         * @description How an ``opportunity_source`` row relates to the canonical job (ADR-016 §2).
+         * @enum {string}
+         */
+        careeros__modules__opportunities__enums__SourceRelation: "primary" | "aggregates" | "repost_of" | "same_as" | "mirror" | "historical_version_of" | "possible_duplicate";
         /** CompareRequest */
         careeros__modules__opportunities__schemas__CompareRequest: {
             /** Ids */
@@ -5039,6 +5329,12 @@ export interface components {
             /** Provider */
             provider?: string | null;
         };
+        /**
+         * SourceRelation
+         * @description How a captured source relates to the opportunity it was attached to (ADR-016).
+         * @enum {string}
+         */
+        careeros__modules__platform__enums__SourceRelation: "primary" | "aggregates" | "repost_of" | "same_as" | "mirror" | "historical_version_of" | "possible_duplicate";
     };
     responses: never;
     parameters: never;
@@ -6193,6 +6489,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OpportunitySnapshotOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    refresh_api_opportunities__opportunity_id__refresh_post: {
+        parameters: {
+            query?: {
+                no_cache?: boolean;
+            };
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadOut"];
                 };
             };
             /** @description Validation Error */
@@ -7422,6 +7751,71 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ConnectionOut"][];
+                };
+            };
+        };
+    };
+    read_job_api_platform_read_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReadRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    detect_api_platform_detect_get: {
+        parameters: {
+            query: {
+                url: string;
+                platform?: components["schemas"]["Platform"] | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DetectionOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

@@ -35,6 +35,15 @@ from careeros.modules.opportunities.service import (
     OpportunityNotFound,
     OpportunityService,
 )
+from careeros.modules.platform.base import (
+    CapabilityUnavailable,
+    NotConnected,
+    PlatformError,
+    ReadUnavailable,
+)
+from careeros.modules.platform.fetch.artifact import JobReadError
+from careeros.modules.platform.schemas import ReadOut
+from careeros.modules.platform.sync import PlatformSyncService
 from careeros.modules.vault.deps import get_vault
 from careeros.modules.vault.service import VaultInvalid
 
@@ -228,6 +237,41 @@ async def list_snapshots(
         return await _svc(request, user, session).list_snapshots(opportunity_id)
     except OpportunityNotFound as exc:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "opportunity not found") from exc
+
+
+@router.post("/{opportunity_id}/refresh", response_model=ReadOut)
+async def refresh(
+    opportunity_id: uuid.UUID,
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+    no_cache: bool = True,
+) -> ReadOut:
+    """Re-read this job from its own URL and snapshot what changed (ADR-015 / ADR-016).
+
+    Delegates to the platform layer — the read path lives there, with the connectors and the
+    strategy chain. A posting that came back 404/gone is reported as `closed`, not as an error.
+    """
+    settings = request.app.state.settings
+    svc = PlatformSyncService(settings, session=session, user_id=user.id)
+    try:
+        return await svc.refresh_job(opportunity_id, no_cache=no_cache)
+    except OpportunityNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "opportunity not found") from exc
+    except JobReadError as exc:
+        raise HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            {
+                "error": exc.diagnostics,
+                "detail": exc.diagnostics,
+                "platform": str(exc.platform),
+                "attempts": [a.model_dump(mode="json") for a in exc.attempts],
+            },
+        ) from exc
+    except (CapabilityUnavailable, ReadUnavailable, NotConnected) as exc:
+        raise HTTPException(status.HTTP_409_CONFLICT, str(exc)) from exc
+    except (PlatformError, OpportunityError) as exc:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, str(exc)) from exc
 
 
 @router.get("/{opportunity_id}/diff", response_model=OpportunityDiffOut)

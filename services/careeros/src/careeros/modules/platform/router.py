@@ -16,20 +16,25 @@ from careeros.modules.platform.base import (
     NotConnected,
     ParseError,
     PlatformError,
+    ReadUnavailable,
     UpstreamError,
 )
 from careeros.modules.platform.enums import ApplicationStatus, SyncKind
+from careeros.modules.platform.fetch.artifact import JobReadError
 from careeros.modules.platform.http import build_http
 from careeros.modules.platform.registry import UnknownPlatform
 from careeros.modules.platform.schemas import (
     ApplicationObservationOut,
     Capabilities,
     ConnectionOut,
+    DetectionOut,
     DoctorCheck,
     JobQuery,
     OAuthStartOut,
     ParseResult,
     PlatformUrls,
+    ReadOut,
+    ReadRequest,
     SyncRequest,
     SyncResult,
     SyncRunOut,
@@ -47,6 +52,21 @@ def _svc(request: Request, user: CurrentUser, session: AsyncSession) -> Platform
 
 
 def _http_error(exc: Exception) -> HTTPException:
+    if isinstance(exc, JobReadError):
+        # Never a bare "failed to fetch" (ADR-015 §4): the body carries every attempt so the
+        # owner can see WHICH strategy hit a captcha, a 404 or a kill switch. ``detail`` and
+        # ``error`` hold the same summary — one for this router's convention, one for the spec.
+        return HTTPException(
+            status.HTTP_422_UNPROCESSABLE_CONTENT,
+            {
+                "error": exc.diagnostics,
+                "detail": exc.diagnostics,
+                "platform": str(exc.platform),
+                "attempts": [a.model_dump(mode="json") for a in exc.attempts],
+            },
+        )
+    if isinstance(exc, ReadUnavailable):
+        return HTTPException(status.HTTP_409_CONFLICT, str(exc))
     if isinstance(exc, UnknownPlatform):
         return HTTPException(status.HTTP_404_NOT_FOUND, f"no connector for platform: {exc}")
     if isinstance(exc, CapabilityUnavailable):
@@ -80,6 +100,41 @@ async def connections(
     request: Request, user: CurrentUserDep, session: SessionDep
 ) -> list[ConnectionOut]:
     return await _svc(request, user, session).platform.list_connections()
+
+
+@router.post("/read", response_model=ReadOut)
+async def read_job(
+    req: ReadRequest, request: Request, user: CurrentUserDep, session: SessionDep
+) -> ReadOut:
+    """Read ONE job behind a URL the user supplies (ADR-015) and file it.
+
+    Detects the provider, honours its access policy and kill switches, runs the declared
+    strategy chain, then either creates the opportunity or snapshots the one already known.
+    `dry_run` fetches and extracts without persisting anything.
+    """
+    try:
+        return await _svc(request, user, session).read_job(req)
+    except _ERRORS as exc:
+        raise _http_error(exc) from exc
+
+
+@router.get("/detect", response_model=DetectionOut)
+async def detect(
+    url: str,
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+    platform: Platform | None = None,
+) -> DetectionOut:
+    """Which provider owns this URL, and what its canonical form is. No network, no writes."""
+    svc = _svc(request, user, session)
+    try:
+        detection = svc.detect(url, platform=platform)
+    except _ERRORS as exc:
+        raise _http_error(exc) from exc
+    if detection is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"no connector recognises {url!r}")
+    return svc.detection_out(detection)
 
 
 @router.post("/{platform}/connect", response_model=OAuthStartOut)

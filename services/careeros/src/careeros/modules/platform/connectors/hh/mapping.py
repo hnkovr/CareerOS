@@ -354,6 +354,25 @@ def vacancy_to_job(
     )
 
 
+def vacancy_detail_to_job(vacancy: dict[str, Any]) -> JobPosting:
+    """``GET /vacancies/{id}`` payload → ``JobPosting`` (the read-one path, ADR-015).
+
+    A read has no separate search item, so the detail record plays both roles: the same mapping
+    as a search hit, plus the description and ``key_skills`` a detail record carries. The payload
+    is kept once and verbatim (no ``{"detail": …}`` nesting — there is nothing to nest it under).
+    """
+    posting = vacancy_to_job(vacancy, detail=vacancy)
+    return posting.model_copy(update={"raw_payload": dict(vacancy)})
+
+
+def is_archived(vacancy: dict[str, Any]) -> bool:
+    """The vacancy is closed on hh: ``archived`` or a non-``open`` ``type``."""
+    if vacancy.get("archived") is True:
+        return True
+    type_id = _id(vacancy.get("type"))
+    return type_id is not None and type_id != "open"
+
+
 # ------------------------------------------------------------------------------ negotiation → obs
 
 

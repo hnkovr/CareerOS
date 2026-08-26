@@ -219,7 +219,8 @@ async def test_sync_profile_jobs_applications_end_to_end(
 @pytest.mark.db
 async def test_platform_api_smoke(db_client: AsyncClient) -> None:
     r = await db_client.get("/api/platform/capabilities")
-    assert r.status_code == 200 and len(r.json()) == 8
+    # 10 connectors: 7 account platforms + rockethunt + justjoin + the generic reader.
+    assert r.status_code == 200 and len(r.json()) == 10
     assert r.json()[0]["platform"] == "hh" and r.json()[0]["manual_capture"] is True
 
     r = await db_client.get("/api/platform/connections")

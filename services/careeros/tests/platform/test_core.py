@@ -31,7 +31,7 @@ NOW = datetime(2026, 8, 25, 12, 0, tzinfo=UTC)
 def test_registry_default_has_all_platforms() -> None:
     reg = get_registry()
     assert reg.platforms() == list(PLATFORMS)
-    assert len(reg.capabilities()) == 8
+    assert len(reg.capabilities()) == 10
     assert reg.platforms()[-1] == Platform.website  # the generic fallback stays last
     assert reg.get("hh").platform == Platform.hh
     with pytest.raises(UnknownPlatform):
