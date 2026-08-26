@@ -9,7 +9,7 @@ the **same working tree** — see “Shared tree” below before reading any fai
 cd ~/gi/@hnkovr/CareerOS && claude --resume 12e5c8cc-6b94-4e7c-8a8b-3938f2396835
 ```
 
-`get-resume-cli.sh` returns `claude --resume 4036da63-f3fe-4ce5-b1a9-729abc03280b` — that is the
+`~/.ai/skills/_scripts/session/get-resume-cli.sh` returns `claude --resume 4036da63-f3fe-4ce5-b1a9-729abc03280b` — that is the
 **first** session of this series (the `make all` refactor), not the latest. Both are valid; the
 one above is the current one.
 
@@ -18,7 +18,7 @@ one above is the current one.
 | Commit | What |
 |---|---|
 | [`dcfb97e`](https://github.com/hnkovr/CareerOS/commit/dcfb97e) | ordered `make all` (12 steps), `make check`/`infra`/`build`/`distclean`, `.NOTPARALLEL`, `run` opens the web app not Finder, `clean` no longer deletes `generated/platform` (OAuth tokens); vault falls back to the bundled demo vault **read-only** (`VaultReadOnly` → HTTP 403) |
-| [`fd0b588`](https://github.com/hnkovr/CareerOS/commit/fd0b588) | `scripts/contracts-check.sh` + `contracts` CI job (the old check diffed `packages/schemas` but only ever regenerated `career/schemas`); `tg-bot.sh` exit **4** = unreachable, split from 2 = rejected token, so `make all` survives being offline; CI builds `Dockerfile.web` |
+| [`fd0b588`](https://github.com/hnkovr/CareerOS/commit/fd0b588) | `scripts/contracts-check.sh` + `contracts` CI job (the old check diffed `packages/schemas` but only ever regenerated `career/schemas`); `scripts/prj-tools/tg-bot.sh` exit **4** = unreachable, split from 2 = rejected token, so `make all` survives being offline; CI builds `deploy/docker/Dockerfile.web` |
 | [`1f4d739`](https://github.com/hnkovr/CareerOS/commit/1f4d739) | `config/gate.yml` (pipeline as data) + `tests/test_gate_config.py`; `scripts/hooks/config-guard.sh`; skill `/careeros-gate` + agent `careeros-gate` |
 | [`56a77cb`](https://github.com/hnkovr/CareerOS/commit/56a77cb) | autouse truncate between db tests ([#24](https://github.com/hnkovr/CareerOS/issues/24)); `scripts/gate.sh` as the single gate for local **and** CI ([#23](https://github.com/hnkovr/CareerOS/issues/23)); `just infra-up` names the fix when Docker is down |
 
