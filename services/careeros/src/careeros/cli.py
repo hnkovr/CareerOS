@@ -47,6 +47,7 @@ def _register_subcommands() -> None:
         ("careeros.modules.opportunities.cli", "opportunities"),
         ("careeros.modules.ai.cli", "ai"),
         ("careeros.modules.assistant.cli", "assistant"),
+        ("careeros.modules.workflows.cli", "workflows"),
         ("careeros.modules.profiles.cli", "profiles"),
         ("careeros.modules.platform.cli", "platform"),
         ("careeros.modules.bot.cli", "bot"),

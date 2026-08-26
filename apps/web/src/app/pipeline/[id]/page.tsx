@@ -100,6 +100,9 @@ export default function ApplicationDetailPage() {
           / {a.opportunity_title}
         </h1>
         <span className="flex items-center gap-2">
+          <Link className="btn" href={`/workflows?kind=follow_up&target=${id}`} title="draft a follow-up → wait for your approval → record it">
+            Follow-up workflow
+          </Link>
           <Badge tone="accent">{a.stage.replaceAll("_", " ")}</Badge>
           <ScoreRing score={a.score_overall} size="text-lg" />
         </span>

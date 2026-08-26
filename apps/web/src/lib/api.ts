@@ -26,6 +26,7 @@ export type InterviewPrepOut = Schemas["InterviewPrepOut"];
 export type NegotiationOut = Schemas["NegotiationOut"];
 export type CompareOut = Schemas["CompareOut"];
 export type AskResponse = Schemas["AskResponse"];
+export type WorkflowRunOut = Schemas["WorkflowRunOut"];
 export type AIRunOut = Schemas["AIRunOut"];
 export type ProviderInfo = Schemas["ProviderInfo"];
 

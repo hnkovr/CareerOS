@@ -75,7 +75,8 @@ Two blockers found and fixed while wiring it up:
 - invariant-7 tech debt paid for insights: notifications/brief read other modules only via service helpers; import-linter contract 5 enforces it
 - ADR 014 assistants via tool-calling: tool-use in the provider port (3 adapters), `AIService.with_tools` loop + ledger trace, `modules/assistant` (6 read-only tools, answer guard), API/CLI/web `/assistant`; ADR numbers: 014 mine, 015/016 claimed by the platform lane
 - shared test infra: `tests/conftest.py` now registers `careeros.modules.bot.models` for create_all (another session's uncommitted per-test truncate fixture, GH #24, needs it — otherwise TRUNCATE hits a table that was never created)
-- lane gates: 309 backend tests (excl. platform/deploy lanes), pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
+- ADR 017 workflows with WAIT_FOR_APPROVAL: `modules/workflows` (engine, runner, `workflow_run` migration c4d8e2f1a9b3 off b1c7d0e9a4f2 — the platform lane chains after it), apply + follow_up workflows, API/CLI/web; the first write actions of the platform, provably gated (tests: reject writes nothing)
+- lane gates: 313 backend tests (excl. platform/deploy lanes), pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
 - still blocked on user: P1.3 Gmail (Google OAuth app credentials); next candidates: §55 tool-calling assistants (ADR + go-ahead), §53 WAIT_FOR_APPROVAL workflows, notifications.py invariant-7 tech debt
 
 ### 2026-08-26 — gate hardening (session 3)

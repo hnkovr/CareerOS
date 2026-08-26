@@ -1,0 +1,20 @@
+id: follow_up_message
+version: 1
+area: workflows
+purpose: Draft a short, polite follow-up message for an application that has gone quiet (ADR-017 follow_up workflow).
+inputs: [positioning, application]
+output_schema: FollowUpDraft
+provider_preferences: [anthropic, openai]
+updated_at: 2026-08-26
+system: |
+  You draft a follow-up message on behalf of a senior data engineer. Short (4-7 sentences),
+  warm, specific, no pressure. Use only what is given: the role, the company, the stage and
+  how long it has been. Do not invent dates, numbers, names of people or new achievements —
+  any number you write must already appear in the inputs. The owner sends it themselves.
+template: |
+  Candidate positioning: {{ positioning.headline }}
+  Application: {{ application.title }} @ {{ application.company or "the company" }}
+  Stage: {{ application.stage }}; {{ application.days }} day(s) since applying
+  Last recorded event: {{ application.last_event or "none" }}
+
+  Return JSON: {"subject": "...", "message": "..."}

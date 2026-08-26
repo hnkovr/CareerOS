@@ -19,7 +19,7 @@ Read first: `docs/architecture/01-architecture-proposal.md`, `docs/adr/README.md
 8. AI output is never valid until Pydantic-validated.
 
 ## Layout
-`services/careeros` — Python modular monolith (uv): `core/`, `modules/{vault,cv,opportunities,profiles,ai,assistant,platform,pipeline,inbox,insights}`, `api/`, `worker/`, `cli.py`.
+`services/careeros` — Python modular monolith (uv): `core/`, `modules/{vault,cv,opportunities,profiles,ai,assistant,workflows,platform,pipeline,inbox,insights}`, `api/`, `worker/`, `cli.py`.
 `modules/platform/connectors/<p>` — one connector per platform (hh, upwork, linkedin, wellfound, indeed, getmatch, toptal): own profile · job search · application statuses via api > export > paste (ADR-013); connectors are pure (import-linter) and `PlatformRegistry.verify()` enforces declared ⇒ implemented.
 `apps/web` — Next.js. `packages/{schemas,api-client,ui}` — generated/shared TS.
 `career/` — schemas (generated), demo vault (`examples/demo`), prompt library, scaffold; `career/private/` is git-ignored.

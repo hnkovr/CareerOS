@@ -50,6 +50,8 @@ Without a key the app still validates, renders CVs (non-AI mode), scores opportu
 produces prompt bundles for external chats. With a key, the tool-using assistant (`/assistant`,
 `careeros assistant ask "…"`) answers questions from your vault and pipeline through read-only
 tools and cites the facts it used — it never applies, sends or edits ([ADR 014](docs/adr/014-assistants-tool-calling.md)).
+Workflows (`/workflows`, `careeros workflows start apply <opportunity-id>`) chain analysis → CV → draft and then
+**wait for your approval** before anything enters the pipeline; sending stays yours ([ADR 017](docs/adr/017-workflows-wait-for-approval.md)).
 
 ## Commands
 

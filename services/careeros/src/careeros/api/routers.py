@@ -18,6 +18,7 @@ from careeros.modules.platform.router import router as platform_router
 from careeros.modules.profiles.router import router as profiles_router
 from careeros.modules.search.router import router as search_router
 from careeros.modules.vault.router import router as vault_router
+from careeros.modules.workflows.router import router as workflows_router
 
 ROUTERS: list[APIRouter] = [
     vault_router,
@@ -34,4 +35,5 @@ ROUTERS: list[APIRouter] = [
     platform_router,
     bot_router,
     assistant_router,
+    workflows_router,
 ]

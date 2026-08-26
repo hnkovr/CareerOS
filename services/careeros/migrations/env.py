@@ -30,6 +30,7 @@ for _mod in (
     "careeros.modules.inbox.models",
     "careeros.modules.bot.models",
     "careeros.modules.search.models",
+    "careeros.modules.workflows.models",
 ):
     with contextlib.suppress(ModuleNotFoundError):
         importlib.import_module(_mod)

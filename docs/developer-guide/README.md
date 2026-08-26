@@ -142,6 +142,22 @@ argument model + handler + an entry in `TOOLS`; never query another module's ORM
 and never make a tool that writes (proposals go through Suggestions). Surface:
 `POST /api/assistant/ask`, `GET /api/assistant/tools`, `careeros assistant ask "…"`, `/assistant`.
 
+## Workflows (WAIT_FOR_APPROVAL, ADR-017)
+
+`modules/workflows/engine.py` declares each workflow as an ordered tuple of `Step(name, kind,
+description, run)`; `kind` is `auto` or `approval`. A step receives a `WorkflowCtx` (settings,
+vault, AI service, session, the run's accumulated `context`, start `options`) and returns a
+`StepResult` — summary, output, context delta, and for approval steps a `Proposal` (title +
+payload). `WorkflowService._advance` runs steps in order, commits the `workflow_run` row after
+every step, and at an approval step records the proposal as a `Suggestion`
+(`target_type="workflow"`) and stops with state `waiting_approval`; `decide(approve|reject)`
+moves the Suggestion and resumes or cancels. Raise `StepFailed` for a clean, non-retried failure.
+Steps call other modules' `service.py` only; nothing in a workflow may send mail, post to a
+platform or edit the vault. Adding a workflow: steps in `engine.py`, a `WorkflowKind`, an entry in
+`DEFINITIONS`, a test that proves rejection writes nothing. Surface: `/api/workflows/*`,
+`careeros workflows …`, `/workflows`. Gotcha: never mutate a step dict that is already stored in
+`run.steps` — `_set_step` deep-copies and calls `flag_modified`, otherwise JSONB changes are lost.
+
 ## Web app
 
 `apps/web` (Next.js 15, App Router, Tailwind 4, TanStack Query). All data access goes through the

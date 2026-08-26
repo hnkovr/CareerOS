@@ -112,6 +112,9 @@ export default function OpportunityDetailPage() {
           <Link className="btn" href={`/assistant?opportunity=${id}`}>
             Ask assistant
           </Link>
+          <Link className="btn" href={`/workflows?kind=apply&target=${id}`} title="analyze → CV → draft → wait for your approval → pipeline">
+            Apply workflow
+          </Link>
           <button className="btn btn-primary" onClick={() => analyze.mutate()} disabled={analyze.isPending}>
             {analyze.isPending ? "Analyzing…" : "Analyze with AI"}
           </button>
