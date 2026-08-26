@@ -42,9 +42,14 @@ function methodsOf(caps: Capabilities, kind: SyncKind): string[] {
   return [];
 }
 
-/** A platform the owner has no account on: nothing to connect, nothing of theirs to sync — it
- * only reads a job behind a URL (the `website` fallback reader). Derived, never hard-coded. */
+/** The fallback reader: the connector that claims ANY url at low confidence, rather than a board
+ * the owner browses. The API is adding `Capabilities.fallback` for exactly this; until it ships we
+ * approximate it (today only `website` matches, and real boards like rockethunt/justjoin will be
+ * indistinguishable on these fields — hence the flag). Read it defensively so the page becomes
+ * correct the moment the field appears, with no second deploy. */
 function isGenericReader(caps: Capabilities): boolean {
+  const flagged = (caps as { fallback?: boolean }).fallback;
+  if (typeof flagged === "boolean") return flagged;
   return (
     caps.auth === "none" &&
     caps.read_one &&
@@ -338,8 +343,9 @@ export default function PlatformsPage() {
       {readers.length > 0 && (
         <Card title="Generic readers">
           <p className="pb-2 text-xs text-ink-dim">
-            Not services you have an account on — fallback readers for any employer or ATS page you point at. Nothing to
-            connect, nothing of yours to sync; they only read a single job behind a URL you provide.
+            Not a service you have an account on — the fallback reader for any employer or ATS page you point at.
+            Nothing to connect and nothing of yours to sync; it reads a single job behind a URL you provide, and you can
+            still paste a job page for it below.
           </p>
           <ul className="space-y-2 text-xs">
             {readers.map((c) => (

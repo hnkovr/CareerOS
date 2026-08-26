@@ -48,7 +48,8 @@ function itemLabel(item: Record<string, unknown>): string {
 /** Paste path (ADR-013): every platform accepts pasted page text, with a parse-only preview. */
 export function PastePanel({ capabilities }: { capabilities: Capabilities[] }) {
   const queryClient = useQueryClient();
-  // account-less generic readers (website) have nothing of the owner's to paste
+  // Offered per kind: an account-less reader exposes only `jobs` paste (a job page), never a
+  // profile or applications page — the kind filter below derives that from the capabilities.
   const pasteable = capabilities.filter(
     (c) =>
       (c.profile ?? []).includes("paste") ||
