@@ -42,10 +42,10 @@ def _ctx(settings: Settings) -> ToolContext:
 
 def test_registry_specs_are_json_schemas_and_read_only() -> None:
     reg = default_registry()
-    assert reg.names() == [t.name for t in TOOLS] and len(TOOLS) == 6
+    assert reg.names() == [t.name for t in TOOLS] and len(TOOLS) == 7
     for spec in reg.specs():
         assert spec.input_schema["type"] == "object"
-    assert all(t.read_only for t in reg.infos())
+    assert [t.name for t in reg.infos() if not t.read_only] == ["start_workflow"]
 
 
 async def test_vault_tools_record_observations_and_ids(settings: Settings, data: VaultData) -> None:
@@ -189,3 +189,85 @@ async def test_ask_api_runs_tools_cites_facts_and_guards(
 
     r = await db_client.post("/api/assistant/ask", json={"question": "hi"})
     assert r.status_code == 422  # too short
+
+
+@pytest.mark.db
+async def test_ask_api_can_start_a_gated_workflow(
+    db_client: AsyncClient, settings: Settings
+) -> None:
+    from careeros.modules.ai.deps import get_provider_registry
+    from careeros.modules.ai.providers.fake import FakeProvider
+    from careeros.modules.opportunities.schemas import OpportunityAnalysisOutput
+
+    jd = """Staff Data Engineer, Streaming
+Aurora Grid — B2B contract, $140,000 - $160,000 per year. Fully remote worldwide.
+Requirements: Python, SQL, dbt, Dagster, ClickHouse.
+"""
+    r = await db_client.post("/api/opportunities/ingest", json={"source": "manual", "text": jd})
+    assert r.status_code == 201, r.text
+    opp = r.json()
+
+    def respond(req: Any, schema: Any = None) -> dict[str, Any]:  # structured() calls
+        if schema is OpportunityAnalysisOutput:
+            return {
+                "verdict": "apply",
+                "executive_summary": "Fit.",
+                "recommended_cv_variant": "general-core",
+                "next_action": "Apply.",
+            }
+        return {}
+
+    def respond_tools(req: ToolChatRequest) -> dict[str, Any]:
+        tool_results = [m for m in req.messages if m.role == "tool"]
+        if not tool_results:
+            return {
+                "tool_calls": [
+                    {
+                        "name": "start_workflow",
+                        "arguments": {"kind": "apply", "target_id": opp["id"], "use_ai": True},
+                    }
+                ]
+            }
+        result = json.loads(tool_results[0].content or "{}")
+        return {
+            "text": json.dumps(
+                {
+                    "answer": f"Started the apply workflow {result['run_id']}; it is waiting for "
+                    f"your approval on /workflows (step {result['waiting_on']}).",
+                    "derived_from": [result["run_id"], opp["id"]],
+                    "suggested_next_action": "Review the draft on /workflows and approve it.",
+                    "confidence": "high",
+                }
+            )
+        }
+
+    get_provider_registry(settings).register(
+        FakeProvider(respond, tool_responder=respond_tools), make_default=True
+    )
+    r = await db_client.get("/api/assistant/tools")
+    tools = {t["name"]: t for t in r.json()}
+    assert tools["start_workflow"]["read_only"] is False
+    assert all(t["read_only"] for n, t in tools.items() if n != "start_workflow")
+
+    r = await db_client.post(
+        "/api/assistant/ask",
+        json={"question": "Apply to this one, please.", "opportunity_id": opp["id"]},
+    )
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["guarded"] is False, body["provenance_problems"]
+    assert [s["tool"] for s in body["tools_used"]] == ["start_workflow"] and body["tools_used"][0][
+        "ok"
+    ]
+    run_id = next(i for i in body["derived_from"] if i != opp["id"])
+
+    # the run exists, stopped at its gate — nothing in the pipeline yet
+    r = await db_client.get(f"/api/workflows/{run_id}")
+    assert r.status_code == 200, r.text
+    run = r.json()
+    assert run["state"] == "waiting_approval" and run["kind"] == "apply"
+    assert run["steps"][3]["status"] == "waiting" and "application_id" not in run["context"]
+    r = await db_client.get("/api/pipeline/board", params={"kind": "employment"})
+    assert all(
+        a["opportunity_id"] != opp["id"] for col in r.json()["columns"] for a in col["applications"]
+    )

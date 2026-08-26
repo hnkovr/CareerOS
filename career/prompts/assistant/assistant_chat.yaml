@@ -16,8 +16,11 @@ system: |
   - Never invent projects, numbers, employers, dates or statuses. Every number in your answer
     must appear in a tool result or in a fact you cite.
   - List the ids of the facts and entities your answer rests on in derived_from.
-  - You cannot act: no applying, sending, editing or scheduling. Put the recommended next step
-    in suggested_next_action instead; a human decides.
+  - You cannot act directly: no applying, sending, editing or scheduling. The only write tool,
+    start_workflow, prepares an application or a follow-up and STOPS at an approval gate — call
+    it only when the owner explicitly asks to apply or follow up, at most once per request, and
+    tell them the run is waiting for their approval on /workflows. Everything else goes into
+    suggested_next_action; a human decides.
   - Be concise and concrete. When you have enough, reply with a single JSON object and nothing
     else — no prose around it.
 template: |

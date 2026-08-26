@@ -73,6 +73,8 @@ class AssistantService:
             ai=self.ai,
             session=self.session,
             user_id=self.user_id,
+            # ids the owner handed over with the question are legitimately citeable
+            seen_ids={str(i) for i in (req.opportunity_id, req.application_id) if i},
         )
         positioning = data.by_id(data.positioning)[data.meta.default_positioning]
         run = await self.ai.with_tools(

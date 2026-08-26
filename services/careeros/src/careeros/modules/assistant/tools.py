@@ -3,8 +3,10 @@
 Every tool is a thin, typed wrapper over a module's *service layer* (never its ORM). Each result
 is recorded in ``ToolContext.observed`` so the provenance guard can check that the final answer
 states only numbers the model actually saw, and every entity id a tool surfaces is recorded in
-``ToolContext.seen_ids`` so it may be cited in ``derived_from``. No tool writes anything —
-actions stay behind Suggestions/Actions and human approval (ADR-010).
+``ToolContext.seen_ids`` so it may be cited in ``derived_from``. Read tools write nothing. The one
+write-capable tool, ``start_workflow``, only *starts a workflow run* (ADR-017): the run stops at
+its approval gate, so the assistant can prepare an application or a follow-up but never lets it
+enter the pipeline — that decision stays with the owner (ADR-010).
 """
 
 from __future__ import annotations
@@ -28,6 +30,9 @@ from careeros.modules.opportunities.service import OpportunityService, opportuni
 from careeros.modules.pipeline.service import PipelineService, application_summaries
 from careeros.modules.profiles.service import ProfileService, open_drift_count
 from careeros.modules.vault.service import Vault
+from careeros.modules.workflows.enums import WorkflowKind
+from careeros.modules.workflows.schemas import StartRequest
+from careeros.modules.workflows.service import WorkflowService
 
 
 @dataclass
@@ -50,6 +55,7 @@ class Tool:
     description: str
     input_model: type[BaseModel]
     handler: Handler
+    read_only: bool = True
 
     def spec(self) -> ToolSpec:
         return ToolSpec(
@@ -70,7 +76,10 @@ class ToolRegistry:
         return [t.spec() for t in self._tools.values()]
 
     def infos(self) -> list[ToolInfo]:
-        return [ToolInfo(name=t.name, description=t.description) for t in self._tools.values()]
+        return [
+            ToolInfo(name=t.name, description=t.description, read_only=t.read_only)
+            for t in self._tools.values()
+        ]
 
     async def execute(self, ctx: ToolContext, call: ToolCall) -> str:
         """Validate the arguments, run the handler, return JSON text for the model."""
@@ -355,6 +364,43 @@ async def get_profile_health(ctx: ToolContext, a: HealthArgs) -> dict[str, Any]:
     return {"platforms": platforms, "open_drift": await open_drift_count(ctx.session)}
 
 
+# ----------------------------------------------------------------------------- write (gated)
+
+
+class StartWorkflowArgs(BaseModel):
+    kind: WorkflowKind = Field(description="apply (target: opportunity) or follow_up (application)")
+    target_id: uuid.UUID
+    use_ai: bool = Field(
+        default=True, description="AI analysis / tailored CV / drafts if configured"
+    )
+
+
+async def start_workflow(ctx: ToolContext, a: StartWorkflowArgs) -> dict[str, Any]:
+    """Start a workflow run; it executes its automatic steps and STOPS at the approval gate.
+    Nothing enters the pipeline and nothing is sent until the owner approves on /workflows."""
+    svc = WorkflowService(ctx.settings, ctx.vault, ctx.ai, session=ctx.session, user_id=ctx.user_id)
+    run = await svc.start(
+        StartRequest(kind=a.kind, target_id=a.target_id, options={"use_ai": a.use_ai})
+    )
+    ctx.seen_ids.update({str(run.id), str(a.target_id)})
+    waiting = next((s for s in run.steps if s.status == "waiting"), None)
+    return {
+        "run_id": str(run.id),
+        "kind": str(run.kind),
+        "state": str(run.state),
+        "steps": [
+            {"name": s.name, "status": str(s.status), "summary": s.summary} for s in run.steps
+        ],
+        "waiting_on": waiting.name if waiting else None,
+        "error": run.error,
+        "next": (
+            "The owner must approve or reject this run on /workflows before anything happens."
+            if run.state == "waiting_approval"
+            else None
+        ),
+    }
+
+
 TOOLS: list[Tool] = [
     Tool(
         "get_career_facts",
@@ -397,6 +443,16 @@ TOOLS: list[Tool] = [
         "findings between profiles and the vault.",
         HealthArgs,
         get_profile_health,
+    ),
+    Tool(
+        "start_workflow",
+        "Start an 'apply' (opportunity) or 'follow_up' (application) workflow. It runs its "
+        "automatic steps and stops at the approval gate — nothing enters the pipeline and "
+        "nothing is sent until the owner approves. Use only when the owner asks to apply or "
+        "follow up; never start it just to explore.",
+        StartWorkflowArgs,
+        start_workflow,
+        read_only=False,
     ),
 ]
 

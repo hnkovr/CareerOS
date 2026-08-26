@@ -138,8 +138,10 @@ model (its JSON Schema goes to the provider) + async handler over a module's **s
 Tools are read-only by construction; every result and every surfaced entity id lands in the
 `ToolContext`, so `guard_answer` can reject an answer that cites an unknown id or states a number
 the model never saw — the answer is withheld, the raw output stays in the ledger. To add a tool:
-argument model + handler + an entry in `TOOLS`; never query another module's ORM from a handler,
-and never make a tool that writes (proposals go through Suggestions). Surface:
+argument model + handler + an entry in `TOOLS`; never query another module's ORM from a handler.
+The only write-capable tool is `start_workflow` (`read_only=False`): it starts an ADR-017 run
+that stops at its approval gate, so the assistant can *prepare* an application or follow-up but
+never complete one. Surface:
 `POST /api/assistant/ask`, `GET /api/assistant/tools`, `careeros assistant ask "…"`, `/assistant`.
 
 ## Workflows (WAIT_FOR_APPROVAL, ADR-017)
