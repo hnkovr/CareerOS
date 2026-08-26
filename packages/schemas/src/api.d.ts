@@ -1293,6 +1293,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/platform/{platform}/urls": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Urls
+         * @description Links the user can open: the platform's search page for a query and their own profile.
+         */
+        get: operations["urls_api_platform__platform__urls_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/platform/{platform}/doctor": {
         parameters: {
             query?: never;
@@ -1392,6 +1412,47 @@ export interface paths {
         get: operations["applications_api_platform_applications_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/tools": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Tools
+         * @description The read-only tools the assistant may call — nothing here writes anywhere.
+         */
+        get: operations["list_tools_api_assistant_tools_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/assistant/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask
+         * @description One question → tool loop → answer with provenance. Withheld when the guard finds an
+         *     uncited id or a number the model never saw.
+         */
+        post: operations["ask_api_assistant_ask_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1680,6 +1741,51 @@ export interface components {
          * @enum {string}
          */
         ApplyLevel: "none" | "manual_assist";
+        /** AskRequest */
+        AskRequest: {
+            /** Question */
+            question: string;
+            /** Opportunity Id */
+            opportunity_id?: string | null;
+            /** Application Id */
+            application_id?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /**
+             * Max Steps
+             * @description model turns, tool calls included
+             * @default 8
+             */
+            max_steps: number;
+        };
+        /** AskResponse */
+        AskResponse: {
+            /** Answer */
+            answer: string;
+            /** Derived From */
+            derived_from?: string[];
+            /** Suggested Next Action */
+            suggested_next_action?: string | null;
+            /** Confidence */
+            confidence: string;
+            /**
+             * Guarded
+             * @description True when the provenance guard withheld the model's answer
+             */
+            guarded: boolean;
+            /** Provenance Problems */
+            provenance_problems?: string[];
+            /** Tools Used */
+            tools_used?: components["schemas"]["ToolStep"][];
+            /** Turns */
+            turns: number;
+            /** Ai Run Id */
+            ai_run_id?: string | null;
+            /** Provider */
+            provider?: string | null;
+            /** Model */
+            model?: string | null;
+        };
         /** AssistRequest */
         AssistRequest: {
             /**
@@ -3633,6 +3739,20 @@ export interface components {
             /** Audited At */
             audited_at: string | null;
         };
+        /** PlatformUrls */
+        PlatformUrls: {
+            platform: components["schemas"]["Platform"];
+            /**
+             * Search Url
+             * @description None = not expressible as a URL
+             */
+            search_url?: string | null;
+            /**
+             * Profile Url
+             * @description None = the owner's URL is not known
+             */
+            profile_url?: string | null;
+        };
         /** PortfolioSuggestion */
         PortfolioSuggestion: {
             /** Technology */
@@ -4301,6 +4421,41 @@ export interface components {
             message_count: number;
             /** Messages */
             messages?: components["schemas"]["MessageOut"][];
+        };
+        /** ToolInfo */
+        ToolInfo: {
+            /** Name */
+            name: string;
+            /** Description */
+            description: string;
+            /**
+             * Read Only
+             * @default true
+             */
+            read_only: boolean;
+        };
+        /**
+         * ToolStep
+         * @description Ledger entry for one executed tool call.
+         */
+        ToolStep: {
+            /** Step */
+            step: number;
+            /** Tool */
+            tool: string;
+            /** Arguments */
+            arguments: {
+                [key: string]: unknown;
+            };
+            /** Ok */
+            ok: boolean;
+            /** Result Preview */
+            result_preview: string;
+            /**
+             * Latency Ms
+             * @default 0
+             */
+            latency_ms: number;
         };
         /**
          * Urgency
@@ -6817,6 +6972,41 @@ export interface operations {
             };
         };
     };
+    urls_api_platform__platform__urls_get: {
+        parameters: {
+            query?: {
+                q?: string | null;
+                location?: string | null;
+                remote?: boolean | null;
+            };
+            header?: never;
+            path: {
+                platform: components["schemas"]["Platform"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlatformUrls"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     doctor_api_platform__platform__doctor_get: {
         parameters: {
             query?: never;
@@ -7005,6 +7195,59 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApplicationObservationOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tools_api_assistant_tools_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ToolInfo"][];
+                };
+            };
+        };
+    };
+    ask_api_assistant_ask_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AskResponse"];
                 };
             };
             /** @description Validation Error */
