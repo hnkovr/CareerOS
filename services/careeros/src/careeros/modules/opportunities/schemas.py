@@ -10,11 +10,13 @@ from careeros.modules.opportunities.enums import (
     CompensationPeriod,
     ContractType,
     EmploymentType,
+    FieldSource,
     OpportunityStatus,
     Recommendation,
     RemotePolicy,
     Seniority,
     Source,
+    SourceRelation,
 )
 from careeros.modules.vault.enums import ScoreDimension
 
@@ -94,6 +96,14 @@ class IngestRequest(BaseModel):
     raw_payload: dict[str, Any] | None = Field(
         default=None, description="verbatim source payload; defaults to the structured fields"
     )
+    platform: str | None = Field(
+        default=None,
+        description="vault Platform value the job was read from (identity with external_id)",
+    )
+    canonical_url: str | None = Field(
+        default=None,
+        description="provider-canonical URL when the caller knows it; else normalize_url(url)",
+    )
 
 
 class DimensionScore(BaseModel):
@@ -172,6 +182,9 @@ class OpportunityOut(BaseModel):
     created_at: datetime
     score: ScoreOut | None = None
     analysis: AnalysisOut | None = None
+    platform: str | None = None
+    external_id: str | None = None
+    canonical_url: str | None = None
 
 
 class OpportunityDetail(OpportunityOut):
@@ -237,6 +250,117 @@ class ExternalPromptRequest(BaseModel):
 
 def extraction_to_dict(ex: OpportunityExtraction) -> dict[str, Any]:
     return ex.model_dump(mode="json")
+
+
+# ----------------------------------------------------------------------------- provenance (ADR-016)
+
+
+class SourceIn(BaseModel):
+    """One place a job was seen; upserted by (platform, external_id) or (platform, canonical_url).
+
+    ``authority`` ranks it when field values disagree; ``relation`` says how it maps onto the job.
+    """
+
+    platform: str = Field(description="vault Platform value, e.g. 'hh', 'rockethunt', 'website'")
+    external_id: str | None = None
+    source_url: str | None = None
+    canonical_url: str | None = Field(
+        default=None, description="defaults to normalize_url(source_url)"
+    )
+    original_url: str | None = Field(
+        default=None, description="employer/ATS link an aggregator points to"
+    )
+    relation: SourceRelation = SourceRelation.primary
+    authority: FieldSource
+    strategy: str | None = Field(default=None, description="fetch strategy that produced it")
+    raw_id: uuid.UUID | None = None
+    fetched_at: datetime | None = None
+    published_at: datetime | None = None
+    content_hash: str | None = None
+    is_archive: bool = False
+    confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    meta: dict[str, Any] | None = None
+
+
+class OpportunitySourceOut(BaseModel):
+    id: uuid.UUID
+    opportunity_id: uuid.UUID
+    platform: str
+    external_id: str | None
+    source_url: str | None
+    canonical_url: str | None
+    original_url: str | None
+    relation: SourceRelation
+    authority: FieldSource
+    strategy: str | None
+    raw_id: uuid.UUID | None
+    fetched_at: datetime | None
+    published_at: datetime | None
+    content_hash: str | None
+    is_archive: bool
+    confidence: float | None
+    meta: dict[str, Any] | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class SnapshotIn(BaseModel):
+    """A re-read of a job. Becomes a new ``OpportunityRaw`` only when the fingerprint changed."""
+
+    raw_text: str
+    raw_payload: dict[str, Any] | None = None
+    strategy: str | None = None
+    fetched_url: str | None = None
+    resolved_url: str | None = None
+    is_archive: bool = Field(
+        default=False, description="archived copy: kept as history, never overwrites the live view"
+    )
+    archive_ts: datetime | None = None
+    quality: float | None = Field(default=None, ge=0.0, le=1.0)
+    extracted: dict[str, Any] | None = Field(
+        default=None, description="OpportunityExtraction at capture time (validated before use)"
+    )
+    content_hash: str | None = Field(default=None, description="defaults to sha256(raw_text)")
+    captured_at: datetime | None = None
+    capture_method: str = "refresh"
+    authority: FieldSource | None = Field(
+        default=None, description="field-evidence source; defaults to board_page / archive"
+    )
+    source_url: str | None = Field(
+        default=None, description="evidence source_url; defaults to fetched_url"
+    )
+
+
+class OpportunitySnapshotOut(BaseModel):
+    id: uuid.UUID = Field(description="the OpportunityRaw id")
+    opportunity_id: uuid.UUID | None
+    captured_at: datetime
+    capture_method: str
+    source: str
+    url: str | None
+    strategy: str | None
+    fingerprint: str | None
+    content_hash: str
+    is_archive: bool
+    archive_ts: datetime | None
+    quality: float | None
+    fetched_url: str | None
+    resolved_url: str | None
+    extracted: dict[str, Any] | None = None
+
+
+class FieldChange(BaseModel):
+    field: str
+    before: Any = None
+    after: Any = None
+
+
+class OpportunityDiffOut(BaseModel):
+    from_raw_id: uuid.UUID | None
+    to_raw_id: uuid.UUID | None
+    from_captured_at: datetime | None = None
+    to_captured_at: datetime | None = None
+    changes: list[FieldChange] = Field(default_factory=list)
 
 
 # ----------------------------------------------------------------------------- P3 assistants

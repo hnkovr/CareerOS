@@ -24,7 +24,10 @@ from careeros.modules.opportunities.schemas import (
     InterviewPrepOut,
     NegotiationOut,
     OpportunityDetail,
+    OpportunityDiffOut,
     OpportunityOut,
+    OpportunitySnapshotOut,
+    OpportunitySourceOut,
     StatusUpdate,
 )
 from careeros.modules.opportunities.service import (
@@ -200,3 +203,46 @@ async def negotiation(
         raise HTTPException(
             status.HTTP_503_SERVICE_UNAVAILABLE, f"AI negotiation plan failed: {exc}"
         ) from exc
+
+
+# ----------------------------------------------------------------------------- provenance (ADR-016)
+
+
+@router.get("/{opportunity_id}/sources", response_model=list[OpportunitySourceOut])
+async def list_sources(
+    opportunity_id: uuid.UUID, request: Request, user: CurrentUserDep, session: SessionDep
+) -> list[OpportunitySourceOut]:
+    """Every place this job was seen, with relation and authority (oldest first)."""
+    try:
+        return await _svc(request, user, session).list_sources(opportunity_id)
+    except OpportunityNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "opportunity not found") from exc
+
+
+@router.get("/{opportunity_id}/snapshots", response_model=list[OpportunitySnapshotOut])
+async def list_snapshots(
+    opportunity_id: uuid.UUID, request: Request, user: CurrentUserDep, session: SessionDep
+) -> list[OpportunitySnapshotOut]:
+    """Raw captures of this job in chronological order — one per meaningful content change."""
+    try:
+        return await _svc(request, user, session).list_snapshots(opportunity_id)
+    except OpportunityNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "opportunity not found") from exc
+
+
+@router.get("/{opportunity_id}/diff", response_model=OpportunityDiffOut)
+async def diff(
+    opportunity_id: uuid.UUID,
+    request: Request,
+    user: CurrentUserDep,
+    session: SessionDep,
+    from_raw_id: Annotated[uuid.UUID | None, Query(alias="from")] = None,
+    to_raw_id: Annotated[uuid.UUID | None, Query(alias="to")] = None,
+) -> OpportunityDiffOut:
+    """What changed between two snapshots (default: the latest and the one before it)."""
+    try:
+        return await _svc(request, user, session).diff(
+            opportunity_id, from_raw_id=from_raw_id, to_raw_id=to_raw_id
+        )
+    except OpportunityNotFound as exc:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, f"{exc} not found") from exc

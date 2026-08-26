@@ -606,6 +606,66 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/opportunities/{opportunity_id}/sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Sources
+         * @description Every place this job was seen, with relation and authority (oldest first).
+         */
+        get: operations["list_sources_api_opportunities__opportunity_id__sources_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/opportunities/{opportunity_id}/snapshots": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List Snapshots
+         * @description Raw captures of this job in chronological order — one per meaningful content change.
+         */
+        get: operations["list_snapshots_api_opportunities__opportunity_id__snapshots_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/opportunities/{opportunity_id}/diff": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Diff
+         * @description What changed between two snapshots (default: the latest and the one before it).
+         */
+        get: operations["diff_api_opportunities__opportunity_id__diff_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/profiles/health": {
         parameters: {
             query?: never;
@@ -1628,6 +1688,12 @@ export interface components {
             /** Error */
             error?: string | null;
         };
+        /**
+         * AccessMode
+         * @description Access policy of a connector, enforced before any network call (ADR-015 §5).
+         * @enum {string}
+         */
+        AccessMode: "public" | "authenticated_user_api" | "manual_import" | "unsupported";
         /** AnalysisOut */
         AnalysisOut: {
             /**
@@ -2323,11 +2389,20 @@ export interface components {
             email_fallback: boolean;
             /** @default none */
             auth: components["schemas"]["AuthKind"];
+            /** Read Job */
+            read_job?: components["schemas"]["FetchStrategy"][];
+            /** @default manual_import */
+            access: components["schemas"]["AccessMode"];
             /**
              * Notes
              * @default
              */
             notes: string;
+            /**
+             * Read One
+             * @description The connector can read a single job behind a URL (``read_job`` non-empty).
+             */
+            readonly read_one: boolean;
             readonly read_profile: components["schemas"]["CapabilityLevel"];
             readonly read_opportunities: components["schemas"]["CapabilityLevel"];
             readonly read_applications: components["schemas"]["CapabilityLevel"];
@@ -3014,6 +3089,32 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /**
+         * FetchStrategy
+         * @description How one job behind a URL is acquired (ADR-015), best first per connector.
+         *
+         *     ``archive_today`` and ``search_recovery`` are reserved names: declared for the data model,
+         *     not implemented in this slice (``run_chain`` skips them with a diagnostic).
+         * @enum {string}
+         */
+        FetchStrategy: "api" | "public_html" | "jina" | "wayback" | "archive_today" | "search_recovery";
+        /** FieldChange */
+        FieldChange: {
+            /** Field */
+            field: string;
+            /** Before */
+            before?: unknown;
+            /** After */
+            after?: unknown;
+        };
+        /**
+         * FieldSource
+         * @description Where an observed value came from. Declaration order **is** the authority order (ADR-016 §3):
+         *     employer ATS/API > employer page > board structured source > board HTML > aggregator >
+         *     aggregator estimate > archive > search result > recruiter message > LLM inference > manual.
+         * @enum {string}
+         */
+        FieldSource: "employer_api" | "employer_page" | "board_api" | "board_page" | "aggregator" | "aggregator_estimate" | "archive" | "search_result" | "recruiter_message" | "llm_inference" | "manual";
         /** FindingOut */
         FindingOut: {
             /** Id */
@@ -3188,6 +3289,16 @@ export interface components {
             raw_payload?: {
                 [key: string]: unknown;
             } | null;
+            /**
+             * Platform
+             * @description vault Platform value the job was read from (identity with external_id)
+             */
+            platform?: string | null;
+            /**
+             * Canonical Url
+             * @description provider-canonical URL when the caller knows it; else normalize_url(url)
+             */
+            canonical_url?: string | null;
         };
         /** InterviewFrame */
         InterviewFrame: {
@@ -3714,10 +3825,29 @@ export interface components {
             created_at: string;
             score?: components["schemas"]["ScoreOut"] | null;
             analysis?: components["schemas"]["AnalysisOut"] | null;
+            /** Platform */
+            platform?: string | null;
+            /** External Id */
+            external_id?: string | null;
+            /** Canonical Url */
+            canonical_url?: string | null;
             /** Description Md */
             description_md?: string | null;
             /** Raw Text */
             raw_text?: string | null;
+        };
+        /** OpportunityDiffOut */
+        OpportunityDiffOut: {
+            /** From Raw Id */
+            from_raw_id: string | null;
+            /** To Raw Id */
+            to_raw_id: string | null;
+            /** From Captured At */
+            from_captured_at?: string | null;
+            /** To Captured At */
+            to_captured_at?: string | null;
+            /** Changes */
+            changes?: components["schemas"]["FieldChange"][];
         };
         /**
          * OpportunityExtraction
@@ -3819,6 +3949,107 @@ export interface components {
             created_at: string;
             score?: components["schemas"]["ScoreOut"] | null;
             analysis?: components["schemas"]["AnalysisOut"] | null;
+            /** Platform */
+            platform?: string | null;
+            /** External Id */
+            external_id?: string | null;
+            /** Canonical Url */
+            canonical_url?: string | null;
+        };
+        /** OpportunitySnapshotOut */
+        OpportunitySnapshotOut: {
+            /**
+             * Id
+             * Format: uuid
+             * @description the OpportunityRaw id
+             */
+            id: string;
+            /** Opportunity Id */
+            opportunity_id: string | null;
+            /**
+             * Captured At
+             * Format: date-time
+             */
+            captured_at: string;
+            /** Capture Method */
+            capture_method: string;
+            /** Source */
+            source: string;
+            /** Url */
+            url: string | null;
+            /** Strategy */
+            strategy: string | null;
+            /** Fingerprint */
+            fingerprint: string | null;
+            /** Content Hash */
+            content_hash: string;
+            /** Is Archive */
+            is_archive: boolean;
+            /** Archive Ts */
+            archive_ts: string | null;
+            /** Quality */
+            quality: number | null;
+            /** Fetched Url */
+            fetched_url: string | null;
+            /** Resolved Url */
+            resolved_url: string | null;
+            /** Extracted */
+            extracted?: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /** OpportunitySourceOut */
+        OpportunitySourceOut: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Opportunity Id
+             * Format: uuid
+             */
+            opportunity_id: string;
+            /** Platform */
+            platform: string;
+            /** External Id */
+            external_id: string | null;
+            /** Source Url */
+            source_url: string | null;
+            /** Canonical Url */
+            canonical_url: string | null;
+            /** Original Url */
+            original_url: string | null;
+            relation: components["schemas"]["SourceRelation"];
+            authority: components["schemas"]["FieldSource"];
+            /** Strategy */
+            strategy: string | null;
+            /** Raw Id */
+            raw_id: string | null;
+            /** Fetched At */
+            fetched_at: string | null;
+            /** Published At */
+            published_at: string | null;
+            /** Content Hash */
+            content_hash: string | null;
+            /** Is Archive */
+            is_archive: boolean;
+            /** Confidence */
+            confidence: number | null;
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /**
          * OpportunityStatus
@@ -4290,6 +4521,12 @@ export interface components {
          */
         Source: "linkedin" | "wellfound" | "upwork" | "toptal" | "hh" | "indeed" | "getmatch" | "rockethunt" | "justjoin" | "email" | "recruiter" | "direct" | "website" | "manual" | "clipboard" | "share" | "url";
         /**
+         * SourceRelation
+         * @description How an ``opportunity_source`` row relates to the canonical job (ADR-016 §2).
+         * @enum {string}
+         */
+        SourceRelation: "primary" | "aggregates" | "repost_of" | "same_as" | "mirror" | "historical_version_of" | "possible_duplicate";
+        /**
          * Stage
          * @enum {string}
          */
@@ -4455,7 +4692,7 @@ export interface components {
          * SyncKind
          * @enum {string}
          */
-        SyncKind: "profile" | "jobs" | "applications";
+        SyncKind: "profile" | "jobs" | "applications" | "job";
         /**
          * SyncMethod
          * @enum {string}
@@ -5894,6 +6131,102 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NegotiationOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_sources_api_opportunities__opportunity_id__sources_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpportunitySourceOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_snapshots_api_opportunities__opportunity_id__snapshots_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpportunitySnapshotOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    diff_api_opportunities__opportunity_id__diff_get: {
+        parameters: {
+            query?: {
+                from?: string | null;
+                to?: string | null;
+            };
+            header?: never;
+            path: {
+                opportunity_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OpportunityDiffOut"];
                 };
             };
             /** @description Validation Error */
