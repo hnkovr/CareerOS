@@ -1497,6 +1497,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/workflows/sweep": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Sweep
+         * @description Start a follow_up run for every due/overdue follow-up without an active run. Each run
+         *     stops at its gate; nothing is sent. The worker runs the same sweep daily.
+         */
+        post: operations["sweep_api_workflows_sweep_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/workflows/{run_id}": {
         parameters: {
             query?: never;
@@ -7561,6 +7582,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WorkflowRunOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    sweep_api_workflows_sweep_post: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WorkflowRunOut"][];
                 };
             };
             /** @description Validation Error */
