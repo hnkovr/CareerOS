@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 import uuid
-from collections.abc import Sequence
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -19,12 +20,20 @@ from careeros.core.config import Settings
 from careeros.core.logging import get_logger
 from careeros.modules.ai.models import AIRun
 from careeros.modules.ai.prompts import PromptRegistry, RenderedPrompt
-from careeros.modules.ai.provider import AIError, AIOutputInvalid, AIProvider, AIUnavailable
+from careeros.modules.ai.provider import (
+    AIError,
+    AIOutputInvalid,
+    AIProvider,
+    AIUnavailable,
+    extract_json_object,
+    schema_instructions,
+)
 from careeros.modules.ai.registry import ProviderRegistry
 from careeros.modules.ai.schemas import (
     AIRunOut,
     BundleOut,
     BundleRequest,
+    ChatMessage,
     DevPacketOut,
     DevPacketRequest,
     FeedbackIn,
@@ -32,6 +41,11 @@ from careeros.modules.ai.schemas import (
     GenerateResponse,
     PromptInfo,
     ProviderInfo,
+    ToolCall,
+    ToolChatRequest,
+    ToolSpec,
+    ToolStep,
+    Usage,
 )
 
 log = get_logger(__name__)
@@ -59,6 +73,22 @@ class RunResult[T: BaseModel]:
 
 def inputs_hash(payload: dict[str, Any]) -> str:
     return hashlib.sha256(json.dumps(payload, sort_keys=True, default=str).encode()).hexdigest()
+
+
+ToolExecutor = Callable[[ToolCall], Awaitable[str]]
+TOOL_MAX_STEPS = 8
+TOOL_RESULT_MAX_CHARS = 8000
+TOOL_PREVIEW_CHARS = 300
+
+
+@dataclass
+class ToolRunResult[T: BaseModel]:
+    data: T
+    response: GenerateResponse
+    run_id: uuid.UUID | None
+    steps: list[ToolStep]
+    turns: int
+    prompt: RenderedPrompt
 
 
 class AIService:
@@ -206,6 +236,175 @@ class AIService:
         if isinstance(last_exc, AIOutputInvalid):
             raise last_exc
         raise AIUnavailable(f"all providers failed: {last_exc or errors}")
+
+    async def with_tools[T: BaseModel](
+        self,
+        prompt_id: str,
+        inputs: dict[str, Any],
+        tools: Sequence[ToolSpec],
+        execute: ToolExecutor,
+        schema: type[T],
+        *,
+        provider: str | None = None,
+        model: str | None = None,
+        entity_type: str | None = None,
+        entity_id: str | None = None,
+        max_steps: int = TOOL_MAX_STEPS,
+        temperature: float = 0.2,
+        max_tokens: int = 4096,
+    ) -> ToolRunResult[T]:
+        """ADR-014 tool loop. Providers translate one turn at a time; this method owns the loop:
+        it executes tool calls through ``execute`` (errors go back to the model as results, never
+        raised), feeds results back, validates the final JSON answer against ``schema`` and writes
+        one ledger entry carrying the whole tool trace. A model that will not finish within
+        ``max_steps`` turns fails with ``AIOutputInvalid`` — no other provider is tried for that.
+        """
+        rendered = self.prompts.render(prompt_id, **inputs)
+        chain = self.providers.chain(provider or self._preferred(rendered))
+        last_exc: Exception | None = None
+        steps: list[ToolStep] = []
+        validation_retries = 0
+
+        async def run_with(prov: AIProvider) -> ToolRunResult[T]:
+            nonlocal steps, validation_retries
+            steps = []
+            validation_retries = 0
+            errors: list[str] = []
+            usage = Usage()
+            latency = 0
+            turns = 0
+            messages = [ChatMessage(role="user", content=rendered.user)]
+            while turns < max_steps:
+                req = ToolChatRequest(
+                    system=rendered.system,
+                    messages=messages,
+                    tools=list(tools),
+                    model=model,
+                    temperature=temperature,
+                    max_tokens=max_tokens,
+                )
+                turn = await prov.chat_with_tools(req)
+                turns += 1
+                usage.input_tokens += turn.response.usage.input_tokens
+                usage.output_tokens += turn.response.usage.output_tokens
+                latency += turn.response.latency_ms
+                if turn.tool_calls:
+                    messages.append(
+                        ChatMessage(
+                            role="assistant", content=turn.text or None, tool_calls=turn.tool_calls
+                        )
+                    )
+                    for call in turn.tool_calls:
+                        started = time.perf_counter()
+                        try:
+                            result = await execute(call)
+                            ok = True
+                        except Exception as exc:  # the model sees the error, the caller does not
+                            result = json.dumps({"error": f"{type(exc).__name__}: {exc}"})
+                            ok = False
+                            log.warning("ai.tool_failed", tool=call.name, error=str(exc))
+                        result = result[:TOOL_RESULT_MAX_CHARS]
+                        steps.append(
+                            ToolStep(
+                                step=len(steps) + 1,
+                                tool=call.name,
+                                arguments=call.arguments,
+                                ok=ok,
+                                result_preview=result[:TOOL_PREVIEW_CHARS],
+                                latency_ms=int((time.perf_counter() - started) * 1000),
+                            )
+                        )
+                        messages.append(
+                            ChatMessage(role="tool", content=result, tool_call_id=call.id)
+                        )
+                    continue
+                try:
+                    data = schema.model_validate(extract_json_object(turn.text))
+                except (ValueError, ValidationError) as exc:
+                    msg = f"{prov.name}: {str(exc).splitlines()[0][:200]}"
+                    errors.append(msg)
+                    if validation_retries >= self.settings.ai_structured_max_retries:
+                        raise AIOutputInvalid(msg, last_text=turn.text, errors=errors) from exc
+                    validation_retries += 1
+                    messages.append(ChatMessage(role="assistant", content=turn.text))
+                    messages.append(
+                        ChatMessage(
+                            role="user",
+                            content="Your previous answer was rejected by the validator:\n"
+                            + msg
+                            + "\nReturn a corrected JSON object only, no prose."
+                            + schema_instructions(schema),
+                        )
+                    )
+                    continue
+                resp = GenerateResponse(
+                    text=turn.text,
+                    provider=prov.name,
+                    model=turn.response.model,
+                    usage=usage,
+                    latency_ms=latency,
+                    stop_reason=turn.response.stop_reason,
+                )
+                run_id = await self._record(
+                    rendered,
+                    prov,
+                    resp,
+                    inputs,
+                    output={
+                        **data.model_dump(mode="json"),
+                        "tool_trace": [s.model_dump(mode="json") for s in steps],
+                    },
+                    valid=True,
+                    retries=validation_retries,
+                    entity_type=entity_type,
+                    entity_id=entity_id,
+                    schema=schema,
+                )
+                return ToolRunResult(
+                    data=data,
+                    response=resp,
+                    run_id=run_id,
+                    steps=steps,
+                    turns=turns,
+                    prompt=rendered,
+                )
+            raise AIOutputInvalid(
+                f"{prov.name}: no final answer after {max_steps} turns", errors=errors
+            )
+
+        for prov in chain:
+            try:
+                return await run_with(prov)
+            except AIOutputInvalid as exc:
+                last_exc = exc
+                break
+            except AIUnavailable as exc:
+                last_exc = exc
+                log.warning("ai.provider_unavailable", provider=prov.name, error=str(exc))
+            except AIError as exc:
+                last_exc = exc
+                log.warning("ai.provider_error", provider=prov.name, error=str(exc))
+            except Exception as exc:  # SDK / network errors
+                last_exc = exc
+                log.warning("ai.call_failed", provider=prov.name, error=str(exc))
+
+        await self._record(
+            rendered,
+            chain[0],
+            None,
+            inputs,
+            output={"tool_trace": [s.model_dump(mode="json") for s in steps]},
+            valid=False,
+            retries=validation_retries,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            schema=schema,
+            error=str(last_exc) if last_exc else "unknown",
+            status="failed",
+        )
+        if isinstance(last_exc, AIOutputInvalid):
+            raise last_exc
+        raise AIUnavailable(f"all providers failed: {last_exc}")
 
     async def generate(
         self,

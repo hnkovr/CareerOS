@@ -139,3 +139,53 @@ class DevPacketOut(BaseModel):
     path: str
     markdown: str
     run_id: uuid.UUID | None = None
+
+
+# ----------------------------------------------------------------------------- tool use (ADR-014)
+
+
+class ToolSpec(BaseModel):
+    name: str = Field(pattern=r"^[a-z][a-z0-9_]{1,63}$")
+    description: str
+    input_schema: dict[str, Any] = Field(description="JSON Schema of the arguments object")
+
+
+class ToolCall(BaseModel):
+    id: str
+    name: str
+    arguments: dict[str, Any] = Field(default_factory=dict)
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant", "tool"]
+    content: str | None = None
+    tool_calls: list[ToolCall] = Field(default_factory=list, description="assistant turns only")
+    tool_call_id: str | None = Field(default=None, description="tool results only")
+
+
+class ToolChatRequest(BaseModel):
+    system: str | None = None
+    messages: list[ChatMessage]
+    tools: list[ToolSpec]
+    model: str | None = None
+    temperature: float = 0.2
+    max_tokens: int = 4096
+
+
+class ToolTurn(BaseModel):
+    """One model turn in a tool loop: text and/or tool calls, plus the response envelope."""
+
+    text: str = ""
+    tool_calls: list[ToolCall] = Field(default_factory=list)
+    response: GenerateResponse
+
+
+class ToolStep(BaseModel):
+    """Ledger entry for one executed tool call."""
+
+    step: int
+    tool: str
+    arguments: dict[str, Any]
+    ok: bool
+    result_preview: str
+    latency_ms: int = 0

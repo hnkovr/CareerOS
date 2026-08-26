@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import { api, unwrap, type BundleOut } from "@/lib/api";
@@ -108,6 +109,9 @@ export default function OpportunityDetailPage() {
           <button className="btn" onClick={() => addToPipeline.mutate()} disabled={addToPipeline.isPending}>
             Add to pipeline
           </button>
+          <Link className="btn" href={`/assistant?opportunity=${id}`}>
+            Ask assistant
+          </Link>
           <button className="btn btn-primary" onClick={() => analyze.mutate()} disabled={analyze.isPending}>
             {analyze.isPending ? "Analyzing…" : "Analyze with AI"}
           </button>

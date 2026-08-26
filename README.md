@@ -47,7 +47,9 @@ can never be committed as if they were yours.
 AI features need a key in `config/.env.secrets` (`CAREEROS_ANTHROPIC_API_KEY` or
 `CAREEROS_OPENAI_API_KEY` + `CAREEROS_OPENAI_BASE_URL` for any OpenAI-compatible endpoint).
 Without a key the app still validates, renders CVs (non-AI mode), scores opportunities and
-produces prompt bundles for external chats.
+produces prompt bundles for external chats. With a key, the tool-using assistant (`/assistant`,
+`careeros assistant ask "…"`) answers questions from your vault and pipeline through read-only
+tools and cites the facts it used — it never applies, sends or edits ([ADR 014](docs/adr/014-assistants-tool-calling.md)).
 
 ## Commands
 

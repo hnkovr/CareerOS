@@ -422,3 +422,31 @@ async def upcoming_interviews(
         }
         for interview, title in rows
     ]
+
+
+async def application_summaries(
+    session: AsyncSession, *, opportunity_id: uuid.UUID | None = None, limit: int = 10
+) -> list[dict[str, Any]]:
+    """Service-level read for assistants: compact application rows, most recently updated first."""
+    stmt = (
+        select(Application, Opportunity.title, Opportunity.company_name)
+        .join(Opportunity, Application.opportunity_id == Opportunity.id)
+        .order_by(Application.updated_at.desc())
+        .limit(limit)
+    )
+    if opportunity_id is not None:
+        stmt = stmt.where(Application.opportunity_id == opportunity_id)
+    return [
+        {
+            "id": str(app.id),
+            "opportunity_id": str(app.opportunity_id),
+            "title": title,
+            "company": company,
+            "kind": app.kind,
+            "stage": app.stage,
+            "applied_at": app.applied_at,
+            "next_follow_up_at": app.next_follow_up_at,
+            "updated_at": app.updated_at,
+        }
+        for app, title, company in (await session.execute(stmt)).all()
+    ]

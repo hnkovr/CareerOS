@@ -10,11 +10,16 @@ from pydantic import BaseModel
 
 from careeros.modules.ai.provider import AIUnavailable, extract_json_object
 from careeros.modules.ai.schemas import (
+    ChatMessage,
     EmbeddingsResponse,
     GenerateRequest,
     GenerateResponse,
     ProviderInfo,
     StreamChunk,
+    ToolCall,
+    ToolChatRequest,
+    ToolSpec,
+    ToolTurn,
     Usage,
 )
 
@@ -107,4 +112,96 @@ class AnthropicProvider:
     async def embeddings(self, texts: list[str], model: str | None = None) -> EmbeddingsResponse:
         raise AIUnavailable(
             "anthropic: embeddings are not offered; configure an OpenAI-compatible provider"
+        )
+
+    # ------------------------------------------------------------------ tool use (ADR-014)
+    @staticmethod
+    def tool_messages(messages: list[ChatMessage]) -> list[dict[str, Any]]:
+        """Neutral conversation → Messages API turns. Tool results become ``tool_result`` blocks
+        in a user turn; consecutive results share one turn (roles must alternate)."""
+        out: list[dict[str, Any]] = []
+        for m in messages:
+            if m.role == "user":
+                out.append({"role": "user", "content": m.content or ""})
+            elif m.role == "assistant":
+                blocks: list[dict[str, Any]] = []
+                if m.content:
+                    blocks.append({"type": "text", "text": m.content})
+                for c in m.tool_calls:
+                    blocks.append(
+                        {"type": "tool_use", "id": c.id, "name": c.name, "input": c.arguments}
+                    )
+                out.append(
+                    {"role": "assistant", "content": blocks or [{"type": "text", "text": "…"}]}
+                )
+            else:
+                block = {
+                    "type": "tool_result",
+                    "tool_use_id": m.tool_call_id,
+                    "content": m.content or "",
+                }
+                last = out[-1] if out else None
+                if (
+                    last is not None
+                    and last["role"] == "user"
+                    and isinstance(last["content"], list)
+                    and last["content"]
+                    and last["content"][0].get("type") == "tool_result"
+                ):
+                    last["content"].append(block)
+                else:
+                    out.append({"role": "user", "content": [block]})
+        return out
+
+    @staticmethod
+    def tool_specs(tools: list[ToolSpec]) -> list[dict[str, Any]]:
+        return [
+            {"name": t.name, "description": t.description, "input_schema": t.input_schema}
+            for t in tools
+        ]
+
+    @staticmethod
+    def parse_tool_turn(msg: Any, *, provider: str, latency_ms: int) -> ToolTurn:
+        text_parts: list[str] = []
+        calls: list[ToolCall] = []
+        for block in msg.content:
+            kind = getattr(block, "type", "")
+            if kind == "text":
+                text_parts.append(block.text)
+            elif kind == "tool_use":
+                calls.append(
+                    ToolCall(id=block.id, name=block.name, arguments=dict(block.input or {}))
+                )
+        text = "".join(text_parts)
+        return ToolTurn(
+            text=text,
+            tool_calls=calls,
+            response=GenerateResponse(
+                text=text,
+                provider=provider,
+                model=msg.model,
+                usage=Usage(
+                    input_tokens=msg.usage.input_tokens, output_tokens=msg.usage.output_tokens
+                ),
+                latency_ms=latency_ms,
+                stop_reason=msg.stop_reason,
+            ),
+        )
+
+    async def chat_with_tools(self, req: ToolChatRequest) -> ToolTurn:
+        client = self._get_client()
+        model = req.model or self.default_model
+        kwargs: dict[str, Any] = {
+            "model": model,
+            "max_tokens": req.max_tokens,
+            "temperature": req.temperature,
+            "messages": self.tool_messages(req.messages),
+            "tools": self.tool_specs(req.tools),
+        }
+        if req.system:
+            kwargs["system"] = req.system
+        started = time.perf_counter()
+        msg = await client.messages.create(**kwargs)
+        return self.parse_tool_turn(
+            msg, provider=self.name, latency_ms=int((time.perf_counter() - started) * 1000)
         )

@@ -15,6 +15,8 @@ from careeros.modules.ai.schemas import (
     GenerateResponse,
     ProviderInfo,
     StreamChunk,
+    ToolChatRequest,
+    ToolTurn,
 )
 
 
@@ -60,6 +62,14 @@ class AIProvider(Protocol):
     async def embeddings(
         self, texts: list[str], model: str | None = None
     ) -> EmbeddingsResponse: ...
+
+    async def chat_with_tools(self, req: ToolChatRequest) -> ToolTurn:
+        """One model turn over a conversation with tools on offer (ADR-014).
+
+        Adapters only translate messages/tools to the wire format and back. The gateway owns the
+        loop: it executes tools, feeds results back and validates the final answer.
+        """
+        ...
 
 
 _FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)

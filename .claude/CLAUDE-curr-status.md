@@ -73,7 +73,9 @@ Two blockers found and fixed while wiring it up:
 - `f23b677` fix handed over by the platform lane: the search_documents migration now creates the pgvector extension (CI's bare Postgres had none) — CI fully green at 6ed6325 (contracts, python, web, docker)
 - P3 interview prep + negotiation intelligence + §31 AI-ranked comparison (`modules/opportunities/assistants.py`): deterministic frame → AI → provenance guard; Suggestion rows; opportunity page cards + list compare mode
 - invariant-7 tech debt paid for insights: notifications/brief read other modules only via service helpers; import-linter contract 5 enforces it
-- lane gates: 148 backend tests (excl. platform/deploy lanes), pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
+- ADR 014 assistants via tool-calling: tool-use in the provider port (3 adapters), `AIService.with_tools` loop + ledger trace, `modules/assistant` (6 read-only tools, answer guard), API/CLI/web `/assistant`; ADR numbers: 014 mine, 015/016 claimed by the platform lane
+- shared test infra: `tests/conftest.py` now registers `careeros.modules.bot.models` for create_all (another session's uncommitted per-test truncate fixture, GH #24, needs it — otherwise TRUNCATE hits a table that was never created)
+- lane gates: 309 backend tests (excl. platform/deploy lanes), pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
 - still blocked on user: P1.3 Gmail (Google OAuth app credentials); next candidates: §55 tool-calling assistants (ADR + go-ahead), §53 WAIT_FOR_APPROVAL workflows, notifications.py invariant-7 tech debt
 
 ### 2026-08-26 — gate hardening (session 3)

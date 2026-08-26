@@ -124,6 +124,24 @@ Endpoints: `POST /opportunities/{id}/interview-prep`, `POST /opportunities/{id}/
 `Suggestion` rows (`interview_prep`, `negotiation_plan`) so they enter the approval flow.
 Prompts: `career/prompts/{interview,negotiation}/`, `career/prompts/opportunity/opportunity_compare.yaml`.
 
+## Assistant (tool-calling, ADR-014)
+
+`AIService.with_tools(prompt_id, inputs, tools, execute, schema)` runs the loop: the provider's
+`chat_with_tools` returns one turn (text and/or tool calls), the gateway executes each call
+through `execute` (errors go back to the model as results, never raised), validates the final
+JSON against `schema` with the usual retry budget, and records **one** `ai_run` whose
+`output.tool_trace` lists every call. Adapters only translate wire formats (`tool_messages` /
+`tool_specs` / `parse_tool_turn`); `FakeProvider(tool_responder=…)` scripts turns in tests.
+
+`modules/assistant/tools.py` is the registry: a `Tool` = name + description + Pydantic argument
+model (its JSON Schema goes to the provider) + async handler over a module's **service layer**.
+Tools are read-only by construction; every result and every surfaced entity id lands in the
+`ToolContext`, so `guard_answer` can reject an answer that cites an unknown id or states a number
+the model never saw — the answer is withheld, the raw output stays in the ledger. To add a tool:
+argument model + handler + an entry in `TOOLS`; never query another module's ORM from a handler,
+and never make a tool that writes (proposals go through Suggestions). Surface:
+`POST /api/assistant/ask`, `GET /api/assistant/tools`, `careeros assistant ask "…"`, `/assistant`.
+
 ## Web app
 
 `apps/web` (Next.js 15, App Router, Tailwind 4, TanStack Query). All data access goes through the
