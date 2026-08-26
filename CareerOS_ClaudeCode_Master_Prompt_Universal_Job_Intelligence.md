@@ -598,32 +598,27 @@ Conceptual interface:
 
 ```python
 class JobProvider(Protocol):
-
     name: str
 
     def detect(
         self,
         source: SourceRef,
-    ) -> DetectionResult:
-        ...
+    ) -> DetectionResult: ...
 
     def canonicalize(
         self,
         source: SourceRef,
-    ) -> CanonicalSource:
-        ...
+    ) -> CanonicalSource: ...
 
     async def fetch(
         self,
         request: FetchRequest,
-    ) -> FetchResult:
-        ...
+    ) -> FetchResult: ...
 
     async def search(
         self,
         request: JobSearchQuery,
-    ) -> SearchResult:
-        ...
+    ) -> SearchResult: ...
 ```
 
 Do not require unsupported capabilities.
@@ -644,12 +639,10 @@ ProviderCapabilities(
     list_company_jobs=False,
     fetch_company=False,
     fetch_recruiter=False,
-
     native_api=True,
     public_html=True,
     browser_render=False,
     archive_recovery=True,
-
     authentication_mode="public",
 )
 ```
