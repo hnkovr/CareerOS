@@ -97,6 +97,48 @@ Two blockers found and fixed while wiring it up:
 - [#23](https://github.com/hnkovr/CareerOS/issues/23) filed: CI still repeats the lint commands
   inline instead of calling the Justfile recipe.
 
+### 2026-08-26 — one gate, isolated tests (session 4)
+- **[#24](https://github.com/hnkovr/CareerOS/issues/24) test isolation.** Tables are created once
+  per session and nothing cleaned rows, so every test's data stayed visible for the rest of the run
+  and assertions about *new* data silently tested earlier tests' leftovers — the opportunities dedup
+  assertion was green alone and red in a full run. An autouse fixture now truncates every table
+  except the seeded `user` after each `@pytest.mark.db` test. Truncate, not a wrapping transaction:
+  API tests drive the app, which opens its own sessions.
+- **[#23](https://github.com/hnkovr/CareerOS/issues/23) one gate.** `scripts/gate.sh lint|test` is
+  the single definition; `just lint`/`just test` and the CI `python` job both call it.
+  `tests/test_gate_config.py` asserts both callers still delegate and that CI has not gone back to
+  spelling the checks out itself.
+- `just infra-up` now names the fix ("start Docker Desktop") instead of printing a socket path — a
+  stopped daemon cost a full run this session.
+- Reflowed 9 over-long lines across the bot/assistant lanes' in-flight files (mechanical, no logic).
+
+## Telegram bot lane (2026-08-26)
+
+Chat surface complete except triage callbacks and the first deploy. Latest: `35898ba` —
+[#28](https://github.com/hnkovr/CareerOS/issues/28) `/queries`,
+[#29](https://github.com/hnkovr/CareerOS/issues/29) `/cv update`,
+[#30](https://github.com/hnkovr/CareerOS/issues/30) `/cv improve`.
+
+- **Shipped**: webhook + 3 gates, ownership claim, capture, `bot_preference`, `/services`, `/open`,
+  `/profiles`, `/urls` (quoted or by index), `/queries`, `/cv`, `/cv update`, `/cv improve`.
+  187 bot + 49 deploy tests.
+- **Read-only against the vault.** Generation writes only under `generated/` (invariant 3);
+  `/queries` projects the vault's positionings rather than storing anything.
+- **`/cv improve` regenerates its own baseline** instead of diffing against the last artifact —
+  otherwise the comparison answers a different question each run, and an AI-vs-AI diff when the
+  previous artifact was itself an AI pass. `CVService.improve` owns the two-pass logic.
+- **Bugs fixed alongside**: `/help` was invalid MarkdownV2 (`[services]`, `<query>` unescaped → 400);
+  no message was ever split at Telegram's 4096-char limit; the artifact read blocked the event loop.
+- **Open decision**: ADR-012 accepted aiogram 3, but nothing has needed it — the thin httpx client
+  covers webhook, gates, claim, capture, keyboards and uploads. Keep it, or adopt aiogram at
+  [#4](https://github.com/hnkovr/CareerOS/issues/4)?
+- **Remaining**: [#4](https://github.com/hnkovr/CareerOS/issues/4) triage callbacks ·
+  [#5](https://github.com/hnkovr/CareerOS/issues/5) `/facts` `/profile` ·
+  [#7](https://github.com/hnkovr/CareerOS/issues/7) notifications ·
+  [#9](https://github.com/hnkovr/CareerOS/issues/9) first Fly deploy ·
+  [#31](https://github.com/hnkovr/CareerOS/issues/31) mini-app.
+  Linear: MY-38 … MY-42 (project CareerOS).
+
 ## Known quirks
 - Concurrent sessions sharing `careeros_test` make db-marked tests flaky; this lane runs its
   gates against `careeros_test_d1` (see developer guide); the platform lane uses `careeros_test_d2`.
