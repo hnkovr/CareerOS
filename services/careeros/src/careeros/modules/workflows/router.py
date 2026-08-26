@@ -66,6 +66,18 @@ async def start(
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
 
 
+@router.post("/sweep", response_model=list[WorkflowRunOut])
+async def sweep(
+    request: Request, user: CurrentUserDep, session: SessionDep, limit: int = 20
+) -> list[WorkflowRunOut]:
+    """Start a follow_up run for every due/overdue follow-up without an active run. Each run
+    stops at its gate; nothing is sent. The worker runs the same sweep daily."""
+    try:
+        return await _svc(request, user, session).sweep_follow_ups(limit=limit)
+    except VaultInvalid as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+
+
 @router.get("/{run_id}", response_model=WorkflowRunOut)
 async def get_run(
     run_id: uuid.UUID, request: Request, user: CurrentUserDep, session: SessionDep

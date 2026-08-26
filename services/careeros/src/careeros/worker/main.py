@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from arq.connections import RedisSettings
+from arq.cron import cron
 
 from careeros.core.config import get_settings
 from careeros.core.logging import configure_logging, get_logger
@@ -21,6 +22,7 @@ def _import_task_modules() -> None:
         "careeros.modules.cv.tasks",
         "careeros.modules.opportunities.tasks",
         "careeros.modules.profiles.tasks",
+        "careeros.modules.workflows.tasks",
     ):
         try:
             importlib.import_module(mod)
@@ -33,6 +35,11 @@ async def startup(ctx: dict[str, Any]) -> None:
     log.info("worker.start")
 
 
+async def daily_follow_up_sweep(ctx: dict[str, Any]) -> Any:
+    """08:00 UTC: queue follow-up drafts for due applications (ADR-017); each waits for approval."""
+    return await run_task(ctx, "workflows.sweep_follow_ups", {})
+
+
 async def shutdown(ctx: dict[str, Any]) -> None:
     from careeros.core.db import dispose_engine
 
@@ -42,6 +49,7 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 
 class WorkerSettings:
     functions = [run_task]
+    cron_jobs = [cron(daily_follow_up_sweep, hour=8, minute=0)]
     on_startup = startup
     on_shutdown = shutdown
     redis_settings = RedisSettings.from_dsn(get_settings().redis_url)

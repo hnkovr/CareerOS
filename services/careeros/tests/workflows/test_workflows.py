@@ -232,3 +232,51 @@ async def test_follow_up_on_closed_application_fails_and_cancel(
 
     r = await db_client.get("/api/workflows/definitions")
     assert r.status_code == 200 and len(r.json()) == 2
+
+
+@pytest.mark.db
+async def test_sweep_starts_one_gated_run_per_due_follow_up(
+    db_client: AsyncClient, settings: Settings
+) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    _register_fake(settings)
+    apps: list[dict[str, Any]] = []
+    for n, jd in enumerate((JD_A + "\nRef: sweep-a", JD_B + "\nRef: sweep-b")):
+        r = await db_client.post("/api/opportunities/ingest", json={"source": "manual", "text": jd})
+        assert r.status_code == 201, r.text
+        r = await db_client.post(
+            "/api/pipeline/applications", json={"opportunity_id": r.json()["id"]}
+        )
+        assert r.status_code == 201, r.text
+        due = datetime.now(UTC) + timedelta(days=-1 if n == 0 else 3)
+        r = await db_client.patch(
+            f"/api/pipeline/applications/{r.json()['id']}",
+            json={"next_follow_up_at": due.isoformat(), "clear_follow_up": False},
+        )
+        assert r.status_code == 200, r.text
+        apps.append(r.json())
+
+    r = await db_client.post("/api/workflows/sweep")
+    assert r.status_code == 200, r.text
+    runs = r.json()
+    assert [x["target_ref"] for x in runs] == [apps[0]["id"]]  # only the overdue one
+    assert runs[0]["state"] == "waiting_approval" and runs[0]["kind"] == "follow_up"
+
+    r = await db_client.post("/api/workflows/sweep")
+    assert r.status_code == 200 and r.json() == []  # an active run blocks a second one
+
+    r = await db_client.post(
+        f"/api/workflows/{runs[0]['id']}/decision", json={"decision": "approve"}
+    )
+    assert r.status_code == 200 and r.json()["state"] == "completed"
+    r = await db_client.post("/api/workflows/sweep")
+    assert r.json() == []  # the approved follow-up rescheduled itself 5 days out
+
+    # the worker registers the same sweep as a task by importing the module (worker/main.py)
+    import importlib
+
+    from careeros.core.tasks import registry
+
+    importlib.import_module("careeros.modules.workflows.tasks")
+    assert "workflows.sweep_follow_ups" in registry.handlers

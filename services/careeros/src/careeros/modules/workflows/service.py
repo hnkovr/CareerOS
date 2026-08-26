@@ -17,6 +17,7 @@ from careeros.core.config import Settings
 from careeros.core.logging import get_logger
 from careeros.modules.ai.service import AIService
 from careeros.modules.ai.suggestions import IllegalTransition, get_suggestion, transition
+from careeros.modules.pipeline.service import due_follow_ups
 from careeros.modules.vault.service import Vault
 from careeros.modules.workflows.engine import (
     DEFINITIONS,
@@ -161,6 +162,38 @@ class WorkflowService:
         run.finished_at = _now()
         await self.session.commit()
         return self._out(run)
+
+    async def sweep_follow_ups(self, *, limit: int = 20) -> list[WorkflowRunOut]:
+        """Start a ``follow_up`` run for every application whose follow-up is due or overdue and
+        has no active run yet. Each run stops at its gate — the sweep never sends anything; it
+        only queues drafts for the owner's approval (the daily sweep from the brief)."""
+        due = await due_follow_ups(self.session, within_hours=0, limit=limit)
+        if not due:
+            return []
+        active = set(
+            (
+                await self.session.scalars(
+                    select(WorkflowRun.target_ref).where(
+                        WorkflowRun.kind == str(WorkflowKind.follow_up),
+                        WorkflowRun.state.in_(
+                            [str(RunState.running), str(RunState.waiting_approval)]
+                        ),
+                    )
+                )
+            ).all()
+        )
+        started: list[WorkflowRunOut] = []
+        for item in due:
+            aid = str(item["application_id"])
+            if aid in active:
+                continue
+            started.append(
+                await self.start(
+                    StartRequest(kind=WorkflowKind.follow_up, target_id=uuid.UUID(aid))
+                )
+            )
+        log.info("workflow.sweep", due=len(due), started=len(started))
+        return started
 
     # ------------------------------------------------------------------ engine
     async def _advance(self, run: WorkflowRun) -> WorkflowRunOut:

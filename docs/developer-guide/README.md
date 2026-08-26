@@ -157,7 +157,10 @@ moves the Suggestion and resumes or cancels. Raise `StepFailed` for a clean, non
 Steps call other modules' `service.py` only; nothing in a workflow may send mail, post to a
 platform or edit the vault. Adding a workflow: steps in `engine.py`, a `WorkflowKind`, an entry in
 `DEFINITIONS`, a test that proves rejection writes nothing. Surface: `/api/workflows/*`,
-`careeros workflows …`, `/workflows`. Gotcha: never mutate a step dict that is already stored in
+`careeros workflows …`, `/workflows`. The daily sweep (`POST /workflows/sweep`,
+`careeros workflows sweep`, worker cron 08:00 UTC via `workflows.sweep_follow_ups`) starts one
+`follow_up` run per due/overdue follow-up without an active run — each waits at its gate.
+Gotcha: never mutate a step dict that is already stored in
 `run.steps` — `_set_step` deep-copies and calls `flag_modified`, otherwise JSONB changes are lost.
 
 ## Web app

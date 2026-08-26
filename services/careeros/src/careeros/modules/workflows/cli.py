@@ -91,6 +91,15 @@ def show(run_id: uuid.UUID, as_json: bool = typer.Option(False, "--json")) -> No
     _print(_run(lambda svc: svc.get(run_id)), as_json=as_json)
 
 
+@app.command("sweep")
+def sweep(limit: int = 20) -> None:
+    """Queue follow-up drafts for every due/overdue follow-up (each waits for approval)."""
+    runs = _run(lambda svc: svc.sweep_follow_ups(limit=limit))
+    typer.echo(f"started {len(runs)} follow-up run(s)")
+    for r in runs:
+        _print(r)
+
+
 @app.command("approve")
 def approve(run_id: uuid.UUID, note: str | None = None) -> None:
     _print(_run(lambda svc: svc.decide(run_id, DecisionRequest(decision="approve", note=note))))

@@ -151,6 +151,10 @@ function WorkflowsInner() {
     queryKey: ["workflows"],
     queryFn: async () => unwrap(await api.GET("/api/workflows", { params: { query: { limit: 50 } } })),
   });
+  const sweep = useMutation({
+    mutationFn: async () => unwrap(await api.POST("/api/workflows/sweep", { params: { query: { limit: 20 } } })),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workflows"] }),
+  });
   const start = useMutation({
     mutationFn: async () =>
       unwrap(await api.POST("/api/workflows", { body: { kind, target_id: target, options: { use_ai: useAi } } })),
@@ -195,6 +199,13 @@ function WorkflowsInner() {
               {start.isPending ? "Running…" : "Start"}
             </button>
             {start.isError && <ErrorBox error={start.error} />}
+            <div className="border-t border-line pt-3">
+              <button className="btn" onClick={() => sweep.mutate()} disabled={sweep.isPending} title="one follow_up run per due/overdue follow-up; each waits for your approval">
+                {sweep.isPending ? "Sweeping…" : "Sweep due follow-ups"}
+              </button>
+              {sweep.isSuccess && <p className="pt-1 text-xs text-ink-dim">started {sweep.data.length} run(s)</p>}
+              {sweep.isError && <ErrorBox error={sweep.error} />}
+            </div>
           </div>
         </Card>
 

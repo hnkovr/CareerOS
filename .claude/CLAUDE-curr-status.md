@@ -77,7 +77,8 @@ Two blockers found and fixed while wiring it up:
 - shared test infra: `tests/conftest.py` now registers `careeros.modules.bot.models` for create_all (another session's uncommitted per-test truncate fixture, GH #24, needs it — otherwise TRUNCATE hits a table that was never created)
 - ADR 017 workflows with WAIT_FOR_APPROVAL: `modules/workflows` (engine, runner, `workflow_run` migration c4d8e2f1a9b3 off b1c7d0e9a4f2 — the platform lane chains after it), apply + follow_up workflows, API/CLI/web; the first write actions of the platform, provably gated (tests: reject writes nothing)
 - `start_workflow` assistant tool — the ADR-014 loop can now prepare an apply/follow-up run that waits at the ADR-017 gate
-- lane gates: 314 backend tests (excl. platform/deploy lanes); note: the platform lane's uncommitted `OpportunitySource` model broke every db test in the shared tree for a while (relation missing at TRUNCATE) — theirs to fix, reported, pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
+- daily follow-up sweep (API/CLI/worker cron) — the first scheduled workflow start; still approval-gated per run
+- lane gates: 315 backend tests (excl. platform/deploy lanes); note: the platform lane's uncommitted `OpportunitySource` model broke every db test in the shared tree for a while (relation missing at TRUNCATE) — theirs to fix, reported, pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
 - still blocked on user: P1.3 Gmail (Google OAuth app credentials); next candidates: §55 tool-calling assistants (ADR + go-ahead), §53 WAIT_FOR_APPROVAL workflows, notifications.py invariant-7 tech debt
 
 ### 2026-08-26 — gate hardening (session 3)
