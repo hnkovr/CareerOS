@@ -108,3 +108,84 @@ def chunk_message(text: str, limit: int = MESSAGE_LIMIT) -> list[str]:
     if current:
         chunks.append(current)
     return [c for c in chunks if c]
+
+
+#: How much of a uuid a chat handle shows. Eight hex characters is 4 billion values
+#: against a personal backlog of hundreds, and it fits a phone line next to a title.
+SHORT_ID_CHARS = 8
+
+#: Lists of strengths / gaps / risks are capped so one analysis stays one screen.
+ANALYSIS_ITEMS = 3
+
+
+def short_id(opportunity_id: object) -> str:
+    """The handle printed in listings and accepted back by `/opp`."""
+    return str(opportunity_id)[:SHORT_ID_CHARS]
+
+
+def matches_short_id(opportunity_id: object, wanted: str) -> bool:
+    """True when `wanted` is a prefix of this id, dashes optional.
+
+    Prefix matching rather than equality because the whole point of the short handle
+    is that nobody types 36 characters on a phone — but the full uuid must keep
+    working, so both spellings resolve.
+    """
+    full = str(opportunity_id).lower()
+    probe = wanted.strip().lower()
+    return bool(probe) and (full.startswith(probe) or full.replace("-", "").startswith(probe))
+
+
+def ranked_list(items: list[object]) -> str:
+    """Plain-text ranked listing, each row carrying a tappable `/opp_<handle>`.
+
+    Plain rather than MarkdownV2: the handle contains an underscore, which is a
+    MarkdownV2 italic marker, and Telegram renders a bare `/opp_ab12cd34` as a
+    tappable command only in unformatted text.
+    """
+    if not items:
+        return "nothing scored yet — forward me a job description"
+    lines: list[str] = []
+    for rank, item in enumerate(items, start=1):
+        score = getattr(getattr(item, "score", None), "overall", None)
+        company = getattr(item, "company_name", None)
+        title = str(getattr(item, "title", "") or "untitled")
+        head = f"{rank}. {score if score is not None else '--'} · {title}"
+        if company:
+            head += f" — {company}"
+        lines.append(head)
+        lines.append(f"   /opp_{short_id(getattr(item, 'id', ''))}")
+    return "\n".join(lines)
+
+
+def analysis_card(detail: object) -> str:
+    """MarkdownV2 rendering of one AI analysis of an already-computed score.
+
+    The verdict is AI's reading of the deterministic breakdown, never a second
+    opinion on the number (invariant 4), so the score is shown next to it rather
+    than replaced by it.
+    """
+    analysis = getattr(detail, "analysis", None)
+    if analysis is None:
+        return escape_md("no analysis came back — check the AI provider configuration")
+
+    title = escape_md(str(getattr(detail, "title", "") or "untitled"))
+    verdict = escape_md(str(getattr(analysis, "verdict", "?")).replace("_", " "))
+    score = getattr(getattr(detail, "score", None), "overall", None)
+    head = f"*{verdict}*" + (escape_md(f" · score {score}/100") if score is not None else "")
+
+    lines = [f"*{title}*", "", head, "", escape_md(str(getattr(analysis, "executive_summary", "")))]
+    for label, attr in (("strengths", "strengths"), ("gaps", "gaps"), ("risks", "risks")):
+        values = list(getattr(analysis, attr, None) or [])
+        if not values:
+            continue
+        lines.append("")
+        lines.append(f"*{escape_md(label)}*")
+        lines.extend(escape_md(f"· {v}") for v in values[:ANALYSIS_ITEMS])
+        if len(values) > ANALYSIS_ITEMS:
+            lines.append(escape_md(f"    … and {len(values) - ANALYSIS_ITEMS} more"))
+
+    next_action = getattr(analysis, "next_action", None)
+    if next_action:
+        lines.append("")
+        lines.append(escape_md(f"next: {next_action}"))
+    return "\n".join(lines)

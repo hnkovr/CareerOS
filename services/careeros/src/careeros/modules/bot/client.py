@@ -58,6 +58,15 @@ class TelegramClient:
     async def delete_webhook(self) -> None:
         await self._call("deleteWebhook", drop_pending_updates=False)
 
+    async def answer_callback_query(self, callback_id: str, text: str = "") -> None:
+        """Close the spinner on a tapped inline button.
+
+        Telegram requires this for every callback_query and refuses it once the query
+        has aged out, so it is sent BEFORE the work the button asked for. `text` shows
+        as a toast; keep it short — Telegram caps it at 200 characters.
+        """
+        await self._call("answerCallbackQuery", callback_query_id=callback_id, text=text[:200])
+
     async def send_message(self, chat_id: int, text: str, **kw: Any) -> dict:
         return await self._call("sendMessage", chat_id=chat_id, text=text, **kw)
 

@@ -15,6 +15,7 @@ import structlog
 
 from careeros.core.auth import SINGLE_USER_ID
 from careeros.core.config import Settings
+from careeros.modules.bot.callbacks import BadCallback, TriageCallback, parse_callback, toast_for
 from careeros.modules.bot.capture import looks_like_job_description
 from careeros.modules.bot.client import TelegramClient
 from careeros.modules.bot.cv import (
@@ -24,7 +25,14 @@ from careeros.modules.bot.cv import (
     resolve_variant,
     variants_card,
 )
-from careeros.modules.bot.formatting import chunk_message, escape_md, score_card
+from careeros.modules.bot.formatting import (
+    analysis_card,
+    chunk_message,
+    escape_md,
+    matches_short_id,
+    ranked_list,
+    score_card,
+)
 from careeros.modules.bot.keyboards import triage_keyboard
 from careeros.modules.bot.links import (
     build_profile_rows,
@@ -40,7 +48,7 @@ from careeros.modules.bot.platforms import (
 )
 from careeros.modules.bot.preferences import PreferenceStore
 from careeros.modules.bot.queries import build_queries, render_queries, resolve_index
-from careeros.modules.opportunities.enums import Source
+from careeros.modules.opportunities.enums import OpportunityStatus, Source
 
 log = structlog.get_logger(__name__)
 
@@ -55,6 +63,9 @@ HELP_BODY = (
     '/urls "<query>" [services] — a job search URL per platform\n'
     "/urls <n> [services] — the same, for query n from /queries\n"
     "/queries — job-search query texts derived from your positionings\n"
+    "/next — the next untriaged opportunity\n"
+    "/top [n] — the highest-scoring ones (default 5)\n"
+    "/opp <id> — one opportunity by the short handle /top prints\n"
     "/cv — list CV variants\n"
     "/cv update [meta|<variant>] — regenerate from the facts, no AI\n"
     "/cv improve [meta|<variant>] — let AI rewrite them, then show the diff\n"
@@ -62,6 +73,20 @@ HELP_BODY = (
     "/whoami — your chat id and whether you are the owner\n"
     "/help — this message"
 )
+
+
+#: Which stored status each triage button means. Skip is "ignored" rather than a
+#: delete: the dedup key must keep matching, or the same posting comes back as new.
+STATUS_BY_ACTION: dict[str, OpportunityStatus] = {
+    "skip": OpportunityStatus.ignored,
+    "save": OpportunityStatus.watching,
+}
+
+#: How many rows /top and /opp read before ranking or matching. The service orders
+#: by arrival, so ranking by score has to look wider than the number it prints.
+SCAN_LIMIT = 100
+
+DEFAULT_TOP = 5
 
 
 class BotService:
@@ -83,6 +108,13 @@ class BotService:
 
     async def handle(self, payload: dict) -> None:
         """Process one already-gated update. Never raises into the request path."""
+        callback = payload.get("callback_query")
+        if callback:
+            try:
+                await self._callback(callback)
+            except Exception:
+                log.exception("bot.callback_failed", data=callback.get("data"))
+            return
         message = payload.get("message") or payload.get("edited_message") or {}
         chat_id = (message.get("chat") or {}).get("id")
         text = (message.get("text") or "").strip()
@@ -95,6 +127,12 @@ class BotService:
 
     async def _dispatch(self, chat_id: int, text: str) -> None:
         command = text.split()[0].lower() if text.startswith("/") else None
+        # `/opp_ab12cd34`: Telegram renders that as a tappable command inside a plain
+        # listing, which is the only way to open an item on a phone without retyping a
+        # uuid. The underscore form and the spaced form mean the same thing.
+        if command and command.startswith("/opp_"):
+            await self._opp(chat_id, command[len("/opp_") :])
+            return
         if command in ("/start", "/help"):
             await self._client.send_message(
                 chat_id, "*CareerOS*\n\n" + escape_md(HELP_BODY), parse_mode="MarkdownV2"
@@ -117,6 +155,13 @@ class BotService:
             await self._queries(chat_id)
         elif command == "/cv":
             await self._cv(chat_id, text)
+        elif command == "/next":
+            await self._next(chat_id)
+        elif command == "/top":
+            await self._top(chat_id, text)
+        elif command == "/opp":
+            parts = text.split(maxsplit=1)
+            await self._opp(chat_id, parts[1] if len(parts) > 1 else "")
         elif looks_like_job_description(text):
             await self._capture(chat_id, text)
         else:
@@ -229,6 +274,111 @@ class BotService:
             await self._say(chat_id, f"cannot read the vault: {exc}")
             return
         await self._say_plain(chat_id, render_queries(queries))
+
+    # ── triage (#4) ───────────────────────────────────────────────────────────
+
+    async def _callback(self, callback: dict) -> None:
+        """One tapped inline button.
+
+        Answer FIRST, then work. Telegram spins the button until answerCallbackQuery
+        arrives and refuses the answer once the query ages out, so doing the AI work
+        first hangs the button on exactly the slow actions.
+        """
+        callback_id = str(callback.get("id") or "")
+        chat_id = ((callback.get("message") or {}).get("chat") or {}).get("id")
+        try:
+            action = parse_callback(callback.get("data"))
+        except BadCallback as exc:
+            # Rejected, not ignored (#4): a dropped tap is indistinguishable from a
+            # dead bot, and the button keeps spinning until the query expires.
+            log.warning("bot.callback_rejected", data=callback.get("data"))
+            await self._client.answer_callback_query(callback_id, str(exc))
+            return
+        await self._client.answer_callback_query(callback_id, toast_for(action.action))
+        if chat_id is None:
+            return
+        try:
+            await self._triage(chat_id, action)
+        except Exception as exc:
+            log.exception("bot.triage_failed", action=action.action)
+            await self._say(chat_id, f"{action.action} failed: {exc}")
+
+    async def _triage(self, chat_id: int, action: TriageCallback) -> None:
+        """Apply one button. Every transition goes through opportunities.service."""
+        oid = action.opportunity_id
+        status = STATUS_BY_ACTION.get(action.action)
+        if status is not None:
+            detail = await self._with_opportunities(lambda svc: svc.set_status(oid, status))
+            await self._say(chat_id, f"{detail.title} → {detail.status}")
+        elif action.action == "analyze":
+            detail = await self._with_opportunities(lambda svc: svc.analyze(oid))
+            await self._say_md(chat_id, analysis_card(detail))
+        elif action.action == "prompt":
+            # An external bundle is meant to be copied into another assistant, so it
+            # goes out unformatted — escaping would have to be undone by hand.
+            bundle = await self._with_opportunities(lambda svc: svc.external_prompt(oid, "generic"))
+            await self._say_plain(chat_id, bundle.text)
+
+    async def _next(self, chat_id: int) -> None:
+        """The oldest-arrived opportunity still sitting at `new`."""
+        items = await self._with_opportunities(
+            lambda svc: svc.list(status=OpportunityStatus.new, limit=1)
+        )
+        if not items:
+            await self._say(chat_id, "nothing untriaged — /top shows what is already scored")
+            return
+        await self._send_card(chat_id, items[0])
+
+    async def _top(self, chat_id: int, text: str) -> None:
+        """The highest-scoring opportunities, unscored ones counted rather than hidden."""
+        parts = text.split()
+        wanted = DEFAULT_TOP
+        if len(parts) > 1:
+            if not parts[1].isdigit() or int(parts[1]) < 1:
+                await self._say(chat_id, f"usage: /top [n] — n is a number, default {DEFAULT_TOP}")
+                return
+            wanted = int(parts[1])
+        items = await self._with_opportunities(lambda svc: svc.list(limit=SCAN_LIMIT))
+        scored = [i for i in items if getattr(i.score, "overall", None) is not None]
+        unscored = len(items) - len(scored)
+        scored.sort(key=lambda i: i.score.overall, reverse=True)
+        body = ranked_list(list(scored[:wanted]))
+        if unscored:
+            # Naming the omission: a ranked list that silently drops rows reads as
+            # "this is everything", which is a different and wrong claim.
+            body += f"\n\n{unscored} not ranked (no score yet)"
+        await self._say_plain(chat_id, body)
+
+    async def _opp(self, chat_id: int, wanted: str) -> None:
+        """One opportunity by short handle or full uuid."""
+        probe = wanted.strip()
+        if not probe:
+            await self._say(chat_id, "usage: /opp ab12cd34 — the handle /top prints")
+            return
+        items = await self._with_opportunities(lambda svc: svc.list(limit=SCAN_LIMIT))
+        matches = [i for i in items if matches_short_id(i.id, probe)]
+        if not matches:
+            await self._say(chat_id, f"no opportunity starts with {probe!r}")
+            return
+        if len(matches) > 1:
+            # Picking the first would act on an opportunity the owner did not choose.
+            await self._say(
+                chat_id, f"{len(matches)} opportunities start with {probe!r} — add more characters"
+            )
+            return
+        detail = await self._with_opportunities(lambda svc: svc.get(matches[0].id))
+        await self._send_card(chat_id, detail)
+        if getattr(detail, "url", None):
+            await self._say_plain(chat_id, str(detail.url))
+
+    async def _send_card(self, chat_id: int, item: Any) -> None:
+        """The triage card plus its buttons — the one place that pairs the two."""
+        await self._client.send_message(
+            chat_id,
+            score_card(item),
+            parse_mode="MarkdownV2",
+            reply_markup=triage_keyboard(str(item.id)),
+        )
 
     # ── CV (#29, #30) ─────────────────────────────────────────────────────────
 
@@ -346,6 +496,30 @@ class BotService:
             svc = PlatformService(self._settings, session=session, user_id=SINGLE_USER_ID)
             return await fn(svc)
 
+    async def _with_opportunities(self, fn):
+        """Run one OpportunityService operation in its own committed session.
+
+        Shared by capture and by every triage button, so the bot has exactly one way
+        to reach the opportunities module (invariant 7) rather than one per handler.
+        """
+        if self._sessionmaker is None:
+            raise RuntimeError("no database configured")
+        from careeros.modules.ai.deps import build_ai_service
+        from careeros.modules.opportunities.service import OpportunityService
+        from careeros.modules.vault.deps import get_vault
+
+        async with self._sessionmaker() as session:
+            svc = OpportunityService(
+                self._settings,
+                get_vault(self._settings),
+                build_ai_service(self._settings, session=session, user_id=SINGLE_USER_ID),
+                session=session,
+                user_id=SINGLE_USER_ID,
+            )
+            result = await fn(svc)
+            await session.commit()
+            return result
+
     async def _with_cv_service(self, fn):
         """Run one CVService operation in its own session (invariant 7)."""
         if self._sessionmaker is None:
@@ -396,31 +570,15 @@ class BotService:
             await self._say(chat_id, "Capture is unavailable: no database configured.")
             return
 
-        from careeros.modules.ai.deps import build_ai_service
         from careeros.modules.opportunities.schemas import IngestRequest
-        from careeros.modules.opportunities.service import OpportunityService
-        from careeros.modules.vault.deps import get_vault
 
-        async with self._sessionmaker() as session:
-            service = OpportunityService(
-                self._settings,
-                get_vault(self._settings),
-                build_ai_service(self._settings, session=session, user_id=SINGLE_USER_ID),
-                session=session,
-                user_id=SINGLE_USER_ID,
-            )
-            url = text.strip() if text.strip().startswith("http") else None
-            detail = await service.ingest(
+        url = text.strip() if text.strip().startswith("http") else None
+        detail = await self._with_opportunities(
+            lambda svc: svc.ingest(
                 IngestRequest(text=None if url else text, url=url, source=Source.manual)
             )
-            await session.commit()
-
-        await self._client.send_message(
-            chat_id,
-            score_card(detail),
-            parse_mode="MarkdownV2",
-            reply_markup=triage_keyboard(str(detail.id)),
         )
+        await self._send_card(chat_id, detail)
 
     def _status(self) -> str:
         s = self._settings

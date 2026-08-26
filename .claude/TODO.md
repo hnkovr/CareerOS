@@ -35,17 +35,18 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
     [#27](https://github.com/hnkovr/CareerOS/issues/27) `/urls`,
     [#28](https://github.com/hnkovr/CareerOS/issues/28) `/queries`,
     [#29](https://github.com/hnkovr/CareerOS/issues/29) `/cv update`,
-    [#30](https://github.com/hnkovr/CareerOS/issues/30) `/cv improve` — 187 bot + 49 deploy tests
-  - TODO: [#4](https://github.com/hnkovr/CareerOS/issues/4) triage callbacks ·
-    [#5](https://github.com/hnkovr/CareerOS/issues/5) fact search (`/facts`; `/cv` is done) ·
+    [#30](https://github.com/hnkovr/CareerOS/issues/30) `/cv improve`,
+    [#4](https://github.com/hnkovr/CareerOS/issues/4) triage commands + inline callbacks — 220 bot + 49 deploy tests
+  - TODO: [#5](https://github.com/hnkovr/CareerOS/issues/5) fact search (`/facts`; `/cv` is done) ·
     [#6](https://github.com/hnkovr/CareerOS/issues/6) ops cmds (partial: /status /whoami /help) ·
     [#7](https://github.com/hnkovr/CareerOS/issues/7) notifications ·
     [#9](https://github.com/hnkovr/CareerOS/issues/9) first deploy ·
     [#31](https://github.com/hnkovr/CareerOS/issues/31) web / Telegram mini-app (needs its own spec:
     `initData` signature auth is a different trust model and cannot reuse the bot's gates)
-  - OPEN QUESTION: aiogram 3 was the accepted library, but nothing has needed it — the thin
-    httpx client covers webhook, gates, claim, capture and keyboards. Keep the thin client or
-    adopt aiogram for #4?
+  - DECIDED 2026-08-26: **aiogram is not adopted**; the thin httpx client stays. The reversal is
+    recorded in the design spec under *Decision reversals* — that is where the library was
+    chosen. ADR 012 never named a library (it decides transport, gating and ownership), so the
+    earlier note here that "ADR-012 accepted aiogram" was wrong.
   - Also filed: [#24](https://github.com/hnkovr/CareerOS/issues/24) opportunities test isolation
 
 ## P2/P3 — lane careeros-d1 (2026-08-26)

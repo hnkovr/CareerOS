@@ -13,7 +13,8 @@ commands and the CV commands are implemented
 [#25](https://github.com/hnkovr/CareerOS/issues/25), [#26](https://github.com/hnkovr/CareerOS/issues/26),
 [#27](https://github.com/hnkovr/CareerOS/issues/27), [#28](https://github.com/hnkovr/CareerOS/issues/28),
 [#29](https://github.com/hnkovr/CareerOS/issues/29), [#30](https://github.com/hnkovr/CareerOS/issues/30)).
-Still open: triage callbacks ([#4](https://github.com/hnkovr/CareerOS/issues/4)), fact search
+Triage commands and inline callbacks are in
+([#4](https://github.com/hnkovr/CareerOS/issues/4)). Still open: fact search
 ([#5](https://github.com/hnkovr/CareerOS/issues/5)), notifications
 ([#7](https://github.com/hnkovr/CareerOS/issues/7)), the first deploy
 ([#9](https://github.com/hnkovr/CareerOS/issues/9)) and the mini-app
@@ -38,6 +39,9 @@ Everything below is owner-only; any other chat gets `200` and silence.
 | Command | What it does |
 |---|---|
 | *(forward a job description)* | parse → dedupe → score, answered with a triage card |
+| `/next` | the next opportunity still at `new`, as a card with its buttons |
+| `/top [n]` | the highest-scoring ones, default 5, each with a tappable `/opp_<handle>` |
+| `/opp <id>` | one opportunity by short handle or full uuid |
 | `/services` · `/services set hh,upwork` | the saved default platform set the other commands act on |
 | `/open <service>` | that platform's home page |
 | `/profiles [services]` | your own profile URL per platform |
@@ -48,6 +52,32 @@ Everything below is owner-only; any other chat gets `200` and silence.
 | `/cv update [meta\|<variant>]` | regenerate deterministically — no AI — and upload the file |
 | `/cv improve [meta\|<variant>]` | AI rewrites the selected facts; the diff and its provenance come back |
 | `/status` · `/whoami` · `/help` | environment, identity, usage |
+
+### The four buttons
+
+Every card carries `Skip` · `Save` · `Analyze` · `Prompt`, and each one is a state transition made
+through `opportunities.service` — the bot stores nothing of its own.
+
+| Button | Effect |
+|---|---|
+| `Skip` | status → `ignored`. Ignored rather than deleted, so the dedup key keeps matching and the same posting cannot return as new. |
+| `Save` | status → `watching` |
+| `Analyze` | AI reads the deterministic breakdown and answers with a verdict card; it never recomputes the score (invariant 4) |
+| `Prompt` | builds the external-assistant bundle and sends it unformatted, ready to copy |
+
+Two rules govern the callback path:
+
+* **Answer first, then work.** Telegram spins the button until `answerCallbackQuery` arrives and
+  refuses the answer once the query has aged out — so answering after a 20-second AI call hangs the
+  UI on exactly the actions that need feedback most. `callbacks.py` parses; `service.py` answers,
+  then acts.
+* **Unknown callback data is rejected, not ignored.** A payload this bot did not produce gets an
+  answer saying what was wrong. Silence would be indistinguishable from a dead bot, and the button
+  would spin until the query expired.
+
+`callback_data` is `o:<action>:<uuid>` — 44 bytes against Telegram's 64-byte cap, which is why the
+namespace is one character. `keyboards.py` raises rather than emitting a payload that would be
+silently dropped.
 
 Four properties are worth knowing because they are load-bearing rather than cosmetic:
 

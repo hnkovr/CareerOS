@@ -122,8 +122,8 @@ Chat surface complete except triage callbacks and the first deploy. Latest: `358
 [#30](https://github.com/hnkovr/CareerOS/issues/30) `/cv improve`.
 
 - **Shipped**: webhook + 3 gates, ownership claim, capture, `bot_preference`, `/services`, `/open`,
-  `/profiles`, `/urls` (quoted or by index), `/queries`, `/cv`, `/cv update`, `/cv improve`.
-  187 bot + 49 deploy tests.
+  `/profiles`, `/urls` (quoted or by index), `/queries`, `/cv`, `/cv update`, `/cv improve`,
+  `/next`, `/top [n]`, `/opp <handle>` and the four inline buttons. 220 bot + 49 deploy tests.
 - **Read-only against the vault.** Generation writes only under `generated/` (invariant 3);
   `/queries` projects the vault's positionings rather than storing anything.
 - **`/cv improve` regenerates its own baseline** instead of diffing against the last artifact —
@@ -131,11 +131,12 @@ Chat surface complete except triage callbacks and the first deploy. Latest: `358
   previous artifact was itself an AI pass. `CVService.improve` owns the two-pass logic.
 - **Bugs fixed alongside**: `/help` was invalid MarkdownV2 (`[services]`, `<query>` unescaped → 400);
   no message was ever split at Telegram's 4096-char limit; the artifact read blocked the event loop.
-- **Open decision**: ADR-012 accepted aiogram 3, but nothing has needed it — the thin httpx client
-  covers webhook, gates, claim, capture, keyboards and uploads. Keep it, or adopt aiogram at
-  [#4](https://github.com/hnkovr/CareerOS/issues/4)?
-- **Remaining**: [#4](https://github.com/hnkovr/CareerOS/issues/4) triage callbacks ·
-  [#5](https://github.com/hnkovr/CareerOS/issues/5) `/facts` `/profile` ·
+- **Decided 2026-08-26**: aiogram is not adopted; the thin httpx client stays. `callback_data`
+  parsing is ~40 hand-written lines with its own tests, against a dependency whose dispatcher
+  assumes it owns the update loop — which here belongs to FastAPI. Recorded in the design spec
+  under *Decision reversals*. Note the earlier claim that ADR-012 chose aiogram was wrong: the
+  ADR never names a library.
+- **Remaining**: [#5](https://github.com/hnkovr/CareerOS/issues/5) `/facts` `/profile` ·
   [#7](https://github.com/hnkovr/CareerOS/issues/7) notifications ·
   [#9](https://github.com/hnkovr/CareerOS/issues/9) first Fly deploy ·
   [#31](https://github.com/hnkovr/CareerOS/issues/31) mini-app.

@@ -23,7 +23,31 @@ logic: it renders what `opportunities`, `cv`, `vault` and `profiles` already com
 | 5 | No scraping / no auto-apply / no auto-send | Bot has zero outbound platform writes. Buttons mutate internal state only. |
 | 6 | No provider-specific AI outside `modules/ai/providers` | Bot calls `modules/ai` service; contains no provider code. |
 | 7 | Cross-module calls via `service.py` | `bot/service.py` is the only cross-module caller; handlers never touch another module's ORM. |
-| 8 | AI output invalid until Pydantic-validated | aiogram is Pydantic-based; AI results arrive already validated by `modules/ai`. |
+| 8 | AI output invalid until Pydantic-validated | AI results arrive already validated by `modules/ai`; the bot's own payloads are parsed into frozen dataclasses before use. |
+
+## Decision reversals
+
+Recorded here rather than silently applied, because a spec that no longer describes the code is
+worse than one that never existed.
+
+**2026-08-26 — aiogram 3 is not adopted; the thin httpx client stays.** The original design named
+aiogram 3 as the library. It was added, nothing imported it, and it was removed again. Everything
+built since — webhook route, three gates, ownership claim, capture, inline keyboards, document
+upload, and now callback routing — is a POST to one of eight Bot API methods and a `dict` in
+return; `client.py` is under a hundred lines and holds the token in exactly one place.
+
+What aiogram would add here is a dispatcher, a filter DSL and a state machine, all of which assume
+they own the process's update loop. This app's loop belongs to FastAPI: the route acknowledges
+Telegram, hands the payload to a background task, and the three gates run before any of that. That
+is the part worth being careful about, and it is ours either way.
+
+The concrete cost of the reversal is that `callback_data` parsing is hand-written rather than
+declared. That is ~40 lines in `callbacks.py` with its own tests, against a dependency whose main
+abstraction we would be bypassing. Revisit if the bot grows conversational state — multi-step
+dialogs are where a real FSM stops being ceremony.
+
+Superseded by nothing; this is the current position. ADR 012 never named a library — it decides
+transport, gating and ownership — so nothing there needs amending.
 
 ## A. Module layout
 
