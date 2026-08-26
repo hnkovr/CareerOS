@@ -11,6 +11,8 @@ class Source(StrEnum):
     hh = "hh"
     indeed = "indeed"
     getmatch = "getmatch"
+    rockethunt = "rockethunt"
+    justjoin = "justjoin"
     email = "email"
     recruiter = "recruiter"
     direct = "direct"
@@ -76,3 +78,37 @@ class CompensationPeriod(StrEnum):
     hour = "hour"
     day = "day"
     project = "project"
+
+
+class SourceRelation(StrEnum):
+    """How an ``opportunity_source`` row relates to the canonical job (ADR-016 §2)."""
+
+    primary = "primary"
+    aggregates = "aggregates"
+    repost_of = "repost_of"
+    same_as = "same_as"
+    mirror = "mirror"
+    historical_version_of = "historical_version_of"
+    possible_duplicate = "possible_duplicate"
+
+
+class FieldSource(StrEnum):
+    """Where an observed value came from. Declaration order **is** the authority order (ADR-016 §3):
+    employer ATS/API > employer page > board structured source > board HTML > aggregator >
+    aggregator estimate > archive > search result > recruiter message > LLM inference > manual."""
+
+    employer_api = "employer_api"
+    employer_page = "employer_page"
+    board_api = "board_api"
+    board_page = "board_page"
+    aggregator = "aggregator"
+    aggregator_estimate = "aggregator_estimate"
+    archive = "archive"
+    search_result = "search_result"
+    recruiter_message = "recruiter_message"
+    llm_inference = "llm_inference"
+    manual = "manual"
+
+
+#: Highest authority first; ``AUTHORITY_ORDER.index(src)`` ranks a source.
+AUTHORITY_ORDER: tuple[FieldSource, ...] = tuple(FieldSource)

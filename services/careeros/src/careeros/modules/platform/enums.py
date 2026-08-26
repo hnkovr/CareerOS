@@ -95,4 +95,7 @@ SOURCE_BY_PLATFORM: dict[Platform, Source] = {
     Platform.indeed: Source.indeed,
     Platform.getmatch: Source.getmatch,
     Platform.toptal: Source.toptal,
+    Platform.rockethunt: Source.rockethunt,
+    Platform.justjoin: Source.justjoin,
+    Platform.website: Source.website,
 }
