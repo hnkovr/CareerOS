@@ -9,12 +9,17 @@
 # So this prints a verdict, not a log: every blocker names the command that clears it.
 # Secret VALUES are never read, only presence and mode. Read-only — it changes nothing.
 #
-# Scalars: config/workstation.yml. Usage: scripts/workstation-preflight.sh [--quiet]
+# Scalars: config/workstation.yml. Usage: scripts/workstation-preflight.sh [--quiet] [--deep]
+#   --deep re-verifies the escrow against the Bitwarden vault (~80s, needs an unlocked session)
 # Exit: 0 clean · 3 blockers found · 2 not runnable (missing tooling)
 set -uo pipefail
 
-QUIET=0
-[[ ${1:-} == --quiet ]] && QUIET=1
+QUIET=0 DEEP=0
+for a in "$@"; do case "$a" in
+  --quiet) QUIET=1 ;;
+  --deep)  DEEP=1 ;;
+  -h|--help) grep '^#' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+esac; done
 
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null) || { echo "not a git repo" >&2; exit 2; }
 cd "$ROOT" || exit 2
@@ -106,20 +111,49 @@ done < <(yq -r '.workstation.secrets.slots[].name' "$CFG")
 say "  $have slot(s) filled · $missing blank (blank is legitimate — optional features stay off)"
 
 push_cmd=$(yq -r '.workstation.secrets.escrow_push' "$CFG")
-if [[ -f "$HOME/.ai/.env.secrets" ]]; then
-  mode=$(stat -f %Lp "$HOME/.ai/.env.secrets" 2>/dev/null)
-  [[ $mode == 600 ]] || block "~/.ai/.env.secrets is mode $mode — chmod 600 it before escrowing"
-  if command -v bw >/dev/null 2>&1; then
-    st=$(bw status 2>/dev/null | yq -r .status 2>/dev/null || echo unknown)
-    [[ $st == unlocked ]] \
-      && note "Bitwarden unlocked — escrow now: $push_cmd" \
-      || block "Bitwarden is '$st' — the new machine has no way to get the secrets: bw unlock, then: $push_cmd"
-  else
-    block "bw (Bitwarden CLI) absent — no escrow lane: brew install bitwarden-cli"
-  fi
+esc_file=$(eval echo "$(yq -r '.workstation.secrets.escrow_file' "$CFG")")
+marker=$(eval echo "$(yq -r '.workstation.secrets.escrow_marker' "$CFG")")
+
+if [[ ! -f $esc_file ]]; then
+  (( have > 0 )) && block "secrets are only in .env, not in ${esc_file/#$HOME/\~} — they will not migrate" \
+                 || note "no ${esc_file/#$HOME/\~} on this machine"
+elif ! command -v bw >/dev/null 2>&1; then
+  block "bw (Bitwarden CLI) absent — no escrow lane: brew install bitwarden-cli"
 else
-  (( have > 0 )) && block "secrets are only in .env, not in ~/.ai/.env.secrets — they will not migrate" \
-                 || note "no ~/.ai/.env.secrets on this machine"
+  mode=$(stat -f %Lp "$esc_file" 2>/dev/null)
+  [[ $mode == 600 ]] || block "${esc_file/#$HOME/\~} is mode $mode — chmod 600 it before escrowing"
+
+  # --deep asks the vault itself: does the item exist, and is it newer than the local file?
+  # Only the revision DATE ever leaves bw — never the notes. ~80s, hence opt-in.
+  if (( DEEP )); then
+    if [[ $(bw status 2>/dev/null | yq -r .status 2>/dev/null) == unlocked ]]; then
+      item="$(yq -r '.secrets_sync.bw.item_prefix' "$HOME/dmp-gateway/secrets-sync/manifest.yml" 2>/dev/null)ai-env-secrets"
+      rev=$(bw list items --search "$item" 2>/dev/null \
+            | ITEM="$item" yq -r '.[] | select(.name == env(ITEM)) | .revisionDate' | head -1)
+      if [[ -n $rev ]]; then
+        mkdir -p "$(dirname "$marker")" && printf '%s\n' "$rev" > "$marker"
+        say "  vault item verified — revised $rev"
+      else
+        block "no escrow item '$item' in the vault — nothing was ever pushed: $push_cmd"
+      fi
+    else
+      note "--deep needs an unlocked vault (bw unlock, export BW_SESSION) — using the cached marker"
+    fi
+  fi
+
+  # The fast path: is the escrow at least as new as the file it is supposed to hold?
+  if [[ -f $marker ]]; then
+    verified=$(cat "$marker")
+    v_epoch=$(date -u -j -f "%Y-%m-%dT%H:%M:%S" "${verified%%.*}" +%s 2>/dev/null || echo 0)
+    f_epoch=$(stat -f %m "$esc_file" 2>/dev/null || echo 0)
+    if (( f_epoch > v_epoch )); then
+      block "escrow is stale — ${esc_file/#$HOME/\~} changed after the last verified push ($verified): $push_cmd"
+    else
+      note "escrow verified $verified; the local file has not changed since"
+    fi
+  else
+    block "escrow never verified from this machine — run: $push_cmd, then scripts/workstation-preflight.sh --deep"
+  fi
 fi
 [[ -f config/.env.secrets ]] && note "config/.env.secrets exists (git-ignored) — it is rendered from the escrow, not copied"
 

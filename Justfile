@@ -125,6 +125,22 @@ platform-applications-dry PLATFORM *ARGS:
 platform-status *ARGS:
     @just _platform status {{ARGS}}
 
+# read ONE job behind a public URL you found (ADR-015): just platform-read https://…/jobs/123 --show-attempts
+platform-read URL *ARGS:
+    @just _platform read "{{URL}}" {{ARGS}}
+
+# same read, nothing persisted — prints the posting and every strategy attempt
+platform-read-dry URL *ARGS:
+    @just _platform read "{{URL}}" --dry-run {{ARGS}}
+
+# which provider owns a URL, and its canonical form (no network, no writes)
+platform-detect URL:
+    @just _platform detect "{{URL}}"
+
+# re-read a stored job by opportunity id: new snapshot when the posting changed
+platform-refresh ID *ARGS:
+    @just _platform refresh {{ID}} {{ARGS}}
+
 test-platform *ARGS:
     uv run pytest services/careeros/tests/platform {{ARGS}}
 
@@ -206,6 +222,10 @@ workstation_jf := "$HOME/.ai/skills/_scripts/session/workstation/Justfile"
 # is this machine safe to walk away from? read-only verdict (0 clean, 3 blocked)
 preflight *ARGS:
     @bash scripts/workstation-preflight.sh {{ARGS}}
+
+# re-verify the secrets escrow against the Bitwarden vault (~80s; needs an unlocked BW_SESSION)
+preflight-deep *ARGS:
+    @bash scripts/workstation-preflight.sh --deep {{ARGS}}
 
 # record THIS host into .ai/workstations/ so the other machine can see where it stopped
 workstation-state *ARGS:

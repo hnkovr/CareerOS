@@ -18,6 +18,7 @@ workstation:
     all: all
   just:
     preflight: preflight
+    preflight_deep: preflight-deep       # re-verify the escrow against the vault (slow, needs BW_SESSION)
     state: workstation-state             # record THIS host into state_dir
     gateway: workstation-gateway         # full handoff: sessions → clones → secrets → state
 
@@ -84,6 +85,10 @@ workstation:
     escrow_file: ~/.ai/.env.secrets          # mode 0600; the only copy that leaves this machine
     escrow_push: just -f ~/dmp-gateway/secrets-sync/Justfile push   # this machine → Bitwarden
     escrow_pull: just -f ~/dmp-gateway/secrets-sync/Justfile pull   # Bitwarden → the new machine
+    # `bw status` answers "is the vault unlocked right now", which is NOT the migration question.
+    # A verified escrow is cached here as a timestamp (no value), and the fast preflight compares it
+    # against the local file's mtime; `--deep` re-verifies against the vault (a ~80s network call).
+    escrow_marker: ~/.cache/careeros/secrets-escrow-verified
     slots:
       - {name: CAREEROS_API_TOKEN,            needed_for: bearer auth on the API, required: false}
       - {name: CAREEROS_ANTHROPIC_API_KEY,    needed_for: AI gateway (Anthropic), required: false}

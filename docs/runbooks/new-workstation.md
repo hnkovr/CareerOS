@@ -75,6 +75,13 @@ Every slot is named in [`config/workstation.yml`](../../config/workstation.yml)
 [`config/.env.secrets.demo.template`](../../config/.env.secrets.demo.template). Blank is a
 legitimate state — an unfilled slot just leaves that feature off.
 
+**How preflight judges the escrow.** "Is Bitwarden unlocked right now" is not the migration
+question — the question is whether the vault already holds the current file. So `just preflight-deep`
+asks the vault once (~80s, needs an unlocked session; only the item's revision *date* ever leaves
+`bw`, never the notes) and caches that date in `workstation.secrets.escrow_marker`. Every ordinary
+`make preflight` after that is instant: it compares the cached date against the local file's mtime
+and calls the escrow stale the moment the file is newer. Re-run the deep check after every push.
+
 ### 1d. Full handoff in one command
 
 ```bash
