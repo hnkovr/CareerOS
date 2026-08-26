@@ -17,7 +17,7 @@ Updated: 2026-08-26
 | P0.8 hardening (e2e smoke, docs, docker build) | in progress | — |
 
 Backend: 68 tests, ruff/pyright/import-linter clean. Web: tsc/eslint clean, vitest 5, prod build OK,
-e2e smoke (built web + real API + proxy) verified.
+e2e smoke (built web + real API + proxy) verified — now 22 checks incl. the workflow approval gate.
 
 ## P1 progress
 - P1.1 pipeline (Kanban, timeline, interviews, follow-ups, contacts) — `dffd335`
@@ -79,6 +79,8 @@ Two blockers found and fixed while wiring it up:
 - `start_workflow` assistant tool — the ADR-014 loop can now prepare an apply/follow-up run that waits at the ADR-017 gate
 - daily follow-up sweep (API/CLI/worker cron) — the first scheduled workflow start; still approval-gated per run
 - `/platforms` web page (#20, web-only): capabilities matrix (incl. read-one-by-URL and access mode), connect/refresh/disconnect, doctor, links, per-kind sync + sync-all, paste with dry-run preview, sync runs, application observations; iterates the capabilities endpoint so new connectors (website/rockethunt/justjoin) appear by themselves
+- e2e smoke extended (22 checks, all green against a live stack): assistant tools (exactly one write-capable), workflow definitions (both gates present), platform capabilities, and a write-path proof — start `apply`, assert it waits at the gate with a pending Suggestion and no application, reject, assert still no application
+- infra (2026-08-26 evening): the Docker daemon died twice; another lane stood up a Homebrew Postgres 17 on 5432 with its data dir in **/tmp/careeros-pg17**, so anything hitting localhost:5432 now talks to that server, not the compose volume. It had only `careeros` (empty) + `careeros_test_d2`; I migrated/seeded `careeros` and recreated `careeros_test_d1` there. Data in /tmp is purgeable — treat it as scratch, and `docker compose up -d postgres` restores the real volume once the daemon is healthy
 - lane gates: 359 backend tests at 061c01f (excl. platform/deploy lanes); note: the platform lane's uncommitted `OpportunitySource` model broke every db test in the shared tree for a while (relation missing at TRUNCATE) — theirs to fix, reported, pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
 - still blocked on user: P1.3 Gmail (Google OAuth app credentials); next candidates: §55 tool-calling assistants (ADR + go-ahead), §53 WAIT_FOR_APPROVAL workflows, notifications.py invariant-7 tech debt
 
