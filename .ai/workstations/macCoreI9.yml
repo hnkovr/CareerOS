@@ -1,0 +1,30 @@
+workstation: macCoreI9
+user: nk.myg
+os: Darwin 23.4.0
+updated: 2026-08-26T18:02:24Z
+repo:
+  path: /Users/nk.myg/gi/@hnkovr/CareerOS
+  origin: https://github.com/hnkovr/CareerOS.git
+  default_branch: main
+  branch: main
+  head: cd468e4
+  ahead: 0
+  behind: 0
+  dirty: 7
+  untracked: 6
+  worktrees:
+  unpushed_branches:
+sessions:  # from ~/.claude/history.jsonl, presence of work — resume ids only
+  - {id: c082649a-9918-4009-a587-2872a54c6c6b, last: "2026-08-26 21:59", clean_end: false, last_cmd: "/compact-safely"}
+  - {id: 0204e303-7731-4709-a4bd-75132fa820e5, last: "2026-08-26 21:58", clean_end: false, last_cmd: "/model"}
+  - {id: 3cd5937b-3e3b-408a-bbfd-2a1766dd112c, last: "2026-08-26 21:57", clean_end: false, last_cmd: "go on"}
+  - {id: d65a7aca-097b-4eea-ba49-6975c0845dc5, last: "2026-08-26 21:55", clean_end: false, last_cmd: "go on"}
+  - {id: 4036da63-f3fe-4ce5-b1a9-729abc03280b, last: "2026-08-26 19:42", clean_end: false, last_cmd: "/compact-safely"}
+secret_files:  # presence only — values never leave the machine except via bw / git-secret lanes
+  - {path: config/.env.secrets.demo.template, present: true, mode: "644"}
+tools:
+  python3: 3.13.0
+  uv: 0.10.3
+  just: 1.46.0
+  gh: 2.71.0
+  claude: 2.1.246

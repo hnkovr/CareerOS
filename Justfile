@@ -199,6 +199,22 @@ bot-token-ensure:
       --var $(yq -r '.careeros.tg_bot.deploy.token_secret' $HOME/.ai/skills/_settings/careeros.yml) \
       --bot $(yq -r '.careeros.tg_bot.handle' $HOME/.ai/skills/_settings/careeros.yml)
 
+# ---------- workstation handoff ----------
+
+workstation_jf := "$HOME/.ai/skills/_scripts/session/workstation/Justfile"
+
+# is this machine safe to walk away from? read-only verdict (0 clean, 3 blocked)
+preflight *ARGS:
+    @bash scripts/workstation-preflight.sh {{ARGS}}
+
+# record THIS host into .ai/workstations/ so the other machine can see where it stopped
+workstation-state *ARGS:
+    just -f {{workstation_jf}} state --repo "{{justfile_directory()}}" --apply {{ARGS}}
+
+# full handoff: sessions -> clones -> shared repos -> secrets -> state -> verify. DRY-RUN; --apply
+workstation-gateway *ARGS:
+    just -f {{workstation_jf}} gateway --repo "{{justfile_directory()}}" {{ARGS}}
+
 # ---------- deploy: fly ----------
 
 # preflight: CLI installed? authed? config present?

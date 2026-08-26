@@ -19,7 +19,7 @@ step = @printf '\n\033[1;34m▸ %s\033[0m\n' "$(1)"
 
 .PHONY: help env infra dev up down build test lint fmt typecheck check all run \
         validate-career generate-cv migrate seed openapi contracts platform-sync \
-        bot-check bot-webhook deploy deploy-dry clean distclean
+        bot-check bot-webhook deploy deploy-dry preflight clean distclean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) \
@@ -119,6 +119,12 @@ deploy-dry: ## Print every command the Fly deploy would run, execute none
 
 deploy: ## Deploy to Fly, then claim the webhook
 	@just deploy-fly
+
+# ---------------------------------------------------------------- workstation
+
+preflight: ## Is this machine safe to walk away from? (migration readiness, read-only)
+	$(call step,preflight — unpushed work · vault · secrets escrow · handoff state)
+	@bash scripts/workstation-preflight.sh
 
 # ---------------------------------------------------------------- aggregates
 

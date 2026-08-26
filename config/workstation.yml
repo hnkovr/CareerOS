@@ -1,0 +1,137 @@
+# CareerOS on another machine — the migration, as data.
+#
+# Consumed by scripts/workstation-preflight.sh, scripts/hooks/workstation-guard.sh and the
+# skill /careeros-workstation; asserted against the Makefile, the Justfile, the secrets
+# template and the runbook by tests/test_workstation_config.py.
+#
+# Behaviour SoT stays the code and docs/runbooks/new-workstation.md; this file only names
+# steps, slots, hazards and commands — never a secret value.
+
+workstation:
+  runbook: docs/runbooks/new-workstation.md
+  preflight: scripts/workstation-preflight.sh
+  guard: scripts/hooks/workstation-guard.sh
+  state_dir: .ai/workstations            # <host>.yml + README index, written by the global tool
+  make:
+    preflight: preflight                 # is this machine safe to walk away from?
+    check: check                         # the gate the new machine must pass
+    all: all
+  just:
+    preflight: preflight
+    state: workstation-state             # record THIS host into state_dir
+    gateway: workstation-gateway         # full handoff: sessions → clones → secrets → state
+
+  # Bootstrap on the NEW machine, in dependency order. `proves` is what a green step
+  # actually establishes — the reason not to skip it.
+  bootstrap:
+    - step: toolchain
+      run: brew install git just uv gh yq node docker && brew install --cask docker
+      proves: uv (python 3.13), just, gh, yq and a running docker daemon exist
+    - step: clone
+      run: gh repo clone hnkovr/CareerOS ~/gi/@hnkovr/CareerOS
+      proves: the repo is private — this fails loudly without `gh auth login` as hnkovr
+    - step: env
+      run: make env
+      proves: .env renders from config/*.template with every unfilled optional blank
+    - step: deps
+      run: uv sync && npm install
+      proves: the python venv and the web workspaces resolve from the committed lockfiles
+    - step: infra
+      run: make infra
+      proves: postgres (pgvector) + redis are up on 5432/6379
+    - step: secrets
+      run: just -f ~/dmp-gateway/secrets-sync/Justfile pull
+      proves: ~/.ai/.env.secrets is restored 0600 from Bitwarden; then re-run `make env`
+    - step: vault
+      run: uv run careeros vault init            # or clone CAREEROS_VAULT_GIT_URL into career/private
+      proves: career/private holds the canonical facts — without it the demo vault is used read-only
+    - step: gate
+      run: make check
+      proves: lint + the full test suite pass on this machine
+    - step: state
+      run: just workstation-state
+      proves: this host is recorded in .ai/workstations so the other machine can see it
+
+  # A clone brings the left column. Everything on the right has to be recreated, and each
+  # row names how — an unrecoverable row would be a migration blocker, not a footnote.
+  migrates:
+    - code, config/*.template, docs, tests, Makefile/Justfile
+    - career/{schemas,templates,prompts} and the demo vault career/examples/demo
+    - .claude/{CLAUDE.md,settings.json,agents} — the repo's agent guide and hooks
+    - .ai/workstations/*.yml and .ai/WiP/HANDOFF-*.md — the other machines' state
+    - alembic migrations (the database is rebuilt by `make migrate seed`, never copied)
+  does_not_migrate:
+    - item: .venv, node_modules, .pytest_cache
+      recreate: uv sync && npm install
+    - item: postgres + redis data volumes
+      recreate: make infra migrate seed          # demo data; real rows are re-synced
+    - item: .env, config/.env.secrets, config/.env.docker
+      recreate: secrets pull, then make env
+    - item: career/private (the canonical career vault — git-ignored on purpose)
+      recreate: clone CAREEROS_VAULT_GIT_URL, or `careeros vault init` for a fresh one
+    - item: the platform OAuth token file (CAREEROS_PLATFORM_TOKEN_FILE, mode 0600)
+      recreate: just platform-connect hh / upwork — re-run OAuth, never copy the file
+    - item: .claude/settings.local.json — per-machine tool permissions
+      recreate: granted again on first use
+    - item: Claude/Codex transcripts — `claude --resume <id>` only works on the owning host
+      recreate: read .ai/WiP/sessions-<host>.md and .claude/TODO.md, start a fresh session
+
+  # Slot names only. Every name here must exist in config/.env.secrets.demo.template and
+  # vice-versa — the test asserts it, so a new secret cannot quietly miss the migration.
+  secrets:
+    template: config/.env.secrets.demo.template
+    local_file: config/.env.secrets          # git-ignored; `make env` folds it into .env
+    escrow_file: ~/.ai/.env.secrets          # mode 0600; the only copy that leaves this machine
+    escrow_push: just -f ~/dmp-gateway/secrets-sync/Justfile push   # this machine → Bitwarden
+    escrow_pull: just -f ~/dmp-gateway/secrets-sync/Justfile pull   # Bitwarden → the new machine
+    slots:
+      - {name: CAREEROS_API_TOKEN,            needed_for: bearer auth on the API, required: false}
+      - {name: CAREEROS_ANTHROPIC_API_KEY,    needed_for: AI gateway (Anthropic), required: false}
+      - {name: CAREEROS_OPENAI_API_KEY,       needed_for: AI gateway (OpenAI-compatible), required: false}
+      - {name: POSTGRES_PASSWORD,             needed_for: compose postgres, required: false}
+      - {name: CAREEROS_TG_BOT_TOKEN,         needed_for: Telegram bot, required: false}
+      - {name: CAREEROS_TG_WEBHOOK_SECRET,    needed_for: Telegram webhook signature, required: false}
+      - {name: CAREEROS_TG_OWNER_CHAT_ID,     needed_for: the only chat the bot serves, required: false}
+      - {name: CAREEROS_VAULT_GIT_URL,        needed_for: private vault remote (carries a token), required: false}
+      - {name: CAREEROS_HH_CLIENT_ID,         needed_for: hh.ru OAuth app, required: false}
+      - {name: CAREEROS_HH_CLIENT_SECRET,     needed_for: hh.ru OAuth app, required: false}
+      - {name: CAREEROS_HH_ACCESS_TOKEN,      needed_for: hh.ru pinned token (containers), required: false}
+      - {name: CAREEROS_HH_REFRESH_TOKEN,     needed_for: hh.ru pinned token (containers), required: false}
+      - {name: CAREEROS_UPWORK_CLIENT_ID,     needed_for: Upwork OAuth app, required: false}
+      - {name: CAREEROS_UPWORK_CLIENT_SECRET, needed_for: Upwork OAuth app, required: false}
+      - {name: CAREEROS_UPWORK_ACCESS_TOKEN,  needed_for: Upwork pinned token (containers), required: false}
+      - {name: CAREEROS_UPWORK_REFRESH_TOKEN, needed_for: Upwork pinned token (containers), required: false}
+      - {name: CAREEROS_JINA_API_KEY,         needed_for: Jina Reader fallback (ADR-015), required: false}
+
+  # Failures that only exist because a SECOND machine now runs this repo. Each one has
+  # already been designed against somewhere in the code; the migration is where it bites.
+  hazards:
+    - id: telegram-webhook-theft
+      why: >-
+        A webhook is exclusive — one bot, one host. The new machine starting the bot with
+        CAREEROS_TG_PUBLIC_URL set would claim @careeros_hnkovr_bot away from production and
+        silently swallow the owner's updates.
+      avoid: >-
+        Leave CAREEROS_TG_PUBLIC_URL unset on the new machine (bot health reads `off`), and
+        ask Telegram who owns it before any deploy.
+      proof: just bot-webhook-info
+    - id: shared-test-database
+      why: >-
+        The db-marked tests drop_all/create_all their database, so two machines (or two
+        sessions) pointed at careeros_test truncate each other mid-run.
+      avoid: give the new machine its own test database, never the shared one.
+      proof: careeros_test_m1
+    - id: vault-is-the-source-of-truth
+      why: >-
+        career/private is git-ignored, so a clone arrives without the canonical facts and
+        CareerOS silently falls back to the bundled demo vault, opened read-only.
+      avoid: >-
+        push the vault to its own private remote and record it in CAREEROS_VAULT_GIT_URL
+        BEFORE leaving the old machine.
+      proof: make validate-career
+    - id: platform-tokens-are-machine-local
+      why: >-
+        OAuth tokens live in a 0600 file outside git by design (ADR-013); copying it between
+        machines spreads a credential that a re-auth would mint for free.
+      avoid: re-authorise on the new machine instead of copying the token file.
+      proof: just platform-connect

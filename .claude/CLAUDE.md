@@ -29,6 +29,13 @@ Read first: `docs/architecture/01-architecture-proposal.md`, `docs/adr/README.md
 `make dev` · `make check` (gate: lint+test) · `make all` (whole local pipeline, ordered) · `make validate-career` · `make generate-cv` · `make seed` — `make help` lists every target, `Justfile` has the granular recipes.
 The vault default: `CAREEROS_VAULT_PATH` when initialised, else the bundled demo vault, opened **read-only** (`Vault.read_only` → `VaultReadOnly` on write).
 `config/gate.yml` describes the `all` pipeline as data (step order, what each proves, how each fails, bot exit codes); `tests/test_gate_config.py` asserts it equals the Makefile. Skill `/careeros-gate` + agent `careeros-gate` run and triage it.
+`make preflight` answers "is this machine safe to walk away from?" (unpushed work · vault · secrets
+escrow · handoff state); `just workstation-state` records this host into `.ai/workstations/` and
+`just workstation-gateway` runs the full handoff. Bootstrapping another machine:
+`docs/runbooks/new-workstation.md`, scalars in `config/workstation.yml`, parity asserted by
+`tests/test_workstation_config.py`. **The vault is the migration** — `career/private` is git-ignored,
+so a fresh clone silently falls back to the demo vault; and a second machine that starts the bot with
+`CAREEROS_TG_PUBLIC_URL` set steals the webhook from production.
 Blank env vars read as **unset** (`Settings._blank_means_unset`) — the templates render every unfilled optional blank, and `int | None` cannot parse `""`.
 
 ## Conventions

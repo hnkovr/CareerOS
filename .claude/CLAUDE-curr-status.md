@@ -159,3 +159,26 @@ Chat surface complete except triage callbacks and the first deploy. Latest: `358
 `make env && docker compose up -d postgres redis && uv sync --all-groups && just migrate && just seed`
 API: `uv run careeros-api` · web: `npm install && npm run dev` · all-in-docker: `make up`
 Gates: `uv run pytest` · `just lint` · `npm run -w apps/web test` · smoke: `scripts/e2e-smoke.sh`
+
+## Workstation migration lane — tooling landed, migration not yet run (2026-08-26)
+Target: a second machine (MacBook M1). It was **not reachable** this session, so the lane was
+built and asserted, not executed. Epic [#44](https://github.com/hnkovr/CareerOS/issues/44).
+
+- `config/workstation.yml` is the SSoT (bootstrap order with `proves`, migrates / does-not-migrate
+  with `recreate`, secret slot names, hazards with a `proof` command). `tests/test_workstation_config.py`
+  asserts it equals `docs/runbooks/new-workstation.md`, the Makefile, the Justfile and
+  `config/.env.secrets.demo.template` — 9 assertions, green.
+- `make preflight` · `just workstation-state` · `just workstation-gateway`;
+  `scripts/hooks/workstation-guard.sh` is registered in `.claude/settings.json` SessionStart.
+- Skill `/careeros-workstation`, agent `careeros-workstation`, registered in
+  `~/.ai/skills/_settings/careeros.yml#careeros.workstation` and
+  `~/.ai/config/locations.yml#projects.careeros.workstation_settings`.
+
+**Current preflight verdict: blocked.** The vault has no remote ([#46](https://github.com/hnkovr/CareerOS/issues/46)), Bitwarden is
+locked so nothing is escrowed ([#47](https://github.com/hnkovr/CareerOS/issues/47)), and the tree had uncommitted work. Bootstrapping
+and verifying on the M1 is [#48](https://github.com/hnkovr/CareerOS/issues/48) — until it runs, every `proves` in the data is a claim.
+
+The trap worth remembering: **the vault is the migration.** `career/private` is git-ignored, so a
+clone silently falls back to the bundled demo vault, read-only — it does not error, it just has no
+facts. Second trap: a machine that starts the bot with `CAREEROS_TG_PUBLIC_URL` set steals
+`@careeros_hnkovr_bot` from production.

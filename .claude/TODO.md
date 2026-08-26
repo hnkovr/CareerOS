@@ -99,6 +99,23 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] test isolation ([#24](https://github.com/hnkovr/CareerOS/issues/24)) — autouse truncate after
   each db test; the opportunities dedup assertion is no longer order-dependent
 
+## Session 2026-08-26 — workstation migration lane ([#44](https://github.com/hnkovr/CareerOS/issues/44))
+The MacBook M1 is not reachable yet, so this pass built the lane rather than running it.
+- [x] `config/workstation.yml` — the migration as data: bootstrap order (`run` + `proves`), what
+  migrates, what does not and how each row comes back, secret slot names, hazards with a `proof`
+  command; `tests/test_workstation_config.py` asserts it equals the runbook, Makefile, Justfile
+  and secrets template ([#45](https://github.com/hnkovr/CareerOS/issues/45))
+- [x] `make preflight` (`scripts/workstation-preflight.sh`) — unpushed work · stashes · vault ·
+  secrets escrow · handoff state; exit 0 clean / 3 blocked, every blocker names its fix
+- [x] `scripts/hooks/workstation-guard.sh` (SessionStart) + `.ai/workstations/<host>.yml` via
+  `just workstation-state`; full handoff `just workstation-gateway`
+- [x] `docs/runbooks/new-workstation.md`, skill `/careeros-workstation`, agent `careeros-workstation`
+- [ ] vault needs its own private remote — `CAREEROS_VAULT_GIT_URL` ([#46](https://github.com/hnkovr/CareerOS/issues/46)) **the vault IS
+  the migration**: a clone without it falls back to the demo vault, read-only, with no error
+- [ ] secrets escrow to Bitwarden ([#47](https://github.com/hnkovr/CareerOS/issues/47)) — blocked on `bw unlock` at the keyboard
+- [ ] bootstrap + verify end-to-end on the M1 ([#48](https://github.com/hnkovr/CareerOS/issues/48)) — every `proves` is a claim until then
+- [ ] `preflight --json` for the gateway ([#49](https://github.com/hnkovr/CareerOS/issues/49)) — backlog
+
 ## Parked
 - `packages/ui` extraction (when Tauri lands)
 - Embedding model choice for P1 semantic search

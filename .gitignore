@@ -39,7 +39,10 @@ coverage/
 !.vscode/settings.json
 .stash/
 .AI/*
+# On a case-insensitive filesystem `.AI/*` also matches `.ai/*`, which would silently drop the
+# cross-machine handoff files. Both are re-included on purpose (see docs/runbooks/new-workstation.md).
 !.AI/WiP/
+!.ai/workstations/
 *.log
 
 # --- generated artifacts that are NOT committed (generated schemas ARE committed) ---
