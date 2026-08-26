@@ -355,7 +355,7 @@ class PlatformSyncService:
         platforms = [platform] if platform else self.platform.registry.platforms()
         for p in platforms:
             caps = self.platform.connector(p).capabilities
-            for kind in SyncKind:
+            for kind in (SyncKind.profile, SyncKind.jobs, SyncKind.applications):
                 available = caps.methods(kind)
                 connected = self.platform.tokens(p) is not None
                 public_jobs = (

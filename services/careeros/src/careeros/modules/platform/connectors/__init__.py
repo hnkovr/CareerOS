@@ -8,4 +8,5 @@ CONNECTOR_MODULES: tuple[str, ...] = (
     "indeed",
     "getmatch",
     "toptal",
+    "generic",  # Platform.website — the fallback provider, always last
 )

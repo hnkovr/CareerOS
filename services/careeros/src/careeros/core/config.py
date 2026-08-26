@@ -101,6 +101,32 @@ class Settings(BaseSettings):
     upwork_access_token: SecretStr | None = None
     upwork_refresh_token: SecretStr | None = None
 
+    # --- job reads by URL (ADR-015): budgets, strategy kill switches, cache, third parties ---
+    job_fetch_http_timeout_s: float = 20.0
+    job_fetch_max_attempts: int = 4
+    job_fetch_max_total_s: float = 30.0
+    job_fetch_max_archive_calls: int = 2
+    job_fetch_max_search_calls: int = 0
+    job_fetch_enable_public_html: bool = True
+    job_fetch_enable_jina: bool = True
+    job_fetch_enable_wayback: bool = True
+    job_fetch_cache_ttl_s: int = 3600
+    job_fetch_negative_cache_ttl_s: int = 300
+    #: None → raw artifacts are kept indefinitely (the sync layer prunes older ones otherwise).
+    job_fetch_raw_retention_days: int | None = None
+    jina_api_key: SecretStr | None = None
+    jina_reader_base: str = "https://r.jina.ai"
+    wayback_cdx_base: str = "https://web.archive.org"
+    # per-provider kill switches (read by ``fetch.strategies.strategy_enabled`` via getattr)
+    rockethunt_enable_public_html: bool = True
+    justjoin_enable_public_api: bool = True
+    # scheduled refresh of stored opportunities (phase H) — off unless the owner opts in
+    job_refresh_enabled: bool = False
+    job_refresh_interval_h: int = 24
+    job_refresh_max_per_run: int = 20
+    #: ``pytest -m live`` runs only when this is set — those tests touch real sites.
+    live_tests: bool = False
+
     # --- telegram bot (ADR-012) ---
     tg_enabled: bool = False
     tg_bot_token: SecretStr | None = None

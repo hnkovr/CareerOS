@@ -5,8 +5,19 @@ from __future__ import annotations
 import importlib
 from collections.abc import Iterable
 
-from careeros.modules.platform.base import METHOD_IMPL, BaseConnector, PlatformError
-from careeros.modules.platform.enums import PLATFORMS, SyncKind
+from careeros.modules.platform.base import (
+    METHOD_IMPL,
+    READ_IMPL,
+    READ_REQUIRED,
+    BaseConnector,
+    PlatformError,
+)
+from careeros.modules.platform.enums import (
+    PLATFORMS,
+    PUBLIC_READ_STRATEGIES,
+    AccessMode,
+    SyncKind,
+)
 from careeros.modules.platform.schemas import Capabilities
 from careeros.modules.vault.enums import Platform
 
@@ -58,7 +69,12 @@ class PlatformRegistry:
         return [c.capabilities for c in self.all()]
 
     def verify(self) -> list[str]:
-        """Declared capability ⇒ overridden method; platform fields consistent. Empty = OK."""
+        """Declared capability ⇒ overridden method; platform fields consistent. Empty = OK.
+
+        Job reads (ADR-015): ``read_job`` declared ⇒ ``detect`` (or ``detect_hosts``) and
+        ``extract_job`` overridden; ``api`` ⇒ ``fetch_job_api``; a public-page strategy ⇒
+        ``access == public``.
+        """
         problems: list[str] = []
         for c in self.all():
             if c.capabilities.platform != c.platform:
@@ -66,11 +82,33 @@ class PlatformRegistry:
             for kind in SyncKind:
                 for method in c.capabilities.methods(kind):
                     attr = METHOD_IMPL[(kind, method)]
-                    if getattr(type(c), attr) is getattr(BaseConnector, attr):
+                    if not _overridden(c, attr):
                         problems.append(f"{c.platform}: declares {kind}/{method} but no {attr}()")
             if c.capabilities.auth != "none" and c.capabilities.official_api is False:
                 problems.append(f"{c.platform}: auth={c.capabilities.auth} but official_api=False")
+            read_job = c.capabilities.read_job
+            if read_job:
+                for attr in READ_REQUIRED:
+                    if attr == "detect" and c.detect_hosts:
+                        continue
+                    if not _overridden(c, attr):
+                        problems.append(f"{c.platform}: declares read_job but no {attr}()")
+                for strategy, attr in READ_IMPL.items():
+                    if strategy in read_job and not _overridden(c, attr):
+                        problems.append(
+                            f"{c.platform}: declares read_job/{strategy} but no {attr}()"
+                        )
+                public = [s for s in read_job if s in PUBLIC_READ_STRATEGIES]
+                if public and c.capabilities.access != AccessMode.public:
+                    problems.append(
+                        f"{c.platform}: read_job has {', '.join(str(s) for s in public)} "
+                        f"but access={c.capabilities.access} (must be public)"
+                    )
         return problems
+
+
+def _overridden(connector: BaseConnector, attr: str) -> bool:
+    return getattr(type(connector), attr) is not getattr(BaseConnector, attr)
 
 
 _default: PlatformRegistry | None = None

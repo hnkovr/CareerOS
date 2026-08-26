@@ -14,11 +14,14 @@ from careeros.modules.platform.enums import (
     LEVEL_BY_METHOD,
     METHOD_ORDER,
     SOURCE_BY_PLATFORM,
+    AccessMode,
     ApplicationStatus,
     ApplyLevel,
     AuthKind,
     CapabilityLevel,
     ConnectionStatus,
+    FetchStrategy,
+    SourceRelation,
     SyncKind,
     SyncMethod,
     SyncStatus,
@@ -51,6 +54,11 @@ class Capabilities(BaseModel):
     official_api: bool = False
     email_fallback: bool = False
     auth: AuthKind = AuthKind.none
+    #: Ordered strategies for reading one job behind a user-supplied URL (ADR-015), best first.
+    read_job: list[FetchStrategy] = Field(default_factory=list)
+    #: Access policy enforced before any network call; ``public`` is required by the
+    #: ``public_html`` / ``jina`` / ``wayback`` strategies (``PlatformRegistry.verify``).
+    access: AccessMode = AccessMode.manual_import
     notes: str = ""
 
     @field_validator("profile", "jobs", "applications", mode="after")
@@ -58,12 +66,29 @@ class Capabilities(BaseModel):
     def _order(cls, v: list[SyncMethod]) -> list[SyncMethod]:
         return _ordered_methods(v)
 
+    @field_validator("read_job", mode="after")
+    @classmethod
+    def _unique_strategies(cls, v: list[FetchStrategy]) -> list[FetchStrategy]:
+        out: list[FetchStrategy] = []
+        for x in v:
+            if x not in out:
+                out.append(x)
+        return out
+
     def methods(self, kind: SyncKind) -> list[SyncMethod]:
+        """Sync methods per kind; ``job`` (single URL read) has strategies, not methods."""
         return {
             SyncKind.profile: self.profile,
             SyncKind.jobs: self.jobs,
             SyncKind.applications: self.applications,
+            SyncKind.job: [],
         }[kind]
+
+    @computed_field
+    @property
+    def read_one(self) -> bool:
+        """The connector can read a single job behind a URL (``read_job`` non-empty)."""
+        return bool(self.read_job)
 
     def level(self, kind: SyncKind) -> CapabilityLevel:
         methods = self.methods(kind)
@@ -148,8 +173,40 @@ class ProfileRead(BaseModel):
         )
 
 
+class FieldEvidence(BaseModel):
+    """Where one extracted field came from (ADR-016): kept per field, never last-write-wins.
+
+    ``source`` names the extractor / authority (``jsonld``, ``embedded``, ``api``,
+    ``text_heuristic``, ``aggregator_estimate``, ``llm`` …); ``value`` is JSON-shaped.
+    """
+
+    field: str
+    value: Any = None
+    source: str
+    source_url: str | None = None
+    observed_at: datetime | None = None
+    confidence: float = Field(default=1.0, ge=0.0, le=1.0)
+
+
+class FetchAttempt(BaseModel):
+    """One strategy attempt of a job read — the diagnostics unit stored in ``PlatformSyncRun``."""
+
+    strategy: FetchStrategy
+    url: str
+    status_code: int | None = None
+    ok: bool = False
+    error_type: str | None = None
+    error_message: str | None = None
+    duration_ms: int = 0
+    cache_status: Literal["hit", "miss", "negative", "bypass", "skip"] = "miss"
+
+
 class JobPosting(BaseModel):
-    """A job as seen on a platform. Maps onto ``opportunities.IngestRequest``."""
+    """A job as seen on a platform. Maps onto ``opportunities.IngestRequest``.
+
+    The provenance block (``canonical_url`` … ``field_evidence``) is filled by a job read
+    (ADR-015/016); paste/search postings leave it at the defaults.
+    """
 
     platform: Platform
     external_id: str | None = None
@@ -161,6 +218,52 @@ class JobPosting(BaseModel):
     raw_text: str = ""
     extraction: OpportunityExtraction | None = None
     raw_payload: dict[str, Any] | None = None
+    # ---- provenance (job reads)
+    canonical_url: str | None = None
+    resolved_url: str | None = None
+    original_url: str | None = Field(default=None, description="the employer's posting, if known")
+    strategy: FetchStrategy | None = None
+    fetched_at: datetime | None = None
+    published_at: datetime | None = None
+    expires_at: datetime | None = None
+    content_hash: str | None = None
+    fingerprint: str | None = None
+    is_archive: bool = False
+    archive_ts: datetime | None = Field(default=None, description="capture time, never a date")
+    quality: float | None = None
+    completeness: float | None = None
+    relation: SourceRelation = SourceRelation.primary
+    field_evidence: list[FieldEvidence] = Field(default_factory=list)
+
+    def has_provenance(self) -> bool:
+        return any(
+            (self.canonical_url, self.strategy, self.fetched_at, self.content_hash, self.is_archive)
+        )
+
+    def provenance(self) -> dict[str, Any]:
+        """JSON-shaped provenance the sync layer writes to ``opportunity_source`` / raw rows."""
+        return self.model_dump(
+            mode="json",
+            include={
+                "platform",
+                "external_id",
+                "canonical_url",
+                "resolved_url",
+                "original_url",
+                "strategy",
+                "fetched_at",
+                "published_at",
+                "expires_at",
+                "content_hash",
+                "fingerprint",
+                "is_archive",
+                "archive_ts",
+                "quality",
+                "completeness",
+                "relation",
+                "field_evidence",
+            },
+        )
 
     def to_ingest(
         self, *, use_ai: bool = False, provider: str | None = None, notes: str | None = None
@@ -178,17 +281,21 @@ class JobPosting(BaseModel):
         text = self.raw_text or None
         if text is None:
             text = "\n".join(p for p in (self.title, self.company, self.location) if p)
+        raw_payload = self.raw_payload
+        if self.has_provenance():
+            # no IngestRequest field for it yet → travels inside the verbatim payload
+            raw_payload = {**(raw_payload or {}), "provenance": self.provenance()}
         return IngestRequest(
             source=SOURCE_BY_PLATFORM[self.platform],
-            url=self.url,
+            url=self.url or self.canonical_url,
             text=text,
             structured=structured,
             use_ai=use_ai,
             provider=provider,
-            received_at=self.posted_at,
+            received_at=self.published_at or self.posted_at,
             notes=notes,
             external_id=self.external_id,
-            raw_payload=self.raw_payload,
+            raw_payload=raw_payload,
         )
 
 
@@ -349,3 +456,25 @@ class ParseResult(BaseModel):
     method: SyncMethod
     items: list[dict[str, Any]]
     count: int
+
+
+class ReadRequest(BaseModel):
+    """Read one job behind a user-supplied URL (ADR-015)."""
+
+    url: str
+    dry_run: bool = Field(default=False, description="fetch/extract only; persist nothing")
+    use_ai: bool = Field(default=False, description="AI extraction to fill deterministic gaps")
+    no_cache: bool = Field(default=False, description="bypass the in-process fetch cache")
+    strategy: FetchStrategy | None = Field(default=None, description="force one strategy")
+    notes: str | None = None
+
+
+class ReadOut(BaseModel):
+    posting: JobPosting | None
+    opportunity_id: uuid.UUID | None = None
+    created: bool = False
+    duplicate_of: uuid.UUID | None = None
+    snapshot_created: bool = False
+    attempts: list[FetchAttempt] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+    diagnostics: str = ""

@@ -1,0 +1,10 @@
+# sanitised shape of a real aggregator's file: a blanket Allow first, then the exceptions
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /*/payment/
+Disallow: /private/
+
+User-agent: CareerOS
+Disallow: /jobs/
+Allow: /jobs/public$

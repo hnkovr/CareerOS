@@ -37,7 +37,8 @@ def known_platforms() -> set[str]:
     """
     from careeros.modules.platform.registry import PlatformRegistry
 
-    return {p.value for p in PlatformRegistry.default()._by_platform}
+    # ``website`` is the generic read-one fallback (ADR-015), not a service the user opens.
+    return {p.value for p in PlatformRegistry.default()._by_platform if p.value != "website"}
 
 
 def parse_platform_set(raw: str) -> list[str]:

@@ -31,7 +31,8 @@ NOW = datetime(2026, 8, 25, 12, 0, tzinfo=UTC)
 def test_registry_default_has_all_platforms() -> None:
     reg = get_registry()
     assert reg.platforms() == list(PLATFORMS)
-    assert len(reg.capabilities()) == 7
+    assert len(reg.capabilities()) == 8
+    assert reg.platforms()[-1] == Platform.website  # the generic fallback stays last
     assert reg.get("hh").platform == Platform.hh
     with pytest.raises(UnknownPlatform):
         reg.get("myspace")
@@ -50,6 +51,42 @@ def test_registry_verify_flags_declared_but_unimplemented() -> None:
     assert problems == ["toptal: declares jobs/api but no search_jobs()"]
 
 
+def test_registry_verify_flags_read_job_contract() -> None:
+    from careeros.modules.platform.enums import AccessMode, FetchStrategy
+
+    class NoDetect(BaseConnector):
+        platform = Platform.toptal
+        capabilities = Capabilities(
+            platform=Platform.toptal,
+            read_job=[FetchStrategy.api, FetchStrategy.public_html],
+            access=AccessMode.manual_import,
+        )
+
+    problems = PlatformRegistry([NoDetect()]).verify()
+    assert problems == [
+        "toptal: declares read_job but no detect()",
+        "toptal: declares read_job but no extract_job()",
+        "toptal: declares read_job/api but no fetch_job_api()",
+        "toptal: read_job has public_html but access=manual_import (must be public)",
+    ]
+
+    class Hosts(BaseConnector):
+        platform = Platform.toptal
+        detect_hosts = ("toptal.com",)
+        capabilities = Capabilities(
+            platform=Platform.toptal, read_job=[FetchStrategy.jina], access=AccessMode.public
+        )
+
+        def extract_job(self, artifact):  # type: ignore[override]
+            raise NotImplementedError
+
+    assert PlatformRegistry([Hosts()]).verify() == []
+    hit = Hosts().detect("https://www.toptal.com/jobs/1?utm_source=x")
+    assert hit is not None and hit.confidence == 0.9
+    assert hit.canonical.canonical_url == "https://toptal.com/jobs/1"
+    assert Hosts().detect("https://example.com/jobs/1") is None
+
+
 def test_capabilities_levels_are_derived_from_methods() -> None:
     caps = Capabilities(
         platform=Platform.hh,
@@ -63,8 +100,11 @@ def test_capabilities_levels_are_derived_from_methods() -> None:
     assert caps.read_applications == CapabilityLevel.none
     assert caps.export_import == CapabilityLevel.export
     assert caps.manual_capture is True
+    assert caps.methods(SyncKind.job) == [] and caps.level(SyncKind.job) == CapabilityLevel.none
+    assert caps.read_one is False and caps.access == "manual_import"
     dumped = caps.model_dump(mode="json")
     assert dumped["read_profile"] == "api" and dumped["apply"] == "none"
+    assert dumped["read_job"] == [] and dumped["read_one"] is False
 
 
 async def test_base_connector_defaults_raise_capability_unavailable() -> None:
@@ -286,13 +326,14 @@ def test_every_connector_answers_the_url_contract() -> None:
     assert reg.get("hh").search_url(JobQuery(text="x", extra={"area": 1})) is not None
     assert "schedule=remote" in (reg.get("hh").search_url(query) or "")
     assert reg.get("wellfound").search_url(JobQuery()) is None  # no free-text search page
+    assert reg.get("website").search_url(query) is None  # generic: nothing to search
     assert (
         reg.get("linkedin").profile_url("dana-kovalenko")
         == "https://www.linkedin.com/in/dana-kovalenko"
     )
     assert reg.get("hh").profile_url("abc123") == "https://hh.ru/resume/abc123"
     assert reg.get("toptal").profile_url("dana") == "https://www.toptal.com/resume/dana"
-    for platform in (Platform.indeed, Platform.getmatch):
+    for platform in (Platform.indeed, Platform.getmatch, Platform.website):
         assert reg.get(platform).profile_url("dana") is None
     for c in reg.all():
         assert c.profile_url(None) is None

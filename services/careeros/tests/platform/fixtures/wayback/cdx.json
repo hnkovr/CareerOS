@@ -1,0 +1,4 @@
+[["urlkey","timestamp","original","mimetype","statuscode","digest","length"],
+["example,northwind,careers)/jobs/senior-data-engineer-4711","20260701120000","https://careers.northwind.example/jobs/senior-data-engineer-4711","text/html","200","AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","5120"],
+["example,northwind,careers)/jobs/senior-data-engineer-4711","20260815093000","https://careers.northwind.example/jobs/senior-data-engineer-4711","text/html","200","BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB","5211"],
+["example,northwind,careers)/jobs/senior-data-engineer-4711","20260810080000","https://careers.northwind.example/jobs/senior-data-engineer-4711","text/html","200","CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC","5190"]]

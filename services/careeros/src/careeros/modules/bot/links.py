@@ -30,6 +30,8 @@ HOME_URLS: dict[str, str] = {
     "indeed": "https://www.indeed.com/",
     "getmatch": "https://getmatch.ru/",
     "toptal": "https://www.toptal.com/",
+    "rockethunt": "https://rockethunt.ai/",
+    "justjoin": "https://justjoin.it/",
 }
 
 

@@ -45,7 +45,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 addopts = "-q -ra"
-markers = ["db: requires a reachable PostgreSQL (CAREEROS_TEST_DATABASE_URL)", "ai: calls a real AI provider (skipped unless CAREEROS_AI_LIVE=1)"]
+markers = ["db: requires a reachable PostgreSQL (CAREEROS_TEST_DATABASE_URL)", "ai: calls a real AI provider (skipped unless CAREEROS_AI_LIVE=1)", "live: reads real job sites (skipped unless CAREEROS_LIVE_TESTS=1)"]
 filterwarnings = ["error::DeprecationWarning:careeros.*"]
 
 [tool.importlinter]
@@ -79,13 +79,21 @@ allow_indirect_imports = true
 [[tool.importlinter.contracts]]
 name = "platform connectors are pure I/O + mapping (ADR-004): no DB, no domain services"
 type = "forbidden"
-source_modules = ["careeros.modules.platform.connectors"]
+# The job-read layer (ADR-015: ``fetch``, ``sources``) is held to the same purity as the
+# connectors that use it. Transitive edges count, so it cannot reach ``opportunities.parser``
+# (→ ``cv.keywords``) either — text heuristics run at ingest, not here.
+source_modules = [
+  "careeros.modules.platform.connectors",
+  "careeros.modules.platform.fetch",
+  "careeros.modules.platform.sources",
+]
 forbidden_modules = [
   "sqlalchemy", "careeros.core.db", "careeros.core.models",
   "careeros.modules.platform.service", "careeros.modules.platform.sync", "careeros.modules.platform.models",
   "careeros.modules.platform.router", "careeros.modules.platform.cli",
   "careeros.modules.profiles.service", "careeros.modules.profiles.models",
   "careeros.modules.opportunities.service", "careeros.modules.opportunities.models",
+  "careeros.modules.opportunities.parser",
   "careeros.modules.ai", "careeros.modules.cv",
 ]
 

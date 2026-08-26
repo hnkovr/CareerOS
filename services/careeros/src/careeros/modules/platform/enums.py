@@ -32,6 +32,9 @@ class SyncKind(StrEnum):
     profile = "profile"
     jobs = "jobs"
     applications = "applications"
+    #: One job behind a user-supplied URL (ADR-015). Has no ``SyncMethod`` — the method column of
+    #: a ``job`` run is the ``FetchStrategy`` that produced the artifact.
+    job = "job"
 
 
 class SyncMethod(StrEnum):
@@ -45,6 +48,42 @@ class SyncStatus(StrEnum):
     partial = "partial"
     failed = "failed"
     skipped = "skipped"
+
+
+class FetchStrategy(StrEnum):
+    """How one job behind a URL is acquired (ADR-015), best first per connector.
+
+    ``archive_today`` and ``search_recovery`` are reserved names: declared for the data model,
+    not implemented in this slice (``run_chain`` skips them with a diagnostic).
+    """
+
+    api = "api"
+    public_html = "public_html"
+    jina = "jina"
+    wayback = "wayback"
+    archive_today = "archive_today"
+    search_recovery = "search_recovery"
+
+
+class AccessMode(StrEnum):
+    """Access policy of a connector, enforced before any network call (ADR-015 §5)."""
+
+    public = "public"
+    authenticated_user_api = "authenticated_user_api"
+    manual_import = "manual_import"
+    unsupported = "unsupported"
+
+
+class SourceRelation(StrEnum):
+    """How a captured source relates to the opportunity it was attached to (ADR-016)."""
+
+    primary = "primary"
+    aggregates = "aggregates"
+    repost_of = "repost_of"
+    same_as = "same_as"
+    mirror = "mirror"
+    historical_version_of = "historical_version_of"
+    possible_duplicate = "possible_duplicate"
 
 
 class ConnectionStatus(StrEnum):
@@ -76,6 +115,20 @@ LEVEL_BY_METHOD: dict[SyncMethod, CapabilityLevel] = {
     SyncMethod.paste: CapabilityLevel.manual,
 }
 
+# Strategies that read a historical copy (archive budget) / a search engine (search budget).
+ARCHIVE_STRATEGIES: frozenset[FetchStrategy] = frozenset(
+    {FetchStrategy.wayback, FetchStrategy.archive_today}
+)
+SEARCH_STRATEGIES: frozenset[FetchStrategy] = frozenset({FetchStrategy.search_recovery})
+# Strategies that hand the URL to a third party (never for URLs from private messages).
+THIRD_PARTY_STRATEGIES: frozenset[FetchStrategy] = frozenset(
+    {FetchStrategy.jina, FetchStrategy.wayback, FetchStrategy.archive_today}
+)
+# Strategies that need ``AccessMode.public`` (they read the page like a browser would).
+PUBLIC_READ_STRATEGIES: frozenset[FetchStrategy] = frozenset(
+    {FetchStrategy.public_html, FetchStrategy.jina, FetchStrategy.wayback}
+)
+
 # Platforms served by a connector submodule (order = display order).
 PLATFORMS: tuple[Platform, ...] = (
     Platform.hh,
@@ -85,6 +138,7 @@ PLATFORMS: tuple[Platform, ...] = (
     Platform.indeed,
     Platform.getmatch,
     Platform.toptal,
+    Platform.website,  # generic fallback provider (any http(s) URL, ADR-015) — always last
 )
 
 SOURCE_BY_PLATFORM: dict[Platform, Source] = {
