@@ -190,9 +190,14 @@ async def test_suggest_reply_records_suggestion(db_client: AsyncClient, settings
         }
 
     get_provider_registry(settings).register(FakeProvider(respond), make_default=True)
+    # ingest the message this test replies to: rows are truncated between tests (GH #24), so
+    # reading "whatever recruiter message is already there" would depend on execution order
+    ingested = await db_client.post("/api/inbox/ingest", json=RECRUITER_JD.model_dump(mode="json"))
+    assert ingested.status_code == 201, ingested.text
     r = await db_client.get(
         "/api/inbox/messages", params={"classification": "recruiter_outreach", "limit": 1}
     )
+    assert r.status_code == 200 and r.json(), r.text
     message_id = r.json()[0]["id"]
     r = await db_client.post(
         f"/api/inbox/messages/{message_id}/suggest-reply", json={"intent": "follow_up"}

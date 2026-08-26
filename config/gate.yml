@@ -72,6 +72,9 @@ gate:
     config: scripts/hooks/config-guard.sh   # SessionStart: does .env still build Settings()?
     bot: scripts/hooks/bot-guard.sh         # SessionStart: do we still own the webhook?
 
+  # one definition of the gate, run by `just lint`/`just test` and by CI alike (GH #23)
+  gate_script: scripts/gate.sh
+
   contracts:
     script: scripts/contracts-check.sh
     generated:

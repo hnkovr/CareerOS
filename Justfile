@@ -21,6 +21,13 @@ api-inline:
     CAREEROS_TASK_RUNNER=inline uv run careeros-api
 
 infra-up:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    # A stopped daemon otherwise fails with a socket path, which names the symptom, not the fix.
+    docker info >/dev/null 2>&1 || {
+      echo "docker daemon is not running — start Docker Desktop (open -a Docker), then re-run" >&2
+      exit 1
+    }
     docker compose up -d postgres redis
 
 infra-down:
@@ -33,20 +40,15 @@ infra-down:
 _web_ready := "[ -f apps/web/package.json ] && [ -d node_modules ]"
 _no_web := "echo '  · web steps skipped — run `npm install` to include them' >&2"
 
+# the gate lives in scripts/gate.sh so CI runs the SAME checks (GH #23)
 test *ARGS:
-    uv run pytest {{ARGS}}
-    if {{_web_ready}}; then npm run -w apps/web test --if-present; else {{_no_web}}; fi
+    scripts/gate.sh test {{ARGS}}
 
 test-py *ARGS:
     uv run pytest {{ARGS}}
 
 lint:
-    uv run ruff check .
-    uv run ruff format --check .
-    just typecheck
-    uv run lint-imports
-    python3 scripts/env-render.py --check
-    if {{_web_ready}}; then npm run -w apps/web lint; else {{_no_web}}; fi
+    scripts/gate.sh lint
 
 fmt:
     uv run ruff check --fix .

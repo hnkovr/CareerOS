@@ -89,8 +89,10 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] `config/gate.yml` — the `all` pipeline as data; `tests/test_gate_config.py` asserts it equals
   the Makefile. Skill `/careeros-gate` (+ `references/triage.md`), agent `careeros-gate`.
 - [x] pyright: `Settings(**dict)` unpacks in the bot tests (`dict[str, Any]`, one `type: ignore`)
-- [ ] CI lint duplication ([GH #23](https://github.com/hnkovr/CareerOS/issues/23)) — prefer moving
-  the gate into `scripts/gate.sh`, mirroring `scripts/contracts-check.sh`
+- [x] CI lint duplication ([#23](https://github.com/hnkovr/CareerOS/issues/23)) — `scripts/gate.sh`
+  is now the one definition; Justfile and CI both call it, asserted by `tests/test_gate_config.py`
+- [x] test isolation ([#24](https://github.com/hnkovr/CareerOS/issues/24)) — autouse truncate after
+  each db test; the opportunities dedup assertion is no longer order-dependent
 
 ## Parked
 - `packages/ui` extraction (when Tauri lands)

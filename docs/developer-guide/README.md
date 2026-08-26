@@ -24,6 +24,18 @@ truthy and authenticates nothing. Adding an optional setting needs nothing extra
 `config-guard.sh` builds `Settings()` from the current `.env` and names the offending field;
 `bot-guard.sh` asks Telegram who owns the webhook.
 
+**One gate, two callers.** `scripts/gate.sh lint|test` is the single definition of the quality
+gate; `just lint` / `just test` and the CI `python` job both call it, so a check cannot end up
+running in one place and not the other ([#23](https://github.com/hnkovr/CareerOS/issues/23)).
+`tests/test_gate_config.py` asserts both callers still delegate to it.
+
+**Test isolation.** Tables are created once per session, so an autouse fixture truncates every
+table except the seeded `user` after each `@pytest.mark.db` test. Without it, rows accumulate
+across a run and assertions about *new* data start testing whatever an earlier test left behind —
+which is why the opportunities dedup assertion passed alone and failed in a full run
+([#24](https://github.com/hnkovr/CareerOS/issues/24)). Truncate, not a wrapping transaction: API
+tests drive the app, which opens its own sessions.
+
 **Generated contracts.** Two generators feed two committed trees: `career/schemas` from
 `careeros vault export-schemas` (python) and `packages/schemas` from `openapi-typescript`
 (node, off the exported OpenAPI). `scripts/contracts-check.sh` — `make contracts` locally, the

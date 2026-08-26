@@ -53,6 +53,7 @@ async def db(settings: Settings) -> AsyncIterator[bool]:
         "careeros.modules.pipeline.models",
         "careeros.modules.inbox.models",
         "careeros.modules.search.models",
+        "careeros.modules.bot.models",
     ):
         with contextlib.suppress(ModuleNotFoundError):
             importlib.import_module(mod)
@@ -80,6 +81,36 @@ async def session(db: bool, settings: Settings) -> AsyncIterator[AsyncSession]:
 
     async with get_sessionmaker(settings)() as s:
         yield s
+
+
+@pytest.fixture(autouse=True)
+async def _isolated_rows(request: pytest.FixtureRequest) -> AsyncIterator[None]:
+    """Leave the database as this test found it (GH #24).
+
+    Tables are created once per session, so without this every row a test writes stays visible
+    for the rest of the run — and a later assertion about *new* data ("no duplicate yet", a
+    count, a first-of-its-kind) silently starts testing whichever test ran before it. The
+    opportunities dedup assertion is the one that surfaced: green alone, red in a full run,
+    because an earlier test had already ingested a matching posting.
+
+    Truncate rather than wrap the test in a transaction: API tests drive the app, which opens
+    its own sessions, so a transaction around the fixture session would not contain their writes.
+    The single seeded user survives — everything references it and `db` seeds it once.
+    """
+    yield
+    if "db" not in request.keywords:
+        return
+    from sqlalchemy import text
+
+    from careeros.core.db import Base, get_engine
+
+    settings = request.getfixturevalue("settings")
+    tables = [t.name for t in Base.metadata.sorted_tables if t.name != "user"]
+    if not tables:
+        return
+    quoted = ", ".join(f'"{name}"' for name in tables)
+    async with get_engine(settings).begin() as conn:
+        await conn.execute(text(f"TRUNCATE TABLE {quoted} RESTART IDENTITY CASCADE"))
 
 
 @pytest.fixture

@@ -35,21 +35,16 @@ jobs:
           enable-cache: true
       - run: uv python install 3.13
       - run: uv sync --all-groups --frozen
-      # keep in step with the `lint` recipe in the Justfile (`make lint` runs the same set)
+      # the same script `just lint` / `make lint` runs — one definition, no drift (#23)
       - name: lint
-        run: |
-          uv run ruff check .
-          uv run ruff format --check .
-          uv run pyright
-          uv run lint-imports
-          python3 scripts/env-render.py --check
+        run: scripts/gate.sh lint
       # contract freshness needs node too — see the `contracts` job below
       - name: validate demo vault
         run: uv run careeros vault validate --path career/examples/demo
       - name: migrate
         run: uv run alembic -c services/careeros/alembic.ini upgrade head
       - name: test
-        run: uv run pytest
+        run: scripts/gate.sh test
 
   # Both generators must run, or "fresh" means "fresh in the half we could check".
   contracts:

@@ -16,6 +16,8 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[1]
 GATE_YML = REPO_ROOT / "config" / "gate.yml"
 MAKEFILE = REPO_ROOT / "Makefile"
+JUSTFILE = REPO_ROOT / "Justfile"
+CI = REPO_ROOT / ".github" / "workflows" / "ci.yml"
 
 
 def makefile_all_steps() -> list[str]:
@@ -55,3 +57,33 @@ def test_only_unreachable_is_tolerated_by_the_pipeline(gate: dict) -> None:
     assert "unreachable" in codes[4]
     # and the Makefile really compares against that code, not some other one
     assert re.search(r"rc -eq 4", MAKEFILE.read_text(encoding="utf-8"))
+
+
+def test_ci_and_the_justfile_run_the_same_gate_script() -> None:
+    """One definition of the gate, or a check ends up running in one place and not the other.
+
+    This is the shape of bug that already shipped twice: a CI step that looked like it covered
+    the generated contracts but never ran their generator, and a lint block kept in step with
+    the Justfile by hand (GH #23).
+    """
+    ci, justfile = CI.read_text(encoding="utf-8"), JUSTFILE.read_text(encoding="utf-8")
+    for mode in ("lint", "test"):
+        assert f"scripts/gate.sh {mode}" in ci, f"CI does not call the shared gate for {mode}"
+        assert f"scripts/gate.sh {mode}" in justfile, f"Justfile does not delegate {mode}"
+    assert (REPO_ROOT / "scripts" / "gate.sh").is_file()
+    # CI must not go back to spelling the checks out itself
+    assert "uv run ruff check ." not in ci
+    assert "run: uv run pytest" not in ci
+
+
+def test_the_gate_script_covers_every_check_the_pipeline_claims() -> None:
+    gate = (REPO_ROOT / "scripts" / "gate.sh").read_text(encoding="utf-8")
+    for tool in (
+        "ruff check",
+        "ruff format --check",
+        "pyright",
+        "lint-imports",
+        "env-render.py --check",
+        "pytest",
+    ):
+        assert tool in gate, f"gate.sh no longer runs {tool}"
