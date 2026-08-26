@@ -42,6 +42,17 @@ function methodsOf(caps: Capabilities, kind: SyncKind): string[] {
   return [];
 }
 
+/** A platform the owner has no account on: nothing to connect, nothing of theirs to sync — it
+ * only reads a job behind a URL (the `website` fallback reader). Derived, never hard-coded. */
+function isGenericReader(caps: Capabilities): boolean {
+  return (
+    caps.auth === "none" &&
+    caps.read_one &&
+    (caps.profile ?? []).length === 0 &&
+    (caps.applications ?? []).length === 0
+  );
+}
+
 function Methods({ methods }: { methods: string[] }) {
   if (methods.length === 0) return <span className="text-ink-dim">—</span>;
   return (
@@ -267,6 +278,8 @@ export default function PlatformsPage() {
 
   const byPlatform = new Map<Platform, ConnectionOut>((connections.data ?? []).map((c) => [c.platform, c]));
   const caps = capabilities.data ?? [];
+  const accounts = caps.filter((c) => !isGenericReader(c));
+  const readers = caps.filter(isGenericReader);
   const connectable = caps.filter((c) => c.auth !== "none").length;
 
   return (
@@ -316,10 +329,29 @@ export default function PlatformsPage() {
         </Card>
       ) : (
         <div className="grid gap-4 lg:grid-cols-3">
-          {caps.map((c) => (
+          {accounts.map((c) => (
             <PlatformCard key={c.platform} caps={c} connection={byPlatform.get(c.platform)} />
           ))}
         </div>
+      )}
+
+      {readers.length > 0 && (
+        <Card title="Generic readers">
+          <p className="pb-2 text-xs text-ink-dim">
+            Not services you have an account on — fallback readers for any employer or ATS page you point at. Nothing to
+            connect, nothing of yours to sync; they only read a single job behind a URL you provide.
+          </p>
+          <ul className="space-y-2 text-xs">
+            {readers.map((c) => (
+              <li key={c.platform} className="flex flex-wrap items-center gap-2">
+                <span className="font-mono">{c.platform}</span>
+                <Badge tone="neutral">generic reader — no account</Badge>
+                <Methods methods={c.read_job ?? []} />
+                {c.notes && <span className="text-ink-dim">{c.notes}</span>}
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
 
       <div className="grid gap-4 lg:grid-cols-3">
