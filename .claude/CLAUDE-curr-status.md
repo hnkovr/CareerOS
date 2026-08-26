@@ -78,7 +78,8 @@ Two blockers found and fixed while wiring it up:
 - ADR 017 workflows with WAIT_FOR_APPROVAL: `modules/workflows` (engine, runner, `workflow_run` migration c4d8e2f1a9b3 off b1c7d0e9a4f2 — the platform lane chains after it), apply + follow_up workflows, API/CLI/web; the first write actions of the platform, provably gated (tests: reject writes nothing)
 - `start_workflow` assistant tool — the ADR-014 loop can now prepare an apply/follow-up run that waits at the ADR-017 gate
 - daily follow-up sweep (API/CLI/worker cron) — the first scheduled workflow start; still approval-gated per run
-- lane gates: 315 backend tests (excl. platform/deploy lanes); note: the platform lane's uncommitted `OpportunitySource` model broke every db test in the shared tree for a while (relation missing at TRUNCATE) — theirs to fix, reported, pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
+- `/platforms` web page (#20, web-only): capabilities matrix (incl. read-one-by-URL and access mode), connect/refresh/disconnect, doctor, links, per-kind sync + sync-all, paste with dry-run preview, sync runs, application observations; iterates the capabilities endpoint so new connectors (website/rockethunt/justjoin) appear by themselves
+- lane gates: 359 backend tests at 061c01f (excl. platform/deploy lanes); note: the platform lane's uncommitted `OpportunitySource` model broke every db test in the shared tree for a while (relation missing at TRUNCATE) — theirs to fix, reported, pyright 0, ruff clean, 4 import contracts kept; web tsc/eslint/vitest/build green
 - still blocked on user: P1.3 Gmail (Google OAuth app credentials); next candidates: §55 tool-calling assistants (ADR + go-ahead), §53 WAIT_FOR_APPROVAL workflows, notifications.py invariant-7 tech debt
 
 ### 2026-08-26 — gate hardening (session 3)

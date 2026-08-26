@@ -26,6 +26,7 @@ export function CommandPalette() {
       { label: "Ask the assistant", hint: "tool-using · cites facts · never acts", run: () => router.push("/assistant") },
       { label: "Workflows", hint: "apply · follow-up · wait for approval", run: () => router.push("/workflows") },
       { label: "Go to Profiles", run: () => router.push("/profiles") },
+      { label: "Platforms", hint: "connect · paste · sync runs", run: () => router.push("/platforms") },
       { label: "Add profile snapshot", run: () => router.push("/profiles?new=1") },
       { label: "API docs (OpenAPI)", hint: "backend", run: () => window.open("/api/../docs", "_blank") },
     ],

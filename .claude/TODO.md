@@ -69,7 +69,7 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
 - [x] hh.ru [#12](https://github.com/hnkovr/CareerOS/issues/12) · Upwork [#13](https://github.com/hnkovr/CareerOS/issues/13) · LinkedIn [#14](https://github.com/hnkovr/CareerOS/issues/14) · Wellfound [#15](https://github.com/hnkovr/CareerOS/issues/15) · Indeed [#16](https://github.com/hnkovr/CareerOS/issues/16) · getmatch [#17](https://github.com/hnkovr/CareerOS/issues/17) · Toptal [#18](https://github.com/hnkovr/CareerOS/issues/18)
 - [x] docs/agents/skill ([#19](https://github.com/hnkovr/CareerOS/issues/19)): ADR-013, matrix, `docs/platform/*`, `/careeros-platform-sync`, `careeros-platform-{ops,connector-dev}` agents
 - [ ] YOU: register OAuth apps — hh.ru (dev.hh.ru) and Upwork (API key approval) → `.env.secrets` → `just platform-connect hh|upwork`; download the LinkedIn archive
-- [ ] Web Platforms page ([#20](https://github.com/hnkovr/CareerOS/issues/20)): capabilities, connections/connect, paste box, sync runs, application statuses
+- [x] Web Platforms page ([#20](https://github.com/hnkovr/CareerOS/issues/20), built by lane careeros-d1, web-only): capability matrix incl. `read_job`/`access` columns, connect/refresh/disconnect, doctor, links, per-kind sync + sync-all, paste box with dry-run preview, sync runs, observed application statuses (the platform lane closes the issue)
 - [ ] Follow-ups ([#21](https://github.com/hnkovr/CareerOS/issues/21)): Fly volume/redirect base if sync moves to Fly, single job-URL capture, email-based statuses via inbox, observations ↔ pipeline Application, live token tests, VERIFY LIVE Upwork fields, shared-parser improvements (relative dates, `now` propagation, schema fields)
 
 ## Build pipeline

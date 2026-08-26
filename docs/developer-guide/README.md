@@ -99,6 +99,10 @@ implement: `read_profile` / `import_profile_export` / `parse_profile_text`, `sea
 implementation. Connectors may not import the DB or any service module (import-linter contract).
 Shared paste heuristics live in `platform/parsers.py`; HTTP goes through `platform/http.py`.
 The `careeros-platform-connector-dev` sub-agent (`.claude/agents/`) encodes this checklist.
+The web surface is `/platforms` (`apps/web/src/app/platforms/`): it iterates
+`GET /api/platform/capabilities` — never a hard-coded platform list — merges it with
+`/connections`, and offers connect/refresh/disconnect, doctor, links, per-kind sync, a paste box
+with a dry-run preview, sync runs and observed application statuses.
 
 ## AI assistants (P3)
 
