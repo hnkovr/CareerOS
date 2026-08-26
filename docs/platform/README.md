@@ -13,15 +13,20 @@ Precedence per capability: **official API > official export > paste** — the CL
 that is available (`--api`, `--export PATH`, `--text-file FILE` force a method). Every command has
 `--dry-run` (parse/fetch, print, persist nothing) and `--json`.
 
-| Platform | Own profile | Job search | Application statuses | Auth | Guide |
-|---|---|---|---|---|---|
-| hh.ru | API · paste | API (search needs no token) · paste | API · paste | OAuth2 app at dev.hh.ru | [hh.md](hh.md) |
-| Upwork | API* · paste | API* · paste | API* · paste | OAuth2, *approved API key required | [upwork.md](upwork.md) |
-| LinkedIn | export · paste | export (`Saved Jobs.csv`) · paste | export (`Job Applications.csv`) · paste | none — "Download your data" archive | [linkedin.md](linkedin.md) |
-| Wellfound | paste | paste | paste | none | [wellfound.md](wellfound.md) |
-| Indeed | paste | paste | paste | none | [indeed.md](indeed.md) |
-| getmatch | paste | paste | paste | none | [getmatch.md](getmatch.md) |
-| Toptal | paste | paste | paste | none | [toptal.md](toptal.md) |
+| Platform | Own profile | Job search | Read one job by URL (ADR-015) | Application statuses | Auth | Guide |
+|---|---|---|---|---|---|---|
+| hh.ru | API · paste | API (search needs no token) · paste | `api` (vacancy id) → `jina` → `wayback` | API · paste | OAuth2 app at dev.hh.ru | [hh.md](hh.md) |
+| Upwork | API* · paste | API* · paste | — | API* · paste | OAuth2, *approved API key required | [upwork.md](upwork.md) |
+| LinkedIn | export · paste | export (`Saved Jobs.csv`) · paste | — | export (`Job Applications.csv`) · paste | none — "Download your data" archive | [linkedin.md](linkedin.md) |
+| Wellfound | paste | paste | — | paste | none | [wellfound.md](wellfound.md) |
+| Indeed | paste | paste | — | paste | none | [indeed.md](indeed.md) |
+| getmatch | paste | paste | — | paste | none | [getmatch.md](getmatch.md) |
+| Toptal | paste | paste | — | paste | none | [toptal.md](toptal.md) |
+| RocketHunt | — | paste · `search_url` deep link | `public_html` (JSON-LD + embedded state) → `jina` → `wayback`; contacts gate never touched | — | none (public pages) | [rockethunt.md](rockethunt.md) |
+| JustJoin.it | — | paste · `search_url` deep link | `api` (offer detail by slug) → `public_html` → `wayback` | — | none (public) | [justjoin.md](justjoin.md) |
+| Generic (`website`) | — | paste | `public_html` (JSON-LD / Open Graph / text) → `jina` → `wayback` | — | none | [generic.md](generic.md) |
+
+Read-one (ADR-015): one user-supplied URL is fetched the way a browser would — robots.txt honoured, identifying User-Agent, ≤ 1 request per URL per cache TTL, no cookies/login, no CAPTCHA/WAF bypass, no listings or `/api/` bulk access; Jina/Wayback fallbacks apply to public URLs only and archive results are marked historical. `careeros platform read <url> --dry-run --show-attempts` explains every attempt.
 
 Live matrix: `careeros platform capabilities` · `GET /api/platform/capabilities`.
 

@@ -19,4 +19,6 @@ New ADRs: copy `000-template.md`, next number, link from here. Superseding an AD
 | [012](012-telegram-bot-surface.md) | Telegram bot as the P0 mobile surface: webhook, owner-gated, read-only vault | accepted |
 | [013](013-platform-connectors.md) | Platform connectors: one submodule per platform, OAuth tokens allowed, paste path everywhere, sync placement | accepted |
 | [014](014-assistants-tool-calling.md) | Assistants via tool-calling: tool-use in the `AIProvider` port, typed read-only tool registry, gateway-owned loop, provenance guard on the answer | accepted |
+| [015](015-public-job-url-reads.md) | User-initiated public job-URL reads: fetch strategies (api/public_html/jina/wayback), access policy, read-one only | accepted |
+| [016](016-job-provenance-snapshots.md) | Job provenance (`opportunity_source`), snapshots on `OpportunityRaw`, authority order, layered identity relations | accepted |
 | [017](017-workflows-wait-for-approval.md) | Workflows with WAIT_FOR_APPROVAL: step engine over the Suggestion state machine; first write actions only behind approval | accepted |
