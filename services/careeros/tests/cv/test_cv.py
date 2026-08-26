@@ -279,3 +279,28 @@ async def test_cv_api_generate_get_compare(db_client: AsyncClient, settings: Set
     assert r.status_code == 200 and len(r.json()) >= 2
     r = await db_client.post("/api/cv/generate", json={"variant_id": "nope"})
     assert r.status_code == 404
+
+
+async def test_improve_diffs_the_ai_pass_against_the_verbatim_facts(
+    settings: Settings, data: VaultData, tmp_path: Path
+) -> None:
+    """The baseline is regenerated, not looked up (#30).
+
+    Comparing against "the last artifact that happened to exist" answers a different
+    question every run, and if that one was itself an AI pass the diff shows AI-vs-AI
+    drift rather than what AI changed about the facts.
+    """
+    svc = CVService(
+        settings.model_copy(update={"generated_dir": tmp_path}),
+        Vault(DEMO_VAULT),
+        _ai(settings, FakeProvider(_responder(data))),
+    )
+    result = await svc.improve("general-core", jd_text=JD, formats=["json"])
+
+    assert result.artifact.ai_used, "the AI pass must actually have run"
+    assert not result.baseline.ai_used, "the baseline is the facts as written"
+    assert result.comparison.a == "facts" and result.comparison.b == "ai"
+    assert result.comparison.rewritten, "the fake provider rewrites at least one bullet"
+    assert all(d.derived_from for d in result.comparison.rewritten), (
+        "a bullet without provenance would violate invariant 2 before it ever reached chat"
+    )

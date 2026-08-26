@@ -6,13 +6,18 @@ deduped and scored, and triage it inline. Owner-gated, single user, no external 
 Design: [`docs/superpowers/specs/2026-08-25-careeros-telegram-bot-design.md`](../superpowers/specs/2026-08-25-careeros-telegram-bot-design.md) ·
 Decision: [ADR 012](../adr/012-telegram-bot-surface.md)
 
-**Status:** the webhook surface, its three gates, the ownership claim and capture are implemented
+**Status:** the webhook surface, its three gates, the ownership claim, capture, the platform-link
+commands and the CV commands are implemented
 ([#1](https://github.com/hnkovr/CareerOS/issues/1), [#2](https://github.com/hnkovr/CareerOS/issues/2),
-[#3](https://github.com/hnkovr/CareerOS/issues/3), [#8](https://github.com/hnkovr/CareerOS/issues/8)).
-Still open: triage callbacks ([#4](https://github.com/hnkovr/CareerOS/issues/4)), career commands
+[#3](https://github.com/hnkovr/CareerOS/issues/3), [#8](https://github.com/hnkovr/CareerOS/issues/8),
+[#25](https://github.com/hnkovr/CareerOS/issues/25), [#26](https://github.com/hnkovr/CareerOS/issues/26),
+[#27](https://github.com/hnkovr/CareerOS/issues/27), [#28](https://github.com/hnkovr/CareerOS/issues/28),
+[#29](https://github.com/hnkovr/CareerOS/issues/29), [#30](https://github.com/hnkovr/CareerOS/issues/30)).
+Still open: triage callbacks ([#4](https://github.com/hnkovr/CareerOS/issues/4)), fact search
 ([#5](https://github.com/hnkovr/CareerOS/issues/5)), notifications
-([#7](https://github.com/hnkovr/CareerOS/issues/7)) and the first deploy
-([#9](https://github.com/hnkovr/CareerOS/issues/9)).
+([#7](https://github.com/hnkovr/CareerOS/issues/7)), the first deploy
+([#9](https://github.com/hnkovr/CareerOS/issues/9)) and the mini-app
+([#31](https://github.com/hnkovr/CareerOS/issues/31)).
 
 ## The one rule
 
@@ -26,7 +31,46 @@ A webhook is **exclusive**. Registering one takes updates away from whoever hold
 Telegram, not the app, is the authority on who owns the webhook. `/status` reports only the claim
 made at that process's startup; `just bot-webhook-info` asks Telegram.
 
-## Commands
+## Chat commands
+
+Everything below is owner-only; any other chat gets `200` and silence.
+
+| Command | What it does |
+|---|---|
+| *(forward a job description)* | parse → dedupe → score, answered with a triage card |
+| `/services` · `/services set hh,upwork` | the saved default platform set the other commands act on |
+| `/open <service>` | that platform's home page |
+| `/profiles [services]` | your own profile URL per platform |
+| `/urls "<query>" [services]` | a job-search URL per platform for that query |
+| `/urls <n> [services]` | the same, for query *n* from `/queries` |
+| `/queries` | job-search query texts derived from the vault's positionings |
+| `/cv` | the CV variants the vault defines, core one marked |
+| `/cv update [meta\|<variant>]` | regenerate deterministically — no AI — and upload the file |
+| `/cv improve [meta\|<variant>]` | AI rewrites the selected facts; the diff and its provenance come back |
+| `/status` · `/whoami` · `/help` | environment, identity, usage |
+
+Four properties are worth knowing because they are load-bearing rather than cosmetic:
+
+* **`meta` means the core CV.** The vault names it in `meta.default_cv_variant`; channel variants
+  project from it. `core`, `master`, `main` and `default` are accepted as the same thing.
+* **`/cv update` never calls a provider.** It reruns fact selection and rendering, nothing else.
+  `/cv improve` is the AI command, and it is deliberately a separate word (#29 vs #30).
+* **`/cv improve` diffs against a regenerated baseline, not against history.** Comparing to
+  "whatever artifact existed last" answers a different question every run — and if that one was
+  itself an AI pass, the diff would show AI-vs-AI drift instead of what AI changed about the facts.
+  The baseline is generated session-less, so it costs a JSON write and never clutters the artifact
+  list. Every bullet in the diff carries its `derived_from[]` (invariant 2), and a diff that shows
+  fewer bullets than it holds says how many it left out.
+* **Nothing here writes to the vault.** Generation reads facts and writes only under `generated/`
+  (invariant 3). `/queries` is read-only for the same reason: adding a query from chat would need
+  `Vault.apply_change()` behind an approval gate, which P0 does not have.
+
+Link and query output is sent as **plain text with no `parse_mode`**. MarkdownV2 requires escaping
+`.`, `-` and `_`, which every URL is made of; Telegram auto-links bare URLs anyway, so the escaping
+bought nothing and cost a class of 400s. Card output is MarkdownV2 and is split at line boundaries
+when it exceeds Telegram's 4096-character limit.
+
+## Ops commands
 
 | Intent | Command |
 |---|---|

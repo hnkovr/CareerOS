@@ -53,9 +53,7 @@ def upgrade() -> None:
     )
     # One row per user: the preference is a singleton, and a unique index is what
     # stops a race between two concurrent /services set commands creating two.
-    op.create_index(
-        op.f("ix_bot_preference_user_id"), "bot_preference", ["user_id"], unique=True
-    )
+    op.create_index(op.f("ix_bot_preference_user_id"), "bot_preference", ["user_id"], unique=True)
 
 
 def downgrade() -> None:

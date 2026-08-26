@@ -25,6 +25,7 @@ from careeros.modules.cv.schemas import (
     CVComparison,
     CVDocument,
     CVFiles,
+    CVImprovement,
     GenerateCVRequest,
     Generation,
     VariantOut,
@@ -188,6 +189,46 @@ class CVService:
             "cv.generated", variant=variant.id, artifact=str(artifact_id), ai=ai_used, status=status
         )
         return self._to_out(artifact, doc)
+
+    # ------------------------------------------------------------------ improve
+    async def improve(
+        self,
+        variant_id: str,
+        *,
+        provider: str | None = None,
+        jd_text: str | None = None,
+        formats: list[str] | None = None,
+    ) -> CVImprovement:
+        """Generate one AI pass and the verbatim-facts baseline it is judged against.
+
+        Two runs, one AI call: the baseline is deterministic, so it costs a selection
+        and a JSON write. It is generated on a session-less service on purpose — the
+        baseline is a measuring stick, not an artifact the owner asked for, and
+        persisting it would bury the real one in the artifact list.
+        """
+        baseline = await CVService(self.settings, self.vault, self.ai).generate(
+            GenerateCVRequest(
+                variant_id=variant_id, jd_text=jd_text, use_ai=False, formats=["json"]
+            )
+        )
+        improved = await self.generate(
+            GenerateCVRequest(
+                variant_id=variant_id,
+                jd_text=jd_text,
+                use_ai=True,
+                provider=provider,
+                formats=formats or ["pdf", "md", "json"],  # type: ignore[arg-type]
+            )
+        )
+        if baseline.document is None or improved.document is None:
+            raise CVError("generation produced no document to compare")
+        return CVImprovement(
+            artifact=improved,
+            baseline=baseline,
+            comparison=compare_documents(
+                baseline.document, improved.document, label_a="facts", label_b="ai"
+            ),
+        )
 
     # ------------------------------------------------------------------ read
     async def list_artifacts(

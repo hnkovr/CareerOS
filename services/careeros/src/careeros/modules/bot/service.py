@@ -7,6 +7,8 @@ flows (GH #3-#5, #7) attach to it without changing the router.
 
 from __future__ import annotations
 
+import asyncio
+from pathlib import Path
 from typing import Any
 
 import structlog
@@ -15,7 +17,14 @@ from careeros.core.auth import SINGLE_USER_ID
 from careeros.core.config import Settings
 from careeros.modules.bot.capture import looks_like_job_description
 from careeros.modules.bot.client import TelegramClient
-from careeros.modules.bot.formatting import escape_md, score_card
+from careeros.modules.bot.cv import (
+    artifact_card,
+    diff_card,
+    parse_cv_command,
+    resolve_variant,
+    variants_card,
+)
+from careeros.modules.bot.formatting import chunk_message, escape_md, score_card
 from careeros.modules.bot.keyboards import triage_keyboard
 from careeros.modules.bot.links import (
     build_profile_rows,
@@ -30,17 +39,25 @@ from careeros.modules.bot.platforms import (
     parse_platform_set,
 )
 from careeros.modules.bot.preferences import PreferenceStore
+from careeros.modules.bot.queries import build_queries, render_queries, resolve_index
 from careeros.modules.opportunities.enums import Source
 
 log = structlog.get_logger(__name__)
 
-HELP = (
-    "*CareerOS*\n"
+#: Plain text on purpose. MarkdownV2 requires escaping `[`, `]`, `>`, `-` and `.`,
+#: all of which a usage line is made of, and one missed character turns /help — the
+#: first command anyone types — into a 400. The title is the only formatted part.
+HELP_BODY = (
     "Forward me a job description and I will parse, dedupe and score it.\n\n"
     "/services — show the platforms commands act on; /services set hh,upwork to change\n"
     "/open <service> — link to a platform\n"
     "/profiles [services] — your profile URL on each platform\n"
     '/urls "<query>" [services] — a job search URL per platform\n'
+    "/urls <n> [services] — the same, for query n from /queries\n"
+    "/queries — job-search query texts derived from your positionings\n"
+    "/cv — list CV variants\n"
+    "/cv update [meta|<variant>] — regenerate from the facts, no AI\n"
+    "/cv improve [meta|<variant>] — let AI rewrite them, then show the diff\n"
     "/status — environment, database, webhook state\n"
     "/whoami — your chat id and whether you are the owner\n"
     "/help — this message"
@@ -59,6 +76,10 @@ class BotService:
         # The handler runs in a background task, after the response has been sent
         # and the request's session closed, so capture must open its own.
         self._sessionmaker = sessionmaker
+        # Generation takes tens of seconds and costs an AI call. Telegram delivers a
+        # double-tap as two distinct updates, which the update_id gate cannot dedupe
+        # because they genuinely are two — so the second one is refused here instead.
+        self._inflight: set[tuple[int, str]] = set()
 
     async def handle(self, payload: dict) -> None:
         """Process one already-gated update. Never raises into the request path."""
@@ -75,18 +96,15 @@ class BotService:
     async def _dispatch(self, chat_id: int, text: str) -> None:
         command = text.split()[0].lower() if text.startswith("/") else None
         if command in ("/start", "/help"):
-            await self._client.send_message(chat_id, HELP, parse_mode="MarkdownV2")
+            await self._client.send_message(
+                chat_id, "*CareerOS*\n\n" + escape_md(HELP_BODY), parse_mode="MarkdownV2"
+            )
         elif command == "/whoami":
             owner = self._settings.tg_owner_chat_id
-            await self._client.send_message(
-                chat_id,
-                escape_md(f"chat id: {chat_id}\nowner: {'yes' if chat_id == owner else 'no'}"),
-                parse_mode="MarkdownV2",
-            )
+            mine = "yes" if chat_id == owner else "no"
+            await self._say(chat_id, f"chat id: {chat_id}\nowner: {mine}")
         elif command == "/status":
-            await self._client.send_message(
-                chat_id, escape_md(self._status()), parse_mode="MarkdownV2"
-            )
+            await self._say(chat_id, self._status())
         elif command == "/services":
             await self._services(chat_id, text)
         elif command == "/open":
@@ -95,14 +113,14 @@ class BotService:
             await self._profiles(chat_id, text)
         elif command == "/urls":
             await self._urls(chat_id, text)
+        elif command == "/queries":
+            await self._queries(chat_id)
+        elif command == "/cv":
+            await self._cv(chat_id, text)
         elif looks_like_job_description(text):
             await self._capture(chat_id, text)
         else:
-            await self._client.send_message(
-                chat_id,
-                escape_md("Forward me a job description, or try /help."),
-                parse_mode="MarkdownV2",
-            )
+            await self._say(chat_id, "Forward me a job description, or try /help.")
 
     async def _services(self, chat_id: int, text: str) -> None:
         """Show or replace the saved platform set."""
@@ -149,7 +167,7 @@ class BotService:
         except ValueError as exc:
             await self._say(chat_id, str(exc))
             return
-        await self._say_links(chat_id, f"{target.platform}: {target.url}")
+        await self._say_plain(chat_id, f"{target.platform}: {target.url}")
 
     async def _profiles(self, chat_id: int, text: str) -> None:
         parts = text.split(maxsplit=1)
@@ -157,14 +175,20 @@ class BotService:
         if platforms is None:
             return await self._say(chat_id, "unknown platform in that list")
         rows = await self._with_platform_service(lambda svc: build_profile_rows(svc, platforms))
-        await self._say_links(chat_id, render_rows(rows, empty="no platforms selected"))
+        await self._say_plain(chat_id, render_rows(rows, empty="no platforms selected"))
 
     async def _urls(self, chat_id: int, text: str) -> None:
-        """/urls "query" [services] — the quoted query is required, the set optional."""
+        """/urls "query" [services], or /urls <n> [services] for a saved query."""
         query, rest = _split_quoted(text)
-        if not query:
-            await self._say(chat_id, 'usage: /urls "senior data engineer" [hh,upwork]')
-            return
+        if query is None:
+            query, rest = self._query_by_index(text)
+            if query is None:
+                await self._say(
+                    chat_id,
+                    'usage: /urls "senior data engineer" [hh,upwork]\n'
+                    "   or: /urls 1 [hh,upwork] — see /queries" + (rest or ""),
+                )
+                return
         platforms = await self._effective_platforms(rest)
         if platforms is None:
             return await self._say(chat_id, "unknown platform in that list")
@@ -175,9 +199,122 @@ class BotService:
         except ValueError as exc:
             await self._say(chat_id, str(exc))
             return
-        await self._say_links(
+        await self._say_plain(
             chat_id, f"{query}\n" + render_rows(rows, empty="no platforms selected")
         )
+
+    def _query_by_index(self, text: str) -> tuple[str | None, str | None]:
+        """Resolve `/urls 2 hh` against the derived query list.
+
+        Returns `(None, note)` when the token is not an index, so the caller can
+        distinguish "you asked for query 9 and there are 6" from "you wrote no query
+        at all" — the first needs the count, the second needs the usage line.
+        """
+        parts = text.split(maxsplit=2)
+        token = parts[1] if len(parts) > 1 else ""
+        if not token.isdigit():
+            return None, None
+        queries = build_queries(self._vault_data())
+        picked = resolve_index(queries, token)
+        if picked is None:
+            return None, f"\n\nthere is no query {token} — /queries lists {len(queries)}"
+        return picked.text, (parts[2] if len(parts) > 2 else None)
+
+    async def _queries(self, chat_id: int) -> None:
+        """Job-search query texts the vault's positionings imply (#28, read-only)."""
+        try:
+            queries = build_queries(self._vault_data())
+        except Exception as exc:  # a broken vault must answer, not go silent
+            log.warning("bot.queries_failed", error=str(exc))
+            await self._say(chat_id, f"cannot read the vault: {exc}")
+            return
+        await self._say_plain(chat_id, render_queries(queries))
+
+    # ── CV (#29, #30) ─────────────────────────────────────────────────────────
+
+    async def _cv(self, chat_id: int, text: str) -> None:
+        try:
+            cmd = parse_cv_command(text)
+        except ValueError as exc:
+            await self._say(chat_id, str(exc))
+            return
+        try:
+            data = self._vault_data()
+        except Exception as exc:
+            log.warning("bot.cv_vault_failed", error=str(exc))
+            await self._say(chat_id, f"cannot read the vault: {exc}")
+            return
+
+        if cmd.action == "show":
+            core = str(getattr(data.meta, "default_cv_variant", "") or "") or None
+            await self._say_md(chat_id, variants_card(list(data.cv_variants), core))
+            return
+        if self._sessionmaker is None:
+            await self._say(chat_id, "CV generation is unavailable: no database configured.")
+            return
+        try:
+            variant = resolve_variant(data, cmd.variant)
+        except ValueError as exc:
+            await self._say(chat_id, str(exc))
+            return
+
+        key = (chat_id, "cv")
+        if key in self._inflight:
+            await self._say(chat_id, "a CV run is already going for this chat — let it finish")
+            return
+        self._inflight.add(key)
+        try:
+            await self._say(chat_id, f"{cmd.action} {variant} — generating, this takes a moment…")
+            if cmd.action == "update":
+                await self._cv_update(chat_id, variant)
+            else:
+                await self._cv_improve(chat_id, variant)
+        except Exception as exc:
+            log.exception("bot.cv_failed", action=cmd.action, variant=variant)
+            await self._say(chat_id, f"{cmd.action} failed: {exc}")
+        finally:
+            self._inflight.discard(key)
+
+    async def _cv_update(self, chat_id: int, variant: str) -> None:
+        """Deterministic regeneration: reruns selection and rendering, no AI (#29)."""
+        from careeros.modules.cv.schemas import GenerateCVRequest
+
+        out = await self._with_cv_service(
+            lambda svc: svc.generate(GenerateCVRequest(variant_id=variant, use_ai=False))
+        )
+        await self._say_md(chat_id, artifact_card(out, header=f"CV updated — {variant}"))
+        await self._send_artifact_file(chat_id, out, variant)
+
+    async def _cv_improve(self, chat_id: int, variant: str) -> None:
+        """AI rewrite of the SELECTED facts, shown as a diff against those facts (#30)."""
+        result = await self._with_cv_service(lambda svc: svc.improve(variant))
+        await self._say_md(
+            chat_id, artifact_card(result.artifact, header=f"CV improved — {variant}")
+        )
+        if not result.artifact.ai_used:
+            # An empty diff after a no-op AI pass reads as "AI had nothing to add",
+            # which is a different claim from "no provider was configured".
+            await self._say(chat_id, "no AI provider ran — the bullets are the facts as written")
+        await self._say_md(chat_id, diff_card(result.comparison))
+        await self._send_artifact_file(chat_id, result.artifact, variant)
+
+    async def _send_artifact_file(self, chat_id: int, artifact: Any, variant: str) -> None:
+        """Upload the rendered CV — the PDF if there is one, else the markdown.
+
+        The read goes to a thread: this runs on the event loop that is also serving
+        incoming webhook updates, and every one of those has ~60 seconds before
+        Telegram retries it.
+        """
+        picked = await asyncio.to_thread(_first_rendered_file, artifact.files)
+        if picked is None:
+            await self._say(chat_id, "no document was rendered — see the warnings above")
+            return
+        suffix, content = picked
+        await self._client.send_document(
+            chat_id, f"{variant}.{suffix}", content, caption=f"{variant} · {suffix}"
+        )
+
+    # ── plumbing ──────────────────────────────────────────────────────────────
 
     async def _effective_platforms(self, inline: str | None) -> list[str] | None:
         """Inline override, else the saved set, else every known platform.
@@ -193,6 +330,12 @@ class BotService:
         saved = await self._with_store(lambda s: s.get_platforms())
         return saved or sorted(known_platforms())
 
+    def _vault_data(self):
+        """Load the vault through its own module (invariant 7); read-only in P0."""
+        from careeros.modules.vault.deps import get_vault
+
+        return get_vault(self._settings).require()
+
     async def _with_platform_service(self, fn):
         """Run one PlatformService operation in its own session (invariant 7)."""
         if self._sessionmaker is None:
@@ -201,6 +344,16 @@ class BotService:
 
         async with self._sessionmaker() as session:
             svc = PlatformService(self._settings, session=session, user_id=SINGLE_USER_ID)
+            return await fn(svc)
+
+    async def _with_cv_service(self, fn):
+        """Run one CVService operation in its own session (invariant 7)."""
+        if self._sessionmaker is None:
+            raise RuntimeError("no database configured")
+        from careeros.modules.cv.deps import build_cv_service
+
+        async with self._sessionmaker() as session:
+            svc = build_cv_service(self._settings, session=session, user_id=SINGLE_USER_ID)
             return await fn(svc)
 
     async def _with_store(self, fn):
@@ -213,27 +366,34 @@ class BotService:
             return result
 
     async def _say(self, chat_id: int, text: str) -> None:
-        await self._client.send_message(chat_id, escape_md(text), parse_mode="MarkdownV2")
+        await self._say_md(chat_id, escape_md(text))
 
-    async def _say_links(self, chat_id: int, text: str) -> None:
-        """Send link output as PLAIN text, with no parse_mode.
+    async def _say_md(self, chat_id: int, markdown: str) -> None:
+        """Send already-escaped MarkdownV2, split at line boundaries if oversized.
+
+        Cards keep each `*bold*` pair inside one line, so a newline split never lands
+        between a marker and its closing partner.
+        """
+        for part in chunk_message(markdown):
+            await self._client.send_message(chat_id, part, parse_mode="MarkdownV2")
+
+    async def _say_plain(self, chat_id: int, text: str) -> None:
+        """Send as PLAIN text, with no parse_mode.
 
         MarkdownV2 requires escaping `.`, `-`, `_` and more, all of which occur in
-        every URL. Escaping renders correctly but makes the message unreadable in
-        any client that shows the raw text, and one missed character returns a 400
-        naming a byte offset. Telegram auto-links bare URLs in plain text, so the
-        formatting buys nothing here and costs a whole class of failure.
+        every URL and in query text meant to be copied out. Escaping renders correctly
+        but makes the message unreadable in any client that shows the raw text, and one
+        missed character returns a 400 naming a byte offset. Telegram auto-links bare
+        URLs in plain text, so the formatting buys nothing here and costs a whole class
+        of failure.
         """
-        await self._client.send_message(chat_id, text)
+        for part in chunk_message(text):
+            await self._client.send_message(chat_id, part)
 
     async def _capture(self, chat_id: int, text: str) -> None:
         """Ingest a forwarded job description and reply with its triage card."""
         if self._sessionmaker is None:
-            await self._client.send_message(
-                chat_id,
-                escape_md("Capture is unavailable: no database configured."),
-                parse_mode="MarkdownV2",
-            )
+            await self._say(chat_id, "Capture is unavailable: no database configured.")
             return
 
         from careeros.modules.ai.deps import build_ai_service
@@ -291,3 +451,19 @@ def _split_quoted(text: str) -> tuple[str | None, str | None]:
             end = body.index(quote, 1)
             return body[1:end].strip() or None, body[end + 1 :].strip() or None
     return None, None
+
+
+def _first_rendered_file(files: Any) -> tuple[str, bytes] | None:
+    """The best rendered file for chat: the PDF, else the markdown, else nothing.
+
+    Blocking on purpose — the caller hands it to a thread. Returning the bytes
+    rather than the path keeps the one filesystem touch in one place.
+    """
+    for attr, suffix in (("pdf", "pdf"), ("md", "md")):
+        raw = getattr(files, attr, None)
+        if not raw:
+            continue
+        path = Path(raw)
+        if path.is_file():
+            return suffix, path.read_bytes()
+    return None

@@ -15,6 +15,13 @@ from careeros.core.config import Settings
 
 log = structlog.get_logger(__name__)
 
+#: Telegram refuses a bot upload above this size. Checked before the request so a
+#: too-large file fails as a sentence the owner can read, not as a timeout.
+MAX_DOCUMENT_BYTES = 50 * 1024 * 1024
+
+#: A caption longer than this is rejected outright, taking the document with it.
+MAX_CAPTION_CHARS = 1024
+
 
 class TelegramError(RuntimeError):
     """Telegram accepted the request and refused it, or could not be reached."""
@@ -53,3 +60,39 @@ class TelegramClient:
 
     async def send_message(self, chat_id: int, text: str, **kw: Any) -> dict:
         return await self._call("sendMessage", chat_id=chat_id, text=text, **kw)
+
+    async def send_document(
+        self,
+        chat_id: int,
+        filename: str,
+        content: bytes,
+        *,
+        caption: str | None = None,
+    ) -> dict:
+        """Upload one file as a document.
+
+        Takes bytes rather than a path on purpose: the client's job is the wire, and
+        keeping the filesystem out of it means a test can exercise the upload without
+        one. Multipart, so it cannot share `_call`'s JSON body.
+        """
+        if len(content) > MAX_DOCUMENT_BYTES:
+            raise TelegramError(
+                f"{filename} is {len(content) // (1024 * 1024)} MB; "
+                f"Telegram caps bot uploads at {MAX_DOCUMENT_BYTES // (1024 * 1024)} MB"
+            )
+        data: dict[str, Any] = {"chat_id": str(chat_id)}
+        if caption:
+            data["caption"] = caption[:MAX_CAPTION_CHARS]
+        async with httpx.AsyncClient(timeout=self._timeout) as http:
+            try:
+                resp = await http.post(
+                    f"{self._base}/sendDocument",
+                    data=data,
+                    files={"document": (filename, content)},
+                )
+            except httpx.HTTPError as exc:
+                raise TelegramError(f"cannot reach Telegram for sendDocument: {exc}") from exc
+        body = resp.json()
+        if not body.get("ok"):
+            raise TelegramError(f"sendDocument failed: {body.get('description')}")
+        return body.get("result")

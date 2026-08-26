@@ -29,12 +29,20 @@ Roadmap detail: `docs/architecture/04-roadmap.md`.
     [#1](https://github.com/hnkovr/CareerOS/issues/1) webhook + 3 gates,
     [#2](https://github.com/hnkovr/CareerOS/issues/2) ownership claim,
     [#3](https://github.com/hnkovr/CareerOS/issues/3) capture,
-    [#8](https://github.com/hnkovr/CareerOS/issues/8) db scheme — 73 bot + 49 deploy tests
+    [#8](https://github.com/hnkovr/CareerOS/issues/8) db scheme,
+    [#25](https://github.com/hnkovr/CareerOS/issues/25) `/services`,
+    [#26](https://github.com/hnkovr/CareerOS/issues/26) `/open` `/profiles`,
+    [#27](https://github.com/hnkovr/CareerOS/issues/27) `/urls`,
+    [#28](https://github.com/hnkovr/CareerOS/issues/28) `/queries`,
+    [#29](https://github.com/hnkovr/CareerOS/issues/29) `/cv update`,
+    [#30](https://github.com/hnkovr/CareerOS/issues/30) `/cv improve` — 187 bot + 49 deploy tests
   - TODO: [#4](https://github.com/hnkovr/CareerOS/issues/4) triage callbacks ·
-    [#5](https://github.com/hnkovr/CareerOS/issues/5) career cmds ·
+    [#5](https://github.com/hnkovr/CareerOS/issues/5) fact search (`/facts`; `/cv` is done) ·
     [#6](https://github.com/hnkovr/CareerOS/issues/6) ops cmds (partial: /status /whoami /help) ·
     [#7](https://github.com/hnkovr/CareerOS/issues/7) notifications ·
-    [#9](https://github.com/hnkovr/CareerOS/issues/9) first deploy
+    [#9](https://github.com/hnkovr/CareerOS/issues/9) first deploy ·
+    [#31](https://github.com/hnkovr/CareerOS/issues/31) web / Telegram mini-app (needs its own spec:
+    `initData` signature auth is a different trust model and cannot reuse the bot's gates)
   - OPEN QUESTION: aiogram 3 was the accepted library, but nothing has needed it — the thin
     httpx client covers webhook, gates, claim, capture and keyboards. Keep the thin client or
     adopt aiogram for #4?

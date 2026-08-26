@@ -227,6 +227,20 @@ class CVComparison(BaseModel):
     sections_b: list[str]
 
 
+class CVImprovement(BaseModel):
+    """One AI pass, plus the verbatim-facts baseline it is judged against.
+
+    The baseline is regenerated rather than looked up: comparing against "whatever
+    artifact happened to be generated last" answers a different question every time,
+    and if that one was itself an AI run the diff shows AI-vs-AI drift instead of
+    what AI changed about the facts.
+    """
+
+    artifact: CVArtifactOut
+    baseline: CVArtifactOut
+    comparison: CVComparison
+
+
 class CompareRequest(BaseModel):
     a: uuid.UUID
     b: uuid.UUID
