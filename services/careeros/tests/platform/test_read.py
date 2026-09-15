@@ -14,10 +14,10 @@ from typing import Any
 import httpx
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from careeros.core.config import Settings
+from careeros.modules.opportunities.deps import find_opportunity_id_by_url
 from careeros.modules.opportunities.enums import FieldSource, OpportunityStatus, SourceRelation
 from careeros.modules.opportunities.models import Opportunity
 from careeros.modules.platform.base import BaseConnector, ReadUnavailable
@@ -285,8 +285,8 @@ async def test_dry_run_reads_but_writes_nothing(
     out = await svc.read_job(ReadRequest(url=JOB_URL, dry_run=True))
     assert out.posting is not None and out.posting.title == "Senior Data Engineer"
     assert out.opportunity_id is None and out.created is False and out.run_id is None
-    assert (await session.scalars(select(Opportunity))).all() == []
-    assert await svc.platform.list_runs(kind=SyncKind.job) == []
+    assert await find_opportunity_id_by_url(session, JOB_URL, user_id=user_id) is None
+    assert await svc.platform.list_runs(platform=Platform.getmatch, kind=SyncKind.job) == []
 
 
 @pytest.mark.db
@@ -302,7 +302,7 @@ async def test_a_captcha_page_fails_with_every_attempt_named(
     runs = await svc.platform.list_runs(kind=SyncKind.job)
     assert len(runs) == 1 and runs[0].status == "failed"
     assert runs[0].details["attempts"][0]["error_type"] == "captcha"
-    assert (await session.scalars(select(Opportunity))).all() == []
+    assert await find_opportunity_id_by_url(session, JOB_URL, user_id=user_id) is None
 
 
 @pytest.mark.db

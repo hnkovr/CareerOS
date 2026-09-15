@@ -1,0 +1,2514 @@
+
+# Build: CV-as-Code / Career Data Platform
+
+Ты — Principal Software Architect + Senior Full-Stack Engineer + AI/Agentic Systems Engineer.
+
+Нужно спроектировать и постепенно реализовать production-quality приложение **CV-as-Code / Career Data Platform** — персональную Career Operating System для Senior Data Engineer / Analytics Engineer / Data Platform Engineer / AI/Agentic Data Platform Consultant.
+
+Не делай очередной Resume Builder.
+
+Главная идея продукта:
+
+> **Canonical career data → positioning → channel-specific profiles/CVs → opportunities → communications → applications → AI-assisted decisions/actions**
+
+Система должна быть **single source of truth для карьеры**, а LinkedIn, Wellfound, Upwork, Toptal, email и AI-сервисы должны быть внешними адаптерами / projections.
+
+---
+
+# 1. Product goals
+
+Приложение должно решать одновременно следующие задачи:
+
+1. Поддержка и обновление **General/Core CV as Code**.
+2. Генерация нескольких CV / positioning variants из одного factual source.
+3. Адаптация профилей под:
+
+   * LinkedIn;
+   * Wellfound;
+   * Upwork;
+   * Toptal;
+   * generic ATS;
+   * recruiter outreach;
+   * direct B2B outreach.
+4. Аудит существующих профилей на этих платформах.
+5. Проверка:
+
+   * completeness;
+   * consistency;
+   * positioning;
+   * recruiter keywords;
+   * channel fit;
+   * outdated information;
+   * contradictions между платформами.
+6. Ingestion вакансий / проектов / контрактов / inbound leads.
+7. Автоматическая оценка релевантности каждой возможности.
+8. Генерация:
+
+   * краткого AI-analysis;
+   * deep analysis;
+   * application strategy;
+   * interview preparation;
+   * prompts для внешних AI chats.
+9. Проверка входящих сообщений:
+
+   * с career platforms;
+   * recruiter emails;
+   * client emails;
+   * application updates;
+   * invitations;
+   * interview requests.
+10. Unified career inbox.
+11. Application / lead pipeline.
+12. AI assistants на уровне каждой основной сущности.
+13. Web + mobile/iOS + macOS UX.
+14. Self-hostable / privacy-first architecture.
+15. Возможность в будущем превратить продукт из single-user personal tool в SaaS.
+
+---
+
+# 2. Non-goals
+
+На первых версиях НЕ пытаться:
+
+* клонировать LinkedIn;
+* строить полноценную CRM;
+* автоматически спамить работодателей;
+* массово подавать заявки без участия человека;
+* обходить CAPTCHA;
+* обходить ограничения API;
+* хранить пароли LinkedIn/Upwork/etc;
+* строить browser automation, нарушающую ToS платформ;
+* автоматически изменять factual career history без подтверждения пользователя;
+* делать Kubernetes обязательным;
+* делать microservices ради microservices.
+
+Архитектура должна быть modular monolith first.
+
+---
+
+# 3. Critical architectural principle
+
+Разделить данные на два класса.
+
+## 3.1 Canonical Career Data
+
+Это факты, которые являются source of truth:
+
+* identity/public profile;
+* positioning;
+* experience;
+* roles;
+* achievements;
+* measurable results;
+* projects;
+* technologies;
+* responsibilities;
+* education;
+* certifications;
+* languages;
+* publications;
+* portfolio;
+* links;
+* testimonials;
+* packaged consulting offers.
+
+Хранить их **as code в private Git repository**:
+
+```text
+career/
+  source/
+  positioning/
+  channels/
+  templates/
+  prompts/
+  schemas/
+```
+
+Формат:
+
+```text
+YAML + Markdown
+```
+
+Каждый существенный факт должен иметь стабильный ID.
+
+Пример:
+
+```yaml
+id: achievement_prodamus_001
+company_id: prodamus
+type: achievement
+
+facts:
+  - designed GitLab CI/CD architecture
+  - introduced dbt Slim CI
+  - improved deployment reliability
+
+technologies:
+ - 1st prio:
+  - dbt
+  - Dagster
+  - GitLab CI
+  - ClickHouse
+  - Docker
+  - ClaudeCode
+
+evidence:
+  - type: project
+    ref: pdp
+
+visibility:
+  linkedin: true
+  wellfound: true
+  upwork: true
+  toptal: optional
+
+status: verified
+```
+
+AI не должен иметь права молча менять `facts`.
+
+AI может:
+
+```text
+fact → select → summarize → rephrase → combine → project
+```
+
+но не:
+
+```text
+fact → invent
+```
+
+Любое предложение AI изменить canonical facts должно оформляться как:
+
+```text
+suggested change → diff → explicit approval
+```
+
+---
+
+# 4. Operational Data
+
+Операционное состояние хранить в PostgreSQL:
+
+* opportunities;
+* job posts;
+* freelance projects;
+* inbound messages;
+* contacts;
+* recruiters;
+* companies;
+* applications;
+* interviews;
+* profile snapshots;
+* profile audits;
+* generated CV variants;
+* AI runs;
+* prompt runs;
+* scoring;
+* reminders;
+* source sync state;
+* email threads;
+* notes;
+* tasks.
+
+Таким образом:
+
+```text
+Git
+=
+career source of truth
+
+PostgreSQL
+=
+operational career state
+```
+
+Не смешивать эти ответственности.
+
+---
+
+# 5. Suggested technology stack
+
+Приоритет:
+
+* low operational complexity;
+* OSS;
+* self-hostability;
+* excellent developer experience;
+* strong typing;
+* API-first;
+* agent-friendly repository;
+* easy local development.
+
+Предпочтительный stack:
+
+## Backend
+
+```text
+Python 3.13+
+FastAPI
+Pydantic v2
+SQLAlchemy 2
+Alembic
+PostgreSQL
+pgvector
+Redis
+ARQ / lightweight async workers
+```
+
+Не использовать Celery без необходимости.
+
+Спроектировать task abstraction так, чтобы позднее можно было перейти на Temporal.
+
+---
+
+## Web
+
+```text
+Next.js
+React
+TypeScript
+Tailwind
+shadcn/ui
+TanStack Query
+```
+
+Web должен быть основным интерфейсом P0.
+
+Поддержать PWA.
+
+---
+
+## Mobile / iOS
+
+```text
+Expo
+React Native
+TypeScript
+```
+
+Максимально переиспользовать:
+
+* API client;
+* schemas;
+* design tokens;
+* domain types;
+* business logic.
+
+Mobile должен быть особенно хорош для:
+
+* quick opportunity triage;
+* inbox;
+* approve/reject;
+* AI summaries;
+* notifications;
+* share-to-app.
+
+---
+
+## macOS
+
+Использовать:
+
+```text
+Tauri v2
+```
+
+Desktop app может переиспользовать web UI / shared React packages там, где это разумно.
+
+macOS app должен дополнительно уметь:
+
+* clipboard integration;
+* file access;
+* Git repo access;
+* launch local AI/dev agents;
+* save prompt/task bundles;
+* macOS notifications;
+* optional menu bar quick actions.
+
+---
+
+# 6. Monorepo
+
+Создать monorepo примерно следующей структуры:
+
+```text
+career-os/
+├── apps/
+│   ├── web/
+│   ├── mobile/
+│   └── desktop/
+│
+├── services/
+│   ├── api/
+│   └── worker/
+│
+├── packages/
+│   ├── domain/
+│   ├── schemas/
+│   ├── api-client/
+│   ├── ui/
+│   ├── ai/
+│   ├── prompts/
+│   └── platform-adapters/
+│
+├── career/
+│   ├── source/
+│   │   ├── profile.yaml
+│   │   ├── experience.yaml
+│   │   ├── achievements.yaml
+│   │   ├── projects.yaml
+│   │   ├── skills.yaml
+│   │   ├── education.yaml
+│   │   ├── certifications.yaml
+│   │   └── testimonials.yaml
+│   │
+│   ├── positioning/
+│   │   ├── senior-data-engineer.yaml
+│   │   ├── analytics-engineer.yaml
+│   │   ├── data-platform-engineer.yaml
+│   │   └── agentic-data-platform-consultant.yaml
+│   │
+│   ├── channels/
+│   │   ├── linkedin.yaml
+│   │   ├── wellfound.yaml
+│   │   ├── upwork.yaml
+│   │   ├── toptal.yaml
+│   │   ├── ats.yaml
+│   │   └── direct-outreach.yaml
+│   │
+│   ├── offers/
+│   ├── prompts/
+│   ├── schemas/
+│   └── rendercv/
+│
+├── generated/
+│   ├── cv/
+│   ├── profiles/
+│   ├── prompts/
+│   └── applications/
+│
+├── docs/
+│   ├── architecture/
+│   ├── product/
+│   ├── developer-guide/
+│   └── adr/
+│
+├── tests/
+├── docker-compose.yml
+└── README.md
+```
+
+Структуру можно скорректировать, если найдётся лучшее разделение ответственности.
+
+Но сначала аргументировать изменения.
+
+---
+
+# 7. CV-as-Code engine
+
+Интегрировать RenderCV через отдельный adapter.
+
+Pipeline:
+
+```text
+Canonical Career Facts
+        ↓
+Positioning Strategy
+        ↓
+Channel Rules
+        ↓
+Opportunity/JD Context [optional]
+        ↓
+Fact Selection
+        ↓
+AI Rewriting
+        ↓
+Validation
+        ↓
+RenderCV
+        ↓
+PDF / Markdown / structured JSON
+```
+
+Поддержать варианты:
+
+```text
+general-core
+senior-data-engineer
+analytics-engineer
+data-platform-engineer
+startup-data-engineer
+consultant
+agentic-data-platform
+poland-eu
+remote-us
+```
+
+---
+
+# 8. Provenance
+
+Это фундаментальная функция.
+
+Каждая bullet point CV должна позволять ответить:
+
+> Из каких canonical facts она была получена?
+
+Пример:
+
+```yaml
+generated_bullet:
+  text: >
+    Designed and productionized dbt/Dagster CI/CD workflows,
+    introducing Slim CI and automated environment validation.
+
+  derived_from:
+    - achievement_prodamus_001
+    - project_pdp_ci_003
+
+  generation:
+    provider: anthropic
+    model: ...
+    prompt_version: cv-bullet-v3
+
+  verified: true
+```
+
+UI должен уметь показывать:
+
+```text
+Generated bullet
+     ↓
+Why is this here?
+     ↓
+Source facts
+```
+
+---
+
+# 9. Channel adaptation
+
+Не считать все career platforms одинаковыми.
+
+Создать отдельные strategies.
+
+## LinkedIn
+
+Оптимизировать под:
+
+* recruiter search;
+* broad keyword coverage;
+* market-core;
+* credibility;
+* career graph;
+* Featured;
+* Skills;
+* Projects;
+* Certifications.
+
+LinkedIn должен оставаться более широким, чем PDF CV.
+
+---
+
+## Wellfound
+
+Оптимизировать под:
+
+* startups;
+* ownership;
+* product thinking;
+* speed to MVP;
+* GCP;
+* BigQuery;
+* dbt;
+* OSS;
+* Dagster;
+* analytics;
+* AI automation;
+* LLMOps.
+
+---
+
+## Upwork
+
+Не относиться к Upwork profile как к обычному CV.
+
+Считать его:
+
+> consultant landing page + proof + packaged offers.
+
+Оптимизировать под:
+
+* client problem;
+* result;
+* delivery speed;
+* confidence;
+* packaged services;
+* proof;
+* portfolio;
+* call-to-action.
+
+Примеры offers:
+
+```text
+BigQuery Cost Optimization Audit
+dbt Analytics Warehouse in 7 Days
+GA4 / CRM → BigQuery → Dashboard
+AI Analyst over Your Warehouse
+ClickHouse Realtime Analytics MVP
+Snowflake/dbt Cleanup
+Dagster Pipeline Observability
+SQLMesh/dbt CI Upgrade
+LLM/RAG Evaluation Dashboard
+```
+
+---
+
+## Toptal
+
+Оптимизировать под:
+
+* seniority;
+* technical ownership;
+* architecture;
+* consulting;
+* client communication;
+* system design;
+* production delivery;
+* troubleshooting;
+* leadership.
+
+---
+
+# 10. Profile snapshots
+
+Создать abstraction:
+
+```text
+PlatformProfileSnapshot
+```
+
+Snapshot должен хранить:
+
+```text
+platform
+captured_at
+source
+headline
+about
+experience
+skills
+projects
+portfolio
+rates
+availability
+preferences
+raw_payload
+```
+
+Snapshot может поступать через:
+
+1. official API;
+2. platform export;
+3. user upload;
+4. user paste;
+5. browser share/capture, если это разрешено;
+6. email-derived metadata.
+
+Не строить скрытый crawler.
+
+---
+
+# 11. Profile Audit Engine
+
+Для каждого snapshot делать аудит.
+
+Категории:
+
+```text
+Completeness
+Freshness
+Consistency
+Keyword coverage
+Channel fit
+Positioning fit
+Proof / metrics
+Credibility
+Call-to-action
+Portfolio coverage
+Compensation positioning
+Remote eligibility clarity
+Location clarity
+```
+
+Сравнивать profile snapshot с canonical career data.
+
+Выводить:
+
+```text
+Profile Health Score: 82/100
+
+Critical
+High
+Medium
+Nice-to-have
+```
+
+Для каждого замечания:
+
+```text
+problem
+why it matters
+suggested change
+source facts
+confidence
+apply manually / generate replacement
+```
+
+---
+
+# 12. Drift detection
+
+Нужно автоматически обнаруживать drift.
+
+Примеры:
+
+```text
+LinkedIn says: 12 years
+Wellfound says: 10 years
+
+LinkedIn headline contains Snowflake
+Core positioning removed Snowflake
+
+Upwork project mentions outdated technology
+
+Toptal rate conflicts with current target
+```
+
+Dashboard должен показывать:
+
+```text
+Profiles out of sync: 3
+```
+
+---
+
+# 13. Opportunity ingestion
+
+Создать unified Opportunity model.
+
+Источник может быть:
+
+```text
+LinkedIn
+Wellfound
+Upwork
+Toptal
+Email
+Recruiter
+Direct outreach
+Website
+Manual
+Clipboard
+Share Sheet
+URL
+```
+
+Opportunity должна поддерживать:
+
+```text
+source
+url
+company
+role
+contract_type
+employment_type
+location
+remote_policy
+timezone
+compensation
+currency
+rate
+description
+requirements
+preferred_skills
+recruiter
+received_at
+deadline
+raw_source
+```
+
+---
+
+# 14. Opportunity normalization
+
+После ingestion:
+
+```text
+raw opportunity
+      ↓
+parser
+      ↓
+normalized opportunity
+      ↓
+enrichment
+      ↓
+AI analysis
+      ↓
+scoring
+```
+
+Не уничтожать raw source.
+
+---
+
+# 15. Opportunity scoring
+
+Scoring должен быть transparent, configurable и multi-dimensional.
+
+Нужны отдельные оценки:
+
+```text
+Overall Fit
+Remote US Fit
+EU Fit
+Poland Fallback Fit
+Upwork Fit
+Startup Fit
+Enterprise Fit
+Technical Fit
+Seniority Fit
+Compensation Fit
+Learning ROI
+Strategic Upside
+Application Effort
+Risk
+```
+
+Особенно учитывать следующие группы технологий.
+
+## Market Core
+
+```text
+Python
+SQL
+dbt
+Snowflake
+Databricks
+Airflow
+AWS
+Spark
+Kafka
+
+More detailed separating:
+technologies:
+ - 1st prio:
+  - dbt
+  - Dagster
+  - GitLab CI
+  - ClickHouse
+  - Docker
+  - ClaudeCode
+ - additional:
+  - Iceberg
+  - Spark
+  - Kafka / PubSub / RedPanda
+  - Airflow
+  - Trino
+  - Prefect
+ - target:
+  - GCP
+  - BQ
+  - Databricks
+  - Snowflake
+  - AWS
+```
+
+## Strategic Core
+
+```text
+GCP
+BigQuery
+dbt
+Dagster
+Python
+SQL
+DuckDB
+ClickHouse
+Semantic BI
+```
+
+## OSS Builder
+
+```text
+Dagster
+SQLMesh
+DuckDB
+ClickHouse
+Redpanda
+Evidence
+Metabase
+OpenLineage
+DataHub
+Soda
+Great Expectations
+```
+
+## Agentic Differentiators
+
+```text
+LLMOps
+AgentOps
+RAG evaluation
+AI analytics
+semantic layers
+AI-assisted development
+agentic workflows
+```
+
+Не считать popularity единственным показателем.
+
+Разделять:
+
+```text
+demand
+supply/competition
+learning curve
+rate ceiling
+portfolio demonstrability
+future upside
+```
+
+---
+
+# 16. User-specific career strategy
+
+Основное positioning:
+
+```text
+Senior Data Engineer / Analytics Engineer
+```
+
+Headline baseline:
+
+```text
+Senior Data Engineer / Analytics Engineer |
+GCP, BigQuery, Snowflake, dbt, Airflow, Dagster,
+Python, SQL, Databricks, Kafka, ClickHouse, LLMOps
+```
+
+Strategic positioning:
+
+```text
+Agentic Data Platform Engineer / Senior Data Engineer
+building AI-ready analytics platforms with GCP/BigQuery,
+dbt, Dagster, ClickHouse, OSS, and enterprise-compatible
+Snowflake/Databricks/Airflow.
+```
+
+Основной target:
+
+```text
+Remote US / EU B2B / freelance / contract
+```
+
+Текущая локация:
+
+```text
+Batumi, Georgia
+```
+
+Fallback:
+
+```text
+Poland / EU relocation
+```
+
+Поэтому scoring должен отдельно учитывать:
+
+```text
+remote outside US allowed?
+contractor allowed?
+Georgia eligible?
+EU timezone?
+Poland-compatible stack?
+```
+
+---
+
+# 17. Recommended opportunity actions
+
+Для каждой opportunity генерировать:
+
+```text
+IGNORE
+WATCH
+APPLY
+HIGH PRIORITY
+REPLY NOW
+ASK QUESTIONS FIRST
+NEGOTIATE
+PREPARE INTERVIEW
+```
+
+AI должен объяснить решение.
+
+Пример:
+
+```text
+84/100 — APPLY
+
+Why:
++ strong dbt/BigQuery overlap
++ outside-US remote allowed
++ startup ownership
++ high portfolio alignment
+
+Risks:
+- compensation not listed
+- Kafka required but secondary
+
+Suggested positioning:
+Senior DE + Analytics Engineering + GCP
+
+CV:
+startup-data-engineer-v3
+
+Next action:
+Send recruiter response.
+```
+
+---
+
+# 18. AI architecture
+
+AI должен быть first-class subsystem.
+
+Создать единый interface:
+
+```python
+class AIProvider:
+    generate(...)
+    stream(...)
+    structured_output(...)
+    embeddings(...)
+```
+
+Поддержать adapters для:
+
+```text
+OpenAI
+Anthropic
+Google Gemini
+xAI/Grok
+local/OpenAI-compatible endpoints
+```
+
+Не размазывать provider-specific code по приложению.
+
+---
+
+# 19. Three AI interaction modes
+
+Каждая сущность должна поддерживать три режима.
+
+## Mode A — Built-in AI
+
+Приложение само вызывает AI API.
+
+Пример:
+
+```text
+Opportunity → Analyze with Claude
+Profile → Audit with GPT
+CV → Tailor with Gemini
+```
+
+---
+
+## Mode B — External AI Chat Handoff
+
+Система генерирует готовый prompt bundle для:
+
+```text
+ChatGPT
+Claude
+Gemini
+Grok
+Perplexity
+etc.
+```
+
+Не полагаться на автоматический доступ к пользовательским chat accounts.
+
+Достаточно:
+
+```text
+Generate
+Copy
+Open target AI chat
+Paste/send manually
+```
+
+Использовать официальный API / deep link только когда это действительно поддерживается.
+
+---
+
+## Mode C — AI Development Agent Handoff
+
+Генерировать task packets для:
+
+```text
+Claude Code
+Codex CLI
+Gemini CLI
+Antigravity
+Cursor
+Windsurf
+other coding agents
+```
+
+Пример артефакта:
+
+```text
+generated/dev-tasks/
+  improve-linkedin-profile.md
+  build-upwork-portfolio-case.md
+  create-clickhouse-demo.md
+```
+
+Task должен включать:
+
+```text
+Context
+Goal
+Relevant source files
+Constraints
+Acceptance criteria
+Suggested commands
+Expected artifacts
+```
+
+---
+
+# 20. Context-aware AI assistants
+
+Добавить AI assistant практически на каждую крупную сущность.
+
+## CV Assistant
+
+Actions:
+
+```text
+Improve
+Shorten
+Add metrics
+Check ATS
+Tailor to JD
+Explain changes
+Compare versions
+Generate variants
+```
+
+---
+
+## Profile Assistant
+
+```text
+Audit
+Rewrite headline
+Rewrite About
+Find missing keywords
+Compare with Core CV
+Optimize for platform
+Generate update checklist
+```
+
+---
+
+## Opportunity Assistant
+
+```text
+Summarize
+Score
+Analyze tradeoffs
+Compare against another opportunity
+Generate questions
+Prepare response
+Select CV
+Generate cover letter
+Prepare interview plan
+```
+
+---
+
+## Inbox Assistant
+
+```text
+Classify
+Summarize
+Detect urgency
+Link to opportunity
+Suggest reply
+Create follow-up
+Extract deadline
+```
+
+---
+
+## Application Assistant
+
+```text
+Current status
+Next step
+Follow-up timing
+Interview preparation
+Negotiation strategy
+Risk analysis
+```
+
+---
+
+## Career Strategy Assistant
+
+```text
+What changed?
+Which skills appear more often?
+What is my current funnel?
+Where am I losing opportunities?
+Which platform performs best?
+Which portfolio project gives highest ROI?
+```
+
+---
+
+# 21. Prompt system
+
+Prompts должны быть version-controlled.
+
+Структура:
+
+```text
+career/prompts/
+  opportunity/
+  cv/
+  profile/
+  inbox/
+  interview/
+  negotiation/
+  dev-agent/
+```
+
+Prompt должен иметь metadata:
+
+```yaml
+id:
+version:
+purpose:
+inputs:
+output_schema:
+provider_preferences:
+updated_at:
+```
+
+AI runs должны сохранять:
+
+```text
+prompt_version
+provider
+model
+timestamp
+inputs hash
+output
+cost
+latency
+user feedback
+```
+
+---
+
+# 22. Generate prompts for external AI
+
+Для любой opportunity должна быть кнопка:
+
+```text
+Generate AI Analysis Prompt
+```
+
+Prompt должен содержать:
+
+```text
+career positioning
+relevant CV facts
+current target market
+job description
+known constraints
+expected analysis framework
+```
+
+И просить AI выдать:
+
+```text
+1. Executive verdict
+2. Fit score
+3. Strong matches
+4. Missing skills
+5. Risks
+6. Compensation assessment
+7. Competition assessment
+8. Channel strategy
+9. Best CV variant
+10. Suggested response
+11. Interview preparation
+12. Apply / skip recommendation
+```
+
+---
+
+# 23. Career Inbox
+
+Создать unified inbox.
+
+Источники:
+
+```text
+Gmail
+platform notifications
+recruiter emails
+client emails
+manual forwarded messages
+```
+
+P0 интеграция:
+
+```text
+Gmail OAuth/API
+```
+
+Позднее:
+
+```text
+generic IMAP
+other email providers
+```
+
+Классифицировать письма:
+
+```text
+New opportunity
+Recruiter outreach
+Client lead
+Interview
+Application update
+Rejection
+Offer
+Platform notification
+Follow-up required
+Spam/noise
+```
+
+---
+
+# 24. Email → Opportunity linking
+
+Письмо должно автоматически связываться с:
+
+```text
+company
+recruiter
+opportunity
+application
+platform
+```
+
+Например:
+
+```text
+LinkedIn notification
+       ↓
+Opportunity #42
+       ↓
+Application #18
+       ↓
+Recruiter Jane Doe
+```
+
+---
+
+# 25. Email safety
+
+AI может предложить reply.
+
+Но отправлять email только после явного user action.
+
+Никаких автоматических ответов P0.
+
+Позднее можно добавить per-workflow approval policies.
+
+---
+
+# 26. Platform integration strategy
+
+Создать capabilities matrix:
+
+```text
+Platform
+Read Profile
+Write Profile
+Read Opportunities
+Read Messages
+Apply
+Export
+Official API
+Email fallback
+Manual capture
+```
+
+Каждый adapter должен объявлять capabilities.
+
+Никогда не предполагать, что все платформы предоставляют одинаковые APIs.
+
+Правило:
+
+```text
+official API
+>
+official export/import
+>
+email ingestion
+>
+user initiated capture
+>
+manual paste
+```
+
+Не обходить security controls.
+
+---
+
+# 27. Browser / Share integration
+
+Позднее добавить browser extension / share extension.
+
+Use cases:
+
+```text
+Open job posting
+→ Share to CareerOS
+
+Open profile
+→ Capture snapshot
+
+Select recruiter message
+→ Add to Career Inbox
+```
+
+Browser extension должна быть **user initiated**.
+
+Не реализовывать массовый scraping.
+
+---
+
+# 28. Dashboard
+
+Главная страница должна отвечать за 10 секунд на вопросы:
+
+```text
+Что нового?
+Что требует моего внимания?
+Какие лучшие новые возможности?
+В порядке ли мои профили?
+Кому нужно ответить?
+Что происходит с заявками?
+```
+
+Основные cards:
+
+```text
+Profile Health
+New Opportunities
+Top Matches
+Career Inbox
+Applications
+Follow-ups
+Interviews
+AI Suggestions
+Sync Status
+CV Versions
+```
+
+---
+
+# 29. Profile dashboard
+
+Пример:
+
+```text
+LinkedIn      91/100   Healthy
+Wellfound     84/100   3 suggestions
+Upwork        76/100   portfolio gap
+Toptal        88/100   stale experience
+```
+
+Нажатие:
+
+```text
+current snapshot
+changes
+issues
+suggested updates
+AI assistant
+```
+
+---
+
+# 30. Opportunity inbox UX
+
+Сделать быстрый triage.
+
+Desktop:
+
+```text
+Opportunity list + detail pane
+```
+
+Mobile:
+
+```text
+swipe / buttons
+```
+
+Actions:
+
+```text
+Skip
+Save
+Analyze
+Apply
+Reply
+Ask AI
+Generate Prompt
+```
+
+---
+
+# 31. Comparison mode
+
+Позволить выбрать 2–5 opportunities и сравнить:
+
+```text
+Rate
+Remote eligibility
+Stack fit
+Strategic fit
+Learning ROI
+Competition
+Application effort
+Relocation fit
+Long-term upside
+```
+
+AI должен давать ranked recommendation.
+
+---
+
+# 32. Application pipeline
+
+Минимальный Kanban:
+
+```text
+Inbox
+Interested
+Preparing
+Applied
+Recruiter Screen
+Technical
+Final
+Offer
+Rejected
+Archived
+```
+
+Отдельно поддержать freelance:
+
+```text
+Lead
+Discovery
+Proposal
+Negotiation
+Active
+Won
+Lost
+```
+
+---
+
+# 33. Communication timeline
+
+Для каждой opportunity показывать:
+
+```text
+Job discovered
+Recruiter message
+Reply
+Application
+Follow-up
+Interview
+Feedback
+Offer
+```
+
+---
+
+# 34. Contacts
+
+Минимальная career CRM entity:
+
+```text
+name
+company
+role
+email
+LinkedIn
+relationship
+opportunities
+messages
+notes
+last_contact
+next_action
+```
+
+Не превращать P0 в полноценный HubSpot.
+
+---
+
+# 35. Search
+
+Unified full-text + semantic search по:
+
+```text
+career facts
+experience
+CV
+opportunities
+messages
+companies
+contacts
+notes
+AI outputs
+```
+
+Использовать:
+
+```text
+PostgreSQL full-text
++
+pgvector
+```
+
+Не вводить отдельный vector DB без необходимости.
+
+---
+
+# 36. Career analytics
+
+Dashboard поздних фаз должен показывать:
+
+```text
+Applications/week
+Replies
+Response rate
+Interview conversion
+Offer conversion
+Platform performance
+Role distribution
+Stack demand
+Compensation distribution
+Reason for rejection
+Time to reply
+Top inbound sources
+```
+
+---
+
+# 37. Market intelligence
+
+На основе поступающих opportunities агрегировать:
+
+```text
+technology frequencies
+technology combinations
+salary/rate
+remote eligibility
+roles
+regions
+seniority
+```
+
+Строить персональный demand/supply proxy.
+
+Не выдавать его за глобальный market research.
+
+Явно подписывать:
+
+```text
+Based on your observed opportunity stream
+```
+
+---
+
+# 38. Skills gap
+
+Сравнивать:
+
+```text
+target opportunities
+vs
+canonical skill inventory
+vs
+portfolio evidence
+```
+
+Разделять:
+
+```text
+Skill known
+Skill claimed
+Skill evidenced
+Skill missing
+Skill worth learning
+```
+
+Очень важно отличать:
+
+```text
+I know X
+
+от
+
+I can prove X
+```
+
+---
+
+# 39. Portfolio planner
+
+Для skill gaps AI может предложить portfolio task.
+
+Пример:
+
+```text
+Gap:
+GCP Pub/Sub
+
+Suggested proof:
+add realtime ingestion path to Agentic Market Intelligence Platform
+
+Estimated career ROI:
+high
+```
+
+---
+
+# 40. Packaged offers
+
+Хранить consulting packaged offers как code.
+
+Структура:
+
+```yaml
+id:
+title:
+customer_problem:
+deliverables:
+timeline:
+ideal_client:
+technologies:
+proof:
+pricing_strategy:
+platforms:
+```
+
+AI должен адаптировать offers для:
+
+```text
+Upwork
+direct outreach
+Wellfound consulting opportunities
+LinkedIn Featured
+```
+
+---
+
+# 41. Notifications
+
+Поддержать:
+
+```text
+new high-score opportunity
+urgent recruiter message
+interview tomorrow
+follow-up due
+profile drift
+new offer
+```
+
+Web Push + mobile notifications + macOS notifications.
+
+Не создавать notification spam.
+
+---
+
+# 42. Security
+
+Это privacy-sensitive приложение.
+
+Обязательно:
+
+* OAuth where possible;
+* no platform password storage;
+* encrypted OAuth tokens at rest;
+* secrets only через environment / secret manager / OS keychain;
+* HTTPS;
+* CSRF protection;
+* secure cookies;
+* least privilege;
+* audit log для write actions;
+* never log email bodies/tokens accidentally;
+* configurable data retention.
+
+Для desktop credentials использовать OS Keychain.
+
+---
+
+# 43. Deployment
+
+P0 должен запускаться:
+
+```bash
+docker compose up
+```
+
+Минимальные production варианты:
+
+```text
+single VPS
+Fly.io
+Railway
+Render
+Cloud Run
+```
+
+Не привязывать архитектуру к конкретному vendor.
+
+PostgreSQL должен быть portable.
+
+---
+
+# 44. CI/CD
+
+Добавить:
+
+```text
+lint
+format
+typecheck
+unit tests
+integration tests
+schema validation
+API contract tests
+build
+security checks
+```
+
+Python:
+
+```text
+ruff
+mypy/pyright
+pytest
+```
+
+TypeScript:
+
+```text
+eslint
+tsc
+vitest
+```
+
+Использовать pre-commit.
+
+---
+
+# 45. Tests
+
+Особое внимание:
+
+```text
+canonical data validation
+AI output schema validation
+provenance
+scoring
+platform adapter contracts
+email parsing
+opportunity deduplication
+CV generation
+prompt snapshots
+authorization
+```
+
+AI output никогда не считать валидным без schema validation.
+
+---
+
+# 46. Observability
+
+Использовать lightweight stack.
+
+Нужны:
+
+```text
+structured logs
+request IDs
+AI run telemetry
+background task telemetry
+sync status
+error tracking
+```
+
+OpenTelemetry-ready design.
+
+Не требовать тяжёлый observability stack для local use.
+
+---
+
+# 47. ADR
+
+Для значимых архитектурных решений создавать:
+
+```text
+docs/adr/
+```
+
+Минимум ADR:
+
+```text
+001-git-as-career-source-of-truth.md
+002-postgres-for-operational-state.md
+003-ai-provider-abstraction.md
+004-platform-adapter-model.md
+005-no-autonomous-platform-scraping.md
+006-rendercv.md
+007-web-first-multiplatform.md
+```
+
+---
+
+# 48. P0 — Career Core
+
+Сначала реализовать вертикальный slice.
+
+P0 должен включать:
+
+```text
+Git career vault
+Schemas
+Career fact editor
+RenderCV
+Core CV generation
+CV variants
+Web dashboard
+Manual opportunity ingest
+JD paste
+Opportunity scoring
+AI analysis
+External AI prompt generation
+Basic profile snapshots
+Profile audit
+Docker Compose
+Tests
+```
+
+P0 должен быть реально usable.
+
+---
+
+# 49. P1 — Inbox & Pipeline
+
+Добавить:
+
+```text
+Gmail integration
+Career Inbox
+Email classification
+Opportunity extraction
+Recruiter detection
+Application Kanban
+Contacts
+Follow-ups
+Notifications
+```
+
+---
+
+# 50. P2 — Platform & Multiplatform
+
+Добавить:
+
+```text
+LinkedIn workflows
+Wellfound workflows
+Upwork workflows
+Toptal workflows
+Profile drift detection
+Browser/share capture
+Expo iOS app
+Tauri macOS app
+```
+
+Важно:
+
+реальная глубина интеграции каждой платформы зависит от доступных официальных capabilities.
+
+---
+
+# 51. P3 — Agentic Career OS
+
+Добавить:
+
+```text
+AI assistants everywhere
+multi-agent workflows
+market intelligence
+career analytics
+skills gap engine
+portfolio recommendations
+negotiation assistant
+interview intelligence
+automated daily briefing
+```
+
+Но сохранить human approval для внешних write actions.
+
+---
+
+# 52. Daily Career Brief
+
+В перспективе dashboard должен генерировать:
+
+```text
+Good morning.
+
+3 new opportunities
+1 high priority recruiter message
+2 applications require follow-up
+LinkedIn profile has 1 drift warning
+Best opportunity today: X — 89/100
+
+Recommended actions:
+1. Reply to recruiter Y.
+2. Apply to X with Startup DE CV.
+3. Update Wellfound headline.
+```
+
+---
+
+# 53. Agentic workflows
+
+Позже поддержать workflows вида:
+
+```text
+Email arrives
+     ↓
+classify
+     ↓
+extract opportunity
+     ↓
+deduplicate
+     ↓
+score
+     ↓
+select CV
+     ↓
+generate analysis
+     ↓
+suggest reply
+     ↓
+WAIT FOR HUMAN APPROVAL
+```
+
+Или:
+
+```text
+Profile snapshot changes
+     ↓
+audit
+     ↓
+detect drift
+     ↓
+generate recommendation
+     ↓
+WAIT FOR HUMAN APPROVAL
+```
+
+---
+
+# 54. Human-in-the-loop
+
+Использовать explicit approval states:
+
+```text
+AI suggested
+Reviewed
+Approved
+Executed
+Rejected
+```
+
+Write actions во внешние системы не должны происходить без approval, если пользователь явно не настроил иной policy.
+
+---
+
+# 55. AI tool model
+
+AI assistant должен работать через tools/functions вместо одного гигантского prompt.
+
+Пример tools:
+
+```text
+get_career_facts()
+get_profile_snapshot()
+get_opportunity()
+score_opportunity()
+search_experience()
+search_achievements()
+generate_cv_variant()
+compare_cv_to_jd()
+generate_external_prompt()
+create_application()
+draft_reply()
+```
+
+LLM orchestration не должна содержать business logic, которую можно выразить детерминированным Python/TypeScript.
+
+Правило:
+
+> deterministic code first, LLM for interpretation/generation.
+
+---
+
+# 56. Structured AI output
+
+Использовать JSON Schema / Pydantic.
+
+Пример:
+
+```json
+{
+  "verdict": "apply",
+  "score": 87,
+  "strengths": [],
+  "gaps": [],
+  "risks": [],
+  "recommended_cv": "",
+  "recommended_positioning": "",
+  "next_action": ""
+}
+```
+
+Не парсить prose regex’ами.
+
+---
+
+# 57. Versioning
+
+Версионировать:
+
+```text
+career facts
+positioning
+CV templates
+prompts
+generated CV
+profile snapshots
+scoring model
+AI provider/model
+```
+
+Любой generated artifact должен быть reproducible насколько возможно.
+
+---
+
+# 58. User editing workflow
+
+UI изменение canonical career information:
+
+```text
+Edit
+→ validate
+→ preview diff
+→ save
+→ Git commit
+```
+
+Опционально:
+
+```text
+commit message generated automatically
+```
+
+Пример:
+
+```text
+career(experience): add PDP GitLab CI achievement
+```
+
+---
+
+# 59. CV comparison
+
+UI должен позволять:
+
+```text
+General Core
+vs
+Remote US
+vs
+Poland
+vs
+Wellfound
+vs
+specific JD
+```
+
+Показывать:
+
+```text
+added
+removed
+rewritten
+keyword difference
+source facts
+```
+
+---
+
+# 60. UX principle
+
+Не заставлять пользователя постоянно писать prompts.
+
+Основные действия должны быть кнопками / commands:
+
+```text
+Analyze
+Audit
+Tailor
+Compare
+Generate
+Reply
+Apply
+Ignore
+Ask AI
+Open in ChatGPT
+Open in Claude
+Create Codex task
+```
+
+---
+
+# 61. Command palette
+
+Desktop/web:
+
+```text
+⌘K
+```
+
+Примеры:
+
+```text
+Add opportunity
+Generate CV
+Audit LinkedIn
+Find ClickHouse roles
+Show unanswered recruiter messages
+Generate Claude prompt
+Create Codex task
+```
+
+---
+
+# 62. Mobile quick capture
+
+Через iOS Share Sheet:
+
+```text
+LinkedIn URL
+Wellfound job
+Upwork project
+webpage
+text
+email snippet
+```
+
+→
+
+```text
+Add to CareerOS
+```
+
+---
+
+# 63. Data import
+
+Подготовить importers для:
+
+```text
+existing CV PDF/DOCX
+LinkedIn export
+JSON Resume
+RenderCV
+plain Markdown
+manual YAML
+```
+
+AI может помогать распарсить импорт, но пользователь подтверждает canonical facts.
+
+---
+
+# 64. Data export
+
+Никакого vendor lock-in.
+
+Экспортировать:
+
+```text
+YAML
+JSON
+Markdown
+PDF
+JSON Resume
+RenderCV
+CSV
+```
+
+---
+
+# 65. Documentation
+
+README должен позволять новому разработчику:
+
+```text
+clone
+configure
+docker compose up
+open app
+load example career data
+generate CV
+add opportunity
+run AI analysis
+```
+
+Документировать:
+
+```text
+architecture
+domain model
+career schemas
+platform adapters
+AI adapters
+security
+development workflow
+deployment
+```
+
+---
+
+# 66. Seed data
+
+Создать realistic fake demo-user.
+
+Не использовать реальные персональные данные в public fixtures.
+
+Отдельно поддержать private user data ignored from public repository.
+
+Например:
+
+```text
+career/private/
+```
+
+в `.gitignore`, либо отдельный private repo/submodule.
+
+Предложить лучший подход.
+
+---
+
+# 67. Developer experience
+
+Добавить команды:
+
+```bash
+make dev
+make test
+make lint
+make generate-cv
+make validate-career
+make seed
+```
+
+Или современный task runner, если он действительно улучшает DX.
+
+---
+
+# 68. First implementation sequence
+
+Не пытайся написать всё сразу.
+
+Начни с:
+
+```text
+1. Inspect repository.
+2. Write architecture proposal.
+3. Define domain boundaries.
+4. Define canonical schemas.
+5. Add ADRs.
+6. Bootstrap backend.
+7. Bootstrap web.
+8. Implement Career Vault reader/validator.
+9. Implement CV generation.
+10. Implement manual opportunity ingest.
+11. Implement deterministic scoring.
+12. Add first AI provider.
+13. Add AI analysis.
+14. Add external prompt generation.
+15. Build first dashboard.
+16. Add tests.
+17. Update docs.
+```
+
+После этого перейти к P1.
+
+---
+
+# 69. Important implementation discipline
+
+На каждом этапе:
+
+```text
+small vertical slice
+tests
+docs
+commit
+```
+
+Не делать огромный unreviewable rewrite.
+
+Перед значимым архитектурным изменением:
+
+```text
+explain
+compare alternatives
+choose
+record ADR
+implement
+```
+
+---
+
+# 70. What I want from you first
+
+На первом шаге НЕ начинай бездумно генерировать сотни файлов.
+
+Сначала:
+
+1. Проанализируй требования.
+2. Предложи final architecture.
+3. Определи bounded contexts.
+4. Определи canonical vs operational data.
+5. Предложи domain model.
+6. Предложи monorepo structure.
+7. Сделай capabilities matrix внешних интеграций.
+8. Определи P0/P1/P2/P3.
+9. Назови технические риски.
+10. Предложи 5–10 ADR.
+11. После этого начинай P0 implementation.
+
+Но если проект уже существует:
+
+> сначала inspect existing repository и адаптируй решение к нему вместо создания параллельной архитектуры.
+
+---
+
+# 71. Definition of Done for first usable release
+
+Первая usable версия считается готовой, если пользователь может:
+
+1. Открыть web app.
+2. Посмотреть canonical career data.
+3. Отредактировать факт.
+4. Увидеть Git diff.
+5. Сохранить изменение.
+6. Сгенерировать Core CV.
+7. Сгенерировать Remote US CV.
+8. Сгенерировать Wellfound-specific variant.
+9. Вставить JD или URL/source текста вакансии.
+10. Получить normalized Opportunity.
+11. Получить transparent score.
+12. Получить AI analysis.
+13. Получить рекомендацию Apply/Skip.
+14. Получить лучший CV variant.
+15. Сгенерировать prompt для ChatGPT/Claude/Gemini/Grok.
+16. Добавить snapshot LinkedIn/Wellfound/Upwork/Toptal.
+17. Получить profile audit.
+18. Увидеть всё это на dashboard.
+19. Запустить всё локально через Docker Compose.
+20. Запустить tests одной командой.
+
+---
+
+# 72. Product north star
+
+Продукт должен эволюционировать не в:
+
+> Resume Builder.
+
+И не просто в:
+
+> Job Tracker.
+
+А в:
+
+> **Personal Agentic Career Data Platform / Career Operating System**
+
+которая соединяет:
+
+```text
+Career Knowledge Base
++
+CV-as-Code
++
+Profile Management
++
+Opportunity Intelligence
++
+Career Inbox
++
+Application CRM
++
+AI Assistants
++
+Agentic Workflows
++
+Career Analytics
+```
+
+Ключевой architecture invariant:
+
+> **Career facts are canonical, channel profiles are projections, opportunities are events, AI outputs are suggestions with provenance, and external actions remain controllable by the user.**
+
+Начинай с архитектурного анализа и P0 vertical slice. Не переусложняй инфраструктуру, но проектируй boundaries так, чтобы последующее добавление Gmail, LinkedIn/Wellfound/Upwork/Toptal adapters, mobile/desktop clients и нескольких AI providers не потребовало переписывания ядра.
