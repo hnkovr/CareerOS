@@ -1,4 +1,5 @@
-# CareerOS on Fly.io — single machine, webhook-driven Telegram bot + HTTP API.
+# CareerOS on Fly.io — STANDBY target (Render is the default: render.yaml).
+# Single machine, webhook-driven Telegram bot + HTTP API. Never deployed yet (GH #9).
 # Pattern: ~/.ai/templates/patterns/fly.toml · Profile: ~/.ai/templates/profiles/fly.yml
 # Deploy:  just deploy-fly   (driver: ~/.ai/skills/_scripts/deploy/deploy-app.sh)
 #
@@ -24,6 +25,9 @@ primary_region = "ams"
   CAREEROS_TG_WEBHOOK_PATH = "/tg/webhook"
   # No Redis add-on on Fly: tasks run in-process. Revisit when P1 adds Gmail sync.
   CAREEROS_TASK_RUNNER = "inline"
+  # Set HERE, per host. The workstation's .env renders `false` and must never decide this —
+  # config/deploy.yml excludes it from env_push for exactly that reason.
+  CAREEROS_TG_ENABLED = "true"
   # Eligibility key: a process with this unset never talks to Telegram, so a local
   # run can never steal production's updates.
   CAREEROS_TG_PUBLIC_URL = "https://careeros.fly.dev"
@@ -56,5 +60,5 @@ primary_region = "ams"
   size = "shared-cpu-1x"
   memory = "512mb"
 
-# No [mounts]: the vault is cloned read-only at boot (CAREEROS_VAULT_GIT_URL) and
-# nothing else is written to disk. Add a volume only when vault writes land (P1).
+# No [mounts]. NOTE: nothing clones the vault at boot yet — CAREEROS_VAULT_GIT_URL is read by no
+# code (GH #50), so this host serves the bundled demo vault. Add a volume only when vault writes land.

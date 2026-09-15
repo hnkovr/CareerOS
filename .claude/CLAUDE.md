@@ -36,6 +36,7 @@ escrow · handoff state); `just workstation-state` records this host into `.ai/w
 `tests/test_workstation_config.py`. **The vault is the migration** — `career/private` is git-ignored,
 so a fresh clone silently falls back to the demo vault; and a second machine that starts the bot with
 `CAREEROS_TG_PUBLIC_URL` set steals the webhook from production.
+Deploy: `just deploy` ships to the **default target, Render** (`render.yaml`, `scripts/prj-tools/render.sh`, runbook `docs/runbooks/deploy-render.md`); Fly is standby (`just deploy fly`). One production target only — the webhook is exclusive. `CAREEROS_TG_ENABLED`/`CAREEROS_TG_PUBLIC_URL` are per-host and never pushed from a workstation.
 Blank env vars read as **unset** (`Settings._blank_means_unset`) — the templates render every unfilled optional blank, and `int | None` cannot parse `""`.
 
 ## Conventions

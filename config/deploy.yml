@@ -15,9 +15,16 @@ env_push:
     # Local-only: these point at the dev docker-compose, never at the deployed stack.
     - CAREEROS_TEST_DATABASE_URL
     - CAREEROS_REDIS_URL
-    # Injected by the platform itself (`fly mpg attach --variable-name`), so pushing
+    # Injected by the platform itself (Fly `mpg attach --variable-name`, Render `fromDatabase`), so pushing
     # a local value would overwrite the real one with a localhost DSN.
     - CAREEROS_DATABASE_URL
+    # Per-HOST bot eligibility. Each host sets these in its own config (fly.toml [env],
+    # render.yaml envVars). A workstation's .env renders CAREEROS_TG_ENABLED=false, and a
+    # non-blank value IS pushed — so without this exclusion a deploy would switch the
+    # production bot off. CAREEROS_TG_PUBLIC_URL is the webhook ownership key: a
+    # workstation value reaching a host would point the bot at the wrong machine.
+    - CAREEROS_TG_ENABLED
+    - CAREEROS_TG_PUBLIC_URL
     # Platform-connector credentials. Sync is LOCAL-ONLY (the owner runs `just platform-*`
     # on the workstation), so the deployed app never uses these — shipping OAuth client
     # secrets and refresh tokens to a host that cannot use them is exposure for nothing.

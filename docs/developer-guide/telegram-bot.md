@@ -111,9 +111,9 @@ when it exceeds Telegram's 4096-character limit.
 | Mint or repair the token | `just bot-token-ensure` |
 | Run locally | `just bot-run` |
 | Webhook ops from the app | `careeros bot webhook-info \| webhook-set \| webhook-delete \| check` |
-| Dry-run the deploy | `just deploy-dry` |
-| Deploy | `just deploy-fly` |
-| Logs / status | `just fly-logs` · `just fly-status` |
+| Dry-run the deploy | `just deploy-dry` (default target: Render) |
+| Deploy | `just deploy` (= `just deploy-render`; standby: `just deploy fly`) |
+| Logs / status | `just render-logs` · `just render-status` (Fly: `just fly-logs` · `just fly-status`) |
 
 A SessionStart hook (`scripts/hooks/bot-guard.sh`) prints the webhook state at the top of every
 agent session, so a bot that quietly lost its webhook is noticed immediately rather than the next
@@ -128,14 +128,14 @@ Secrets (`config/.env.secrets`, never committed — values resolved via `find-se
 | `CAREEROS_TG_BOT_TOKEN` | bot token; every code path that uses it ends in `getMe` |
 | `CAREEROS_TG_WEBHOOK_SECRET` | echoed by Telegram in `X-Telegram-Bot-Api-Secret-Token` |
 | `CAREEROS_TG_OWNER_CHAT_ID` | the only chat served; every other chat gets `200` and no reply |
-| `CAREEROS_VAULT_GIT_URL` | private vault remote; unset → the bundled demo vault |
+| `CAREEROS_VAULT_GIT_URL` | private vault remote — **declared but read by no code yet** ([#50](https://github.com/hnkovr/CareerOS/issues/50)); deployed hosts use the bundled demo vault |
 
 Non-secret settings live in `config/.env.config.template` (`CAREEROS_TG_ENABLED`,
 `CAREEROS_TG_WEBHOOK_PATH`, `CAREEROS_TG_PUBLIC_URL`, `CAREEROS_TG_NOTIFY_MIN_SCORE`).
 
-Ops scalars — bot handle, Fly app, region, URL — are **not** duplicated in scripts. They live in
+Ops scalars — bot handle, deploy targets, region, URL — are **not** duplicated in scripts. They live in
 `~/.ai/skills/_settings/careeros.yml`, which the scripts, the `/careeros-bot` skill and the
-`fly-ops` agent all read. `tests/deploy/` asserts every key a script reads actually exists there.
+`render-ops` / `fly-ops` agents all read. The scripts use `tg_bot.deploy.public_url` — the URL of `default_target`. `tests/deploy/` asserts every key a script reads actually exists there.
 
 ## First deploy
 
@@ -144,20 +144,26 @@ Ops scalars — bot handle, Fly app, region, URL — are **not** duplicated in s
 2. **Webhook secret** — `openssl rand -hex 32` → `CAREEROS_TG_WEBHOOK_SECRET`.
 3. **Owner chat id** — message the bot once while the webhook is unset, read `getUpdates`, store
    `CAREEROS_TG_OWNER_CHAT_ID`.
-4. **Postgres** — `fly mpg create`, then `fly mpg attach --variable-name CAREEROS_DATABASE_URL`.
-   Note `core/db.py` normalises the `postgres://` scheme Fly hands out to `postgresql+asyncpg://`.
+4. **Host** — Render (default): follow [`docs/runbooks/deploy-render.md`](../runbooks/deploy-render.md) —
+   launch the Blueprint (it creates the web service and Postgres and prompts for each secret),
+   record the service id, read back the real URL. Fly (standby): `fly mpg create`, then
+   `fly mpg attach --variable-name CAREEROS_DATABASE_URL`. Either way `core/db.py` normalises the
+   `postgres://` scheme to `postgresql+asyncpg://`.
 5. **Preflight** — `just deploy-check`, then `just deploy-dry` to read every command first.
-6. **Deploy** — `just deploy-fly`. Migrations run as `release_command`, before traffic shifts; the
-   recipe claims the webhook afterwards.
+6. **Deploy** — `just deploy`. On Render's free plan migrations run in `dockerCommand` before the API
+   starts (pre-deploy commands are paid-only); on Fly they run as `release_command`. The recipe
+   claims the webhook afterwards.
 7. **Verify** — `just bot-webhook-info` shows our URL and `pending=0`; message the bot as owner.
 
-Only `CAREEROS_*` variables are pushed to Fly (`config/deploy.yml` `env_push.include` is an
-allow-list), and `CAREEROS_DATABASE_URL` is explicitly excluded so a local DSN cannot overwrite the
-one the platform attached.
+Only `CAREEROS_*` variables leave the workstation (`config/deploy.yml` `env_push.include` is an
+allow-list; on Render the same rule is asserted over `render.yaml`'s `sync: false` keys).
+`CAREEROS_DATABASE_URL` is excluded so a local DSN cannot overwrite the one the platform attached,
+and `CAREEROS_TG_ENABLED` / `CAREEROS_TG_PUBLIC_URL` are excluded because they are per-host: a
+workstation renders `TG_ENABLED=false`, which would switch the production bot off.
 
 ## Why single-machine
 
-`fly.toml` pins `--ha=false`, `min_machines_running = 0` and `auto_stop_machines = "off"`:
+Both targets run exactly one instance (`render.yaml`: no scaling; `fly.toml` below). `fly.toml` pins `--ha=false`, `min_machines_running = 0` and `auto_stop_machines = "off"`:
 
 * two machines would be two webhook claimants;
 * scale-to-zero is fine because a webhook delivery wakes a stopped machine in ~9s;

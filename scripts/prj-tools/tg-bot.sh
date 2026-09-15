@@ -34,7 +34,7 @@ _SETTING_KEYS=(
   '.careeros.tg_bot.deploy.token_secret'
   '.careeros.tg_bot.deploy.webhook_secret'
   '.careeros.tg_bot.deploy.webhook_path'
-  '.careeros.tg_bot.deploy.fly.url'
+  '.careeros.tg_bot.deploy.public_url'   # the DEFAULT target's URL (render today)
   '.careeros.tg_bot.handle'
 )
 read_settings() {

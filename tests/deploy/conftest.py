@@ -22,7 +22,7 @@ BOT_GUARD = REPO_ROOT / "scripts" / "hooks" / "bot-guard.sh"
 
 FAKE_TOKEN = "123456:FAKE-TOKEN-VALUE-must-never-be-printed"
 HANDLE = "careeros_hnkovr_bot"
-OUR_URL = "https://careeros.fly.dev/tg/webhook"
+OUR_URL = "https://careeros.onrender.com/tg/webhook"
 
 
 @pytest.fixture
@@ -44,8 +44,8 @@ def env(tmp_path: Path):
         "      token_secret: CAREEROS_TG_BOT_TOKEN\n"
         "      webhook_secret: CAREEROS_TG_WEBHOOK_SECRET\n"
         "      webhook_path: /tg/webhook\n"
-        "      fly:\n"
-        "        url: https://careeros.fly.dev\n"
+        "      default_target: render\n"
+        "      public_url: https://careeros.onrender.com\n"
         "  api:\n"
         "    telegram_bot_api: https://api.telegram.org\n"
     )

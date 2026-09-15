@@ -114,11 +114,11 @@ bot-webhook: ## Claim the Telegram webhook for this deployment
 
 # ---------------------------------------------------------------- deploy
 
-deploy-dry: ## Print every command the Fly deploy would run, execute none
+deploy-dry: ## Print every command a deploy to the default target (render) would run
 	@just deploy-dry
 
-deploy: ## Deploy to Fly, then claim the webhook
-	@just deploy-fly
+deploy: ## Deploy to the default target (render; careeros.yml default_target), then claim the webhook
+	@just deploy
 
 # ---------------------------------------------------------------- workstation
 

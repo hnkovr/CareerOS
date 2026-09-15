@@ -235,17 +235,55 @@ workstation-state *ARGS:
 workstation-gateway *ARGS:
     just -f {{workstation_jf}} gateway --repo "{{justfile_directory()}}" {{ARGS}}
 
-# ---------- deploy: fly ----------
+# ---------- deploy: default target ----------
+# The target lives in careeros.yml#careeros.tg_bot.deploy.default_target (render today). The
+# fallback keeps this Justfile loadable on a machine that has no settings file yet.
 
-# preflight: CLI installed? authed? config present?
-deploy-check:
+deploy_target := `yq -r '.careeros.tg_bot.deploy.default_target // "render"' "$HOME/.ai/skills/_settings/careeros.yml" 2>/dev/null || echo render`
+
+# preflight for a target (default: the default target): CLI, auth, config valid?
+deploy-check TARGET=deploy_target:
+    just deploy-check-{{TARGET}}
+
+# print every command a deploy would run, execute none
+deploy-dry TARGET=deploy_target:
+    just deploy-dry-{{TARGET}}
+
+# ship to a target (default: the default target), then claim the webhook
+deploy TARGET=deploy_target:
+    just deploy-{{TARGET}}
+
+# ---------- deploy: render (DEFAULT) — scripts/prj-tools/render.sh ----------
+
+deploy-check-render:
+    scripts/prj-tools/render.sh check
+
+deploy-dry-render:
+    scripts/prj-tools/render.sh deploy --dry-run
+
+# deploy the recorded service id, then claim the webhook (refuses a foreign owner)
+deploy-render:
+    scripts/prj-tools/render.sh deploy
+    just bot-webhook-set
+
+render-logs:
+    scripts/prj-tools/render.sh logs
+
+render-status:
+    scripts/prj-tools/render.sh status
+
+# after launching the Blueprint: print the srv-… id to record in careeros.yml
+render-find-id:
+    scripts/prj-tools/render.sh find-id
+
+# ---------- deploy: fly (STANDBY) — generic deploy driver ----------
+
+deploy-check-fly:
     just -f {{deploy_jf}} check fly
 
-# print every command the deploy would run, execute none
-deploy-dry:
+deploy-dry-fly:
     just -f {{deploy_jf}} deploy-dry fly
 
-# ship it (preflight must pass); then claim the webhook
 deploy-fly:
     just -f {{deploy_jf}} deploy fly
     just bot-webhook-set

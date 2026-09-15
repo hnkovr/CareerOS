@@ -1,0 +1,84 @@
+# CareerOS on Render — the DEFAULT deploy target (Fly is standby).
+# Selected by ~/.ai/skills/_settings/careeros.yml#careeros.tg_bot.deploy.default_target.
+# Deploy:  just deploy   (= just deploy-render → scripts/prj-tools/render.sh)
+# Runbook: docs/runbooks/deploy-render.md
+#
+# tests/deploy/test_deploy_config.py holds this file, fly.toml and the settings SSoT in step.
+#
+# Secrets are NEVER written here. Every secret is `sync: false`: entered once in the Render
+# dashboard when the Blueprint is launched. Which keys may appear here at all follows the
+# same policy as config/deploy.yml env_push — no platform OAuth credentials, no local DSNs.
+
+services:
+  - type: web
+    name: careeros
+    runtime: docker
+    region: frankfurt            # EU; Render has no Amsterdam region (Fly standby runs in ams)
+    # FREE: spins down after 15 min idle and cold-starts on the next request, and gets no
+    # pre-deploy command. Switching to `starter` is a two-line change — see the runbook.
+    plan: free
+    dockerfilePath: ./deploy/docker/Dockerfile.careeros
+    dockerContext: .
+    # Explicit deploys only (`just deploy`). main is a shared tree where several agent lanes
+    # commit half-finished slices, and every deploy can claim the Telegram webhook.
+    autoDeployTrigger: "off"
+    # Migrations run BEFORE the API starts. On a paid plan they belong in `preDeployCommand`
+    # (it runs before traffic shifts, like fly.toml's release_command), but Render runs
+    # pre-deploy commands only for paid instances: on `free` it would silently never run.
+    # Safe here because a free service is exactly one instance — nothing to race.
+    dockerCommand: sh -c "alembic -c services/careeros/alembic.ini upgrade head && exec careeros-api"
+    healthCheckPath: /health
+    envVars:
+      # ── non-secret, per-host — these must come from HERE, never from a workstation ──
+      - key: CAREEROS_ENV
+        value: prod
+      - key: CAREEROS_LOG_JSON
+        value: "true"
+      - key: CAREEROS_API_PORT
+        value: "8000"
+      - key: PORT                # Render routes traffic to $PORT; keep it on the app's port
+        value: "8000"
+      - key: CAREEROS_TASK_RUNNER
+        value: inline            # no Key Value (Redis) instance: tasks run in-process
+      - key: CAREEROS_TG_ENABLED
+        value: "true"
+      - key: CAREEROS_TG_WEBHOOK_PATH
+        value: /tg/webhook
+      # Eligibility key: the ONE deployment that may own @careeros_hnkovr_bot's webhook.
+      # Must equal careeros.yml#careeros.tg_bot.deploy.render.url (asserted by the tests).
+      - key: CAREEROS_TG_PUBLIC_URL
+        value: https://careeros.onrender.com
+      # ── platform-provided ──
+      - key: CAREEROS_DATABASE_URL   # postgres:// — core/db.py normalises it to postgresql+asyncpg://
+        fromDatabase:
+          name: careeros-db
+          property: connectionString
+      # ── secrets: prompted in the dashboard at Blueprint launch, never committed ──
+      - key: CAREEROS_TG_BOT_TOKEN
+        sync: false
+      - key: CAREEROS_TG_WEBHOOK_SECRET
+        sync: false
+      - key: CAREEROS_TG_OWNER_CHAT_ID
+        sync: false
+      - key: CAREEROS_API_TOKEN
+        sync: false
+      - key: CAREEROS_ANTHROPIC_API_KEY
+        sync: false
+      - key: CAREEROS_OPENAI_API_KEY
+        sync: false
+      - key: CAREEROS_JINA_API_KEY
+        sync: false
+      # Read by no code yet (GH #50) — declared so the value is in place when it is.
+      - key: CAREEROS_VAULT_GIT_URL
+        sync: false
+
+databases:
+  - name: careeros-db
+    region: frankfurt
+    # FREE Render Postgres is DELETED after 30 days. The vault holds the facts (invariant 1),
+    # but pipeline, inbox and application rows live only here. Pick a paid plan before any
+    # real data lands — see the runbook.
+    plan: free
+    databaseName: careeros
+    user: careeros
+    ipAllowList: []              # private network only: the web service is the sole client

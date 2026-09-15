@@ -20,7 +20,9 @@ emit() { printf '🤖 [careeros-bot] %s\n' "$1"; }
 # Only speak inside the CareerOS repo.
 [[ -f "$SETTINGS" ]] || exit 0
 git rev-parse --show-toplevel >/dev/null 2>&1 || exit 0
-[[ -f "$(git rev-parse --show-toplevel 2>/dev/null)/fly.toml" ]] || exit 0
+# Gate on the project, not on one platform's file: fly.toml alone stopped meaning "CareerOS"
+# once Render became the default target.
+[[ -f "$(git rev-parse --show-toplevel 2>/dev/null)/config/deploy.yml" ]] || exit 0
 
 command -v yq >/dev/null 2>&1 || { emit "yq missing — cannot read $SETTINGS"; exit 0; }
 command -v jq >/dev/null 2>&1 || { emit "jq missing — skipping webhook check"; exit 0; }
@@ -28,7 +30,7 @@ command -v jq >/dev/null 2>&1 || { emit "jq missing — skipping webhook check";
 # One yq process, not five: this runs on every session start, so interpreter
 # startup is the dominant cost.
 raw=$(yq -r '[.careeros.api.telegram_bot_api, .careeros.tg_bot.deploy.token_secret,
-              .careeros.tg_bot.deploy.fly.url, .careeros.tg_bot.deploy.webhook_path,
+              .careeros.tg_bot.deploy.public_url, .careeros.tg_bot.deploy.webhook_path,
               .careeros.tg_bot.handle] | @tsv' "$SETTINGS" 2>/dev/null)
 IFS=$'\t' read -r API_BASE TOKEN_VAR PUBLIC_URL WEBHOOK_PATH HANDLE <<<"$raw"
 
