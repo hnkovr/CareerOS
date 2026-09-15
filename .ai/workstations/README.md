@@ -2,6 +2,6 @@
 
 | workstation | updated (UTC) | branch | default +/- | dirty | untracked | worktrees | open sessions |
 |---|---|---|---|---|---|---|---|
-| macCoreI9 | 2026-08-26T18:02:24Z | main | +0/-0 | 7 | 6 | 0 | 5 |
+| macCoreI9 | 2026-09-15T17:55:42Z | main | +0/-0 | 5 | 0 | 0 | 5 |
 
 Refresh here: `just -f ~/.ai/skills/_scripts/session/workstation/Justfile state --apply`

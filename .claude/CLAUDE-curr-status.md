@@ -184,3 +184,15 @@ The trap worth remembering: **the vault is the migration.** `career/private` is 
 clone silently falls back to the bundled demo vault, read-only — it does not error, it just has no
 facts. Second trap: a machine that starts the bot with `CAREEROS_TG_PUBLIC_URL` set steals
 `@careeros_hnkovr_bot` from production.
+
+## Deploy target: Render (default), Fly (standby) — configured, not launched (2026-09-15)
+`just deploy` resolves `careeros.yml#careeros.tg_bot.deploy.default_target` = render (`render.yaml`,
+`scripts/prj-tools/render.sh`, runbook `docs/runbooks/deploy-render.md`); Fly stays `just deploy fly`
+and has never been deployed. Commit 06d6cb8, [#51](https://github.com/hnkovr/CareerOS/issues/51).
+
+Waiting on the owner: confirm the Render workspace (the escrowed key sees only *Ольга Крупий's Workspace*),
+choose the plan (free Postgres is deleted after 30 days), launch the Blueprint, record `render.service_id`.
+Until [#50](https://github.com/hnkovr/CareerOS/issues/50) lands, any deployed host answers from the demo vault.
+
+Vault lane closed: `hnkovr/careeros-vault` exists and holds the initialised vault ([#46](https://github.com/hnkovr/CareerOS/issues/46), 14ba499);
+secrets escrow verified ([#47](https://github.com/hnkovr/CareerOS/issues/47)).

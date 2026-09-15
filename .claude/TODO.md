@@ -110,11 +110,23 @@ The MacBook M1 is not reachable yet, so this pass built the lane rather than run
 - [x] `scripts/hooks/workstation-guard.sh` (SessionStart) + `.ai/workstations/<host>.yml` via
   `just workstation-state`; full handoff `just workstation-gateway`
 - [x] `docs/runbooks/new-workstation.md`, skill `/careeros-workstation`, agent `careeros-workstation`
-- [ ] vault needs its own private remote — `CAREEROS_VAULT_GIT_URL` ([#46](https://github.com/hnkovr/CareerOS/issues/46)) **the vault IS
-  the migration**: a clone without it falls back to the demo vault, read-only, with no error
-- [ ] secrets escrow to Bitwarden ([#47](https://github.com/hnkovr/CareerOS/issues/47)) — blocked on `bw unlock` at the keyboard
+- [x] vault has its own private remote `hnkovr/careeros-vault` ([#46](https://github.com/hnkovr/CareerOS/issues/46)); found + fixed `is_repo()` binding a
+  nested vault to the CareerOS repo (14ba499) and the runbook's `git clone` into a non-empty dir
+- [x] secrets escrowed to Bitwarden and verified against the vault ([#47](https://github.com/hnkovr/CareerOS/issues/47)); preflight now checks escrow
+  freshness, not the lock state (d93c77e)
+- [ ] `CAREEROS_VAULT_GIT_URL` is read by no code — deployed hosts serve the demo vault ([#50](https://github.com/hnkovr/CareerOS/issues/50))
 - [ ] bootstrap + verify end-to-end on the M1 ([#48](https://github.com/hnkovr/CareerOS/issues/48)) — every `proves` is a claim until then
 - [ ] `preflight --json` for the gateway ([#49](https://github.com/hnkovr/CareerOS/issues/49)) — backlog
+
+## Session 2026-09-15 — Render is the default deploy target ([#51](https://github.com/hnkovr/CareerOS/issues/51))
+- [x] `render.yaml` (validated against the workspace), `scripts/prj-tools/render.sh`, `just deploy` → default
+  target from `careeros.yml`, Fly → standby (`just deploy fly`); bot scripts read `public_url` (06d6cb8)
+- [x] fixed: a Fly deploy would have pushed the workstation's `CAREEROS_TG_ENABLED=false` (bot off) — per-host
+  eligibility now excluded from env push; Render free has no `preDeployCommand` → migrations in `dockerCommand`
+- [ ] **owner:** confirm the Render workspace (the key sees only *Ольга Крупий's Workspace*) and the plan —
+  free Postgres is deleted after 30 days
+- [ ] launch the Blueprint → `just render-find-id` → record `render.service_id` → align the real URL → `just deploy`
+- [ ] shared driver profile `~/.ai/templates/profiles/render.yml` is broken for Render CLI v2 (`env set`, id-less deploy)
 
 ## Parked
 - `packages/ui` extraction (when Tauri lands)
