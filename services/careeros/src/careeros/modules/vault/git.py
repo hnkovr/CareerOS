@@ -47,15 +47,29 @@ class GitRepo:
 
     # --- queries ---
     def is_repo(self) -> bool:
+        """True only when *this* directory is the repository root.
+
+        `--is-inside-work-tree` is not the question: it also says true for a vault nested in
+        someone else's checkout (the default vault path, `career/private`, sits inside the
+        CareerOS repo). Answering that question bound the vault to the ENCLOSING repo, so
+        `init` skipped `git init` and `apply_change()` would have committed private career
+        facts into the code repo — or, where the path is gitignored, staged nothing at all
+        and failed with "nothing to commit". A vault owns its repository or has none.
+        """
         if not self.root.exists():
             return False
         proc = subprocess.run(
-            ["git", "rev-parse", "--is-inside-work-tree"],
+            ["git", "rev-parse", "--show-toplevel"],
             cwd=self.root,
             capture_output=True,
             text=True,
         )
-        return proc.returncode == 0 and proc.stdout.strip() == "true"
+        if proc.returncode != 0:
+            return False
+        try:
+            return Path(proc.stdout.strip()).resolve() == self.root.resolve()
+        except OSError:  # pragma: no cover - unreadable path
+            return False
 
     def head_sha(self) -> str | None:
         if not self.is_repo():

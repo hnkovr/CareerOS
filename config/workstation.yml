@@ -44,7 +44,11 @@ workstation:
       run: just -f ~/dmp-gateway/secrets-sync/Justfile pull
       proves: ~/.ai/.env.secrets is restored 0600 from Bitwarden; then re-run `make env`
     - step: vault
-      run: uv run careeros vault init            # or clone CAREEROS_VAULT_GIT_URL into career/private
+      run: git -C career/private init -b main
+      # then: remote add origin "$CAREEROS_VAULT_GIT_URL" · fetch --depth=1 origin main ·
+      # checkout -f -B main origin/main. NOT `git clone`: career/private/README.md is tracked by
+      # CareerOS to keep the directory present, and clone refuses a non-empty destination.
+      # A brand-new vault instead: uv run careeros vault init
       proves: career/private holds the canonical facts — without it the demo vault is used read-only
     - step: gate
       run: make check
@@ -69,7 +73,7 @@ workstation:
     - item: .env, config/.env.secrets, config/.env.docker
       recreate: secrets pull, then make env
     - item: career/private (the canonical career vault — git-ignored on purpose)
-      recreate: clone CAREEROS_VAULT_GIT_URL, or `careeros vault init` for a fresh one
+      recreate: init+fetch+checkout from CAREEROS_VAULT_GIT_URL (clone refuses the non-empty dir), or `careeros vault init`
     - item: the platform OAuth token file (CAREEROS_PLATFORM_TOKEN_FILE, mode 0600)
       recreate: just platform-connect hh / upwork — re-run OAuth, never copy the file
     - item: .claude/settings.local.json — per-machine tool permissions

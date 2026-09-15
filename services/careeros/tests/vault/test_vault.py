@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -251,6 +252,43 @@ def test_search_facts(demo_vault: Vault) -> None:
     assert hits and hits[0].score == 100
     assert {h.collection for h in hits} >= {"achievements", "projects", "skills"}
     assert search_facts(demo_vault.require(), "") == []
+
+
+def test_init_from_template_inside_another_repo(tmp_path: Path) -> None:
+    """A vault nested in someone else's checkout must still own its git repository.
+
+    The default vault path (`career/private`) sits inside the CareerOS repo. Asking git
+    `--is-inside-work-tree` says "yes" there — about the ENCLOSING repo — so `init` skipped
+    `git init` and bound the vault to the code repo: writes would have committed private
+    career facts into it, and where the path is gitignored, `init` failed outright with
+    "nothing to commit".
+    """
+    from tests.conftest import REPO_ROOT
+
+    outer = tmp_path / "outer"
+    (outer / "career").mkdir(parents=True)
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=outer, check=True)
+    (outer / ".gitignore").write_text("career/private/*\n", encoding="utf-8")
+
+    nested = outer / "career" / "private"
+    vault = Vault(nested, git_user_name="T", git_user_email="t@example.com")
+    vault.init_from_template(REPO_ROOT / "career" / "templates", owner="Test Owner")
+
+    # its own repository root, its own first commit — not the outer repo's
+    toplevel = subprocess.run(
+        ["git", "rev-parse", "--show-toplevel"],
+        cwd=nested,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert Path(toplevel).resolve() == nested.resolve()
+    assert vault.head_sha() is not None
+    # and the outer repo has no vault content staged or committed
+    outer_tracked = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=outer, capture_output=True, text=True, check=True
+    ).stdout
+    assert "career/private" not in outer_tracked
 
 
 def test_export_schemas_roundtrip(tmp_path: Path) -> None:

@@ -113,8 +113,13 @@ bw unlock
 just -f ~/dmp-gateway/secrets-sync/Justfile pull   # → ~/.ai/.env.secrets (0600)
 make env                            # re-render .env now that the values exist
 
-# 6 vault
-git clone "$CAREEROS_VAULT_GIT_URL" career/private   # or: uv run careeros vault init
+# 6 vault — NOT `git clone`: career/private/README.md is tracked by CareerOS to keep the
+#   directory present, and clone refuses a non-empty destination. Fetch into it instead:
+git -C career/private init -b main
+git -C career/private remote add origin "$CAREEROS_VAULT_GIT_URL"
+git -C career/private fetch --depth=1 origin main
+git -C career/private checkout -f -B main origin/main
+#   a brand-new vault instead of an existing one: uv run careeros vault init
 
 # 7 gate
 make check                          # lint + full test suite
